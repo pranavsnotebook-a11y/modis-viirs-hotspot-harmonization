@@ -34,3 +34,9 @@ Note: FIRMS `scan`/`track` are already in km.
 Matches / log10-FRP correlation: 30 min → 31 / 0.75, 60 → 369 / 0.41, 120 → 2,737 / 0.44,
 180 → 5,917 / 0.53. Only a few pairs are near-simultaneous (Aqua and S-NPP both cross ~13:30
 local), so most "both" matches are different overpasses of the same fire (fire evolves).
+
+## Other VIIRS satellites and map
+NOAA-20/21 (J1/J2) CSVs are at `noaa-20-viirs-c2/.../J1_VIIRS_C2_Global_24h.csv` and
+`noaa-21-viirs-c2/.../J2_VIIRS_C2_Global_24h.csv`. With a 30 min window, coincident MODIS matches:
+S-NPP 31 (corr 0.75), NOAA-20 29 (0.74), NOAA-21 11 (0.83) — near-simultaneous overpasses are rare.
+`python -m hotspots.map data/harmonized.csv data/map.html` writes an interactive map.

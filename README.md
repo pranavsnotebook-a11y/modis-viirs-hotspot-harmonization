@@ -18,3 +18,14 @@ Get CSVs from https://firms.modaps.eosdis.nasa.gov/active_fire/ into `data/`.
 ## Dev
     python3 -m venv .venv && source .venv/bin/activate
     pip install -e '.[dev]' && pytest
+
+## Run on real data
+    mkdir -p data && cd data
+    B=https://firms.modaps.eosdis.nasa.gov/data/active_fire
+    curl -O $B/modis-c6.1/csv/MODIS_C6_1_Global_24h.csv
+    curl -O $B/suomi-npp-viirs-c2/csv/SUOMI_VIIRS_C2_Global_24h.csv
+    cd .. && python -m hotspots.cli data/MODIS_C6_1_Global_24h.csv data/SUOMI_VIIRS_C2_Global_24h.csv data/harmonized.csv
+
+First result (global 24h, 2026-10-31): 5,917 events seen by both sensors, 70,432 VIIRS-only,
+11,494 MODIS-only; log10 FRP correlation 0.53, median VIIRS-sum/MODIS FRP ratio 1.23.
+Note: FIRMS `scan`/`track` are already in km.

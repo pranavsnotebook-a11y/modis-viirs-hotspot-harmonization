@@ -4,24 +4,16 @@ from .match import match
 
 
 def harmonize(modis: pd.DataFrame, viirs: pd.DataFrame, **kw) -> pd.DataFrame:
-    """Return one row per fire event. VIIRS location preferred (finer resolution);
-    FRP of a MODIS pixel is summed over the VIIRS pixels it contains for comparability.
-    `detected_by` is 'both', 'viirs' or 'modis'."""
-    pairs = match(modis, viirs, **kw)
-    mi_used = set(pairs.modis_idx)
-    vi_used = set(pairs.viirs_idx)
-    v_frp_by_m = viirs.frp.groupby(pairs.set_index("viirs_idx").modis_idx).sum() \
-        if len(pairs) else pd.Series(dtype=float)
-
-    v = viirs.copy()
-    v["detected_by"] = ["both" if i in vi_used else "viirs" for i in v.index]
-    v["modis_idx"] = pairs.set_index("viirs_idx").modis_idx.reindex(v.index)
+    """One row per fire event. VIIRS location is preferred (finer resolution).
+    `detected_by` is 'both', 'viirs' or 'modis'. `viirs_frp` is the FRP of the VIIRS
+    pixel; `modis_frp` is the matched MODIS pixel's FRP (pixel-level, not summed)."""
+    pairs = match(modis, viirs, **kw).set_index("viirs_idx")
+    v = viirs.rename(columns={"frp": "viirs_frp"}).copy()
+    v["modis_idx"] = pairs.modis_idx.reindex(v.index)
+    v["detected_by"] = v.modis_idx.notna().map({True: "both", False: "viirs"})
     v["modis_frp"] = v.modis_idx.map(modis.frp)
-
-    m_only = modis[~modis.index.isin(mi_used)].copy()
-    m_only["detected_by"] = "modis"
-    m_only["modis_frp"] = m_only.frp
-    out = pd.concat([v.rename(columns={"frp": "viirs_frp"}),
-                     m_only.rename(columns={"frp": "viirs_frp"}).assign(viirs_frp=float("nan"))],
-                    ignore_index=True)
-    return out.drop(columns=["modis_idx"])
+    # MODIS pixel with several VIIRS pixels: aggregate VIIRS FRP for fair comparison
+    v["viirs_frp_in_modis_pixel"] = v.groupby("modis_idx").viirs_frp.transform("sum")
+    m_only = modis[~modis.index.isin(pairs.modis_idx)].rename(columns={"frp": "modis_frp"})
+    m_only = m_only.assign(detected_by="modis")
+    return pd.concat([v.drop(columns="modis_idx"), m_only], ignore_index=True)

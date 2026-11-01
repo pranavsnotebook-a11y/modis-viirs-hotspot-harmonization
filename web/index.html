@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>MODIS + VIIRS Harmonized Hot Spots</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head><body>
+<header><h1>Harmonized MODIS + VIIRS hot spots</h1>
+<p id="sub">Loading…</p></header>
+<section id="counts"></section>
+<main><div id="map"></div><div id="hist"></div></main>
+<footer>Map shows all dual-sensor ("both") rows plus a random sample of single-sensor rows; counts and histograms use the full dataset. Toggle layers top-right.
+Caveat: "both" means matched within a footprint and a 180 min window, often different overpasses.</footer>
+<script src="app.js"></script>
+</body></html>

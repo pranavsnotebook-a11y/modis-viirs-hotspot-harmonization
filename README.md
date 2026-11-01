@@ -29,3 +29,8 @@ Get CSVs from https://firms.modaps.eosdis.nasa.gov/active_fire/ into `data/`.
 First result (global 24h, 2026-10-31): 5,917 events seen by both sensors, 70,432 VIIRS-only,
 11,494 MODIS-only; log10 FRP correlation 0.53, median VIIRS-sum/MODIS FRP ratio 1.23.
 Note: FIRMS `scan`/`track` are already in km.
+
+## Time-window sensitivity (`python -m hotspots.analyze modis.csv viirs.csv`)
+Matches / log10-FRP correlation: 30 min → 31 / 0.75, 60 → 369 / 0.41, 120 → 2,737 / 0.44,
+180 → 5,917 / 0.53. Only a few pairs are near-simultaneous (Aqua and S-NPP both cross ~13:30
+local), so most "both" matches are different overpasses of the same fire (fire evolves).

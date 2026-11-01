@@ -1,9 +1,11 @@
 """Normalize MODIS and VIIRS FIRMS records to a common schema."""
 import numpy as np
 import pandas as pd
+from .confidence import conf_score
+from .footprint import heading_deg
 
-COMMON_COLS = ["sensor", "latitude", "longitude", "time", "frp", "conf_class",
-               "scan_km", "track_km", "daynight"]
+COMMON_COLS = ["sensor", "satellite", "latitude", "longitude", "time", "frp", "conf_class",
+               "conf_score", "scan_km", "track_km", "heading_deg", "daynight"]
 
 # FIRMS `scan` and `track` are already pixel dimensions in km (they grow toward the
 # swath edge), so they are used as-is.
@@ -35,15 +37,19 @@ def normalize(df: pd.DataFrame, sensor: str) -> pd.DataFrame:
     if sensor not in SENSORS:
         raise ValueError(f"unknown sensor {sensor!r}")
     conf = (modis_conf_class if sensor == "MODIS" else viirs_conf_class)(df["confidence"])
+    sat = df["satellite"].astype(str) if "satellite" in df else pd.Series(sensor, index=df.index)
     out = pd.DataFrame({
         "sensor": sensor,
+        "satellite": sat,
         "latitude": df["latitude"].astype(float),
         "longitude": df["longitude"].astype(float),
         "time": _to_time(df),
         "frp": pd.to_numeric(df["frp"], errors="coerce"),
         "conf_class": conf,
+        "conf_score": conf_score(df["confidence"], sensor),
         "scan_km": df["scan"].astype(float),
         "track_km": df["track"].astype(float),
+        "heading_deg": heading_deg(df["latitude"].astype(float), sat, df["daynight"]),
         "daynight": df["daynight"],
     })
     return out[COMMON_COLS].reset_index(drop=True)

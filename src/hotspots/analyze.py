@@ -19,7 +19,7 @@ def main(argv=None):
         n, c, _ = corr(harmonize(m, v, max_dt_min=dt))
         print(f"{dt:>9} {n:>6} {c:.3f}")
     _, _, b = corr(harmonize(m, v, max_dt_min=30))
-    print("\nBy MODIS confidence class (dt<=30):")
+    print("\nBy VIIRS confidence class (dt<=30):")
     for k, g in b.groupby("conf_class"):
         if len(g) > 2:
             print(k, len(g), f"corr={np.corrcoef(np.log10(g.modis_frp.clip(lower=0.1)), np.log10(g.viirs_frp_in_modis_pixel.clip(lower=0.1)))[0,1]:.3f}")

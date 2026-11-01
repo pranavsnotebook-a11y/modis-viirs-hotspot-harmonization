@@ -8,9 +8,12 @@ overpass times. This project merges them into one consistent hot-spot product.
 1. **Load** FIRMS CSV downloads (MODIS C6.1, VIIRS S-NPP / NOAA-20 375 m) — `hotspots.io`
 2. **Normalize** to a common schema: sensor, lat/lon, UTC time, FRP (MW), confidence class
    (low/nominal/high), footprint size from scan/track — `hotspots.schema`
-3. **Match** detections across sensors within a spatial footprint + time window — `hotspots.match`
+3. **Match** detections across sensors by oriented-rectangle footprint overlap + time window —
+   `hotspots.match`, `hotspots.footprint`
 4. **Merge** matched groups into harmonized fire events (best location from VIIRS,
-   combined FRP, agreement flag) — `hotspots.merge`
+   combined FRP, agreement flag, unified confidence) — `hotspots.merge`, `hotspots.confidence`
+5. **FRP harmonization** and **detection-probability** analysis — `hotspots.frp`, `hotspots.detection`,
+   report via `python -m hotspots.report modis.csv viirs*.csv`
 
 ## Data
 Get CSVs from https://firms.modaps.eosdis.nasa.gov/active_fire/ into `data/`.
@@ -26,21 +29,56 @@ Get CSVs from https://firms.modaps.eosdis.nasa.gov/active_fire/ into `data/`.
     curl -O $B/suomi-npp-viirs-c2/csv/SUOMI_VIIRS_C2_Global_24h.csv
     cd .. && python -m hotspots.cli data/MODIS_C6_1_Global_24h.csv data/SUOMI_VIIRS_C2_Global_24h.csv data/harmonized.csv
 
-First result (global 24h, 2026-10-31): 5,917 events seen by both sensors, 70,432 VIIRS-only,
-11,494 MODIS-only; log10 FRP correlation 0.53, median VIIRS-sum/MODIS FRP ratio 1.23.
-Note: FIRMS `scan`/`track` are already in km.
-
-## Time-window sensitivity (`python -m hotspots.analyze modis.csv viirs.csv`)
-Matches / log10-FRP correlation: 30 min → 31 / 0.75, 60 → 369 / 0.41, 120 → 2,737 / 0.44,
-180 → 5,917 / 0.53. Only a few pairs are near-simultaneous (Aqua and S-NPP both cross ~13:30
-local), so most "both" matches are different overpasses of the same fire (fire evolves).
-
-## Other VIIRS satellites and map
-NOAA-20/21 (J1/J2) CSVs are at `noaa-20-viirs-c2/.../J1_VIIRS_C2_Global_24h.csv` and
-`noaa-21-viirs-c2/.../J2_VIIRS_C2_Global_24h.csv`. With a 30 min window, coincident MODIS matches:
-S-NPP 31 (corr 0.75), NOAA-20 29 (0.74), NOAA-21 11 (0.83) — near-simultaneous overpasses are rare.
+NOAA-20/21 CSVs: `noaa-20-viirs-c2/csv/J1_VIIRS_C2_Global_24h.csv`, `noaa-21-viirs-c2/csv/J2_VIIRS_C2_Global_24h.csv`.
 `python -m hotspots.map data/harmonized.csv data/map.html` writes an interactive map.
+Note: FIRMS `scan`/`track` are already pixel sizes in km.
 
-## Regional comparison (`python -m hotspots.regional modis.csv viirs*.csv`, 60 min window, all 3 VIIRS sats)
-Log-FRP correlation / median VIIRS-sum÷MODIS FRP: North America 0.82 / 1.77 (n=38), Oceania 0.57 / 1.39,
-South America 0.46 / 0.98, Asia 0.42 / 0.97, Africa -0.04 / 0.90 (n=200). Regions are coarse boxes; small n in some.
+## Results (FIRMS global 24h, 2026-10-31/11-01; MODIS Aqua+Terra 13,846 px, VIIRS S-NPP+NOAA-20+NOAA-21 236,006 px)
+All numbers below come from `python -m hotspots.cli|analyze|regional|report` (run inside `data/`).
+
+**Footprint matching** (`hotspots.footprint`, `hotspots.match`): a VIIRS pixel matches a MODIS pixel when
+their oriented rectangles (along-scan `scan` km x along-track `track` km) overlap; among overlapping candidates
+the closest in time wins. FIRMS has no pixel orientation, so the along-track direction is approximated by the
+ground-track heading of a 98.2 deg sun-synchronous orbit (orbit leg from satellite + day/night flag, Earth-rotation
+corrected); unknown satellites fall back to axis-aligned rectangles in local ENU. Bow-tie overlap and the
+triangular MODIS response are ignored, and the day/night flag can pick the wrong orbit leg near the poles.
+Sanity check: at dt<=30 min the heading-oriented rectangles give 83 matches vs 81 axis-aligned, 77 rotated 45 deg
+and 74 rotated 90 deg (small n, but the expected order).
+
+**Time-window sensitivity** (S-NPP only, VIIRS rows matched / log10-FRP corr): 15 min -> 0, 30 -> 33 / 0.82,
+60 -> 424 / 0.42, 120 -> 3,669 / 0.37, 180 -> 8,026 / 0.44. Near-simultaneous overpasses are rare, so most
+"both" matches at >= 60 min are different overpasses of an evolving fire. At 180 min: 8,026 both / 68,323
+VIIRS-only / 10,970 MODIS-only; median VIIRS-sum / MODIS FRP 1.50.
+
+**Regional** (all 3 VIIRS, 60 min; log-FRP corr / median VIIRS-sum / MODIS, VIIRS rows matched): North America
+0.89 / 1.39 (52), Oceania 0.62 / 1.33 (65), South America 0.49 / 1.11 (246), Asia 0.42 / 0.92 (223),
+Africa 0.08 / 0.78 (206). Boxes are coarse; VIIRS FRP is now summed per (MODIS pixel, VIIRS satellite) so
+different VIIRS satellites are never added together.
+
+**FRP harmonization** (`hotspots.frp`): Theil-Sen fit of log10(VIIRS FRP summed over the MODIS footprint) on
+log10(MODIS FRP), using only near-coincident pairs (dt <= 30 min): **n = 25** (MODIS pixel x VIIRS satellite, all Aqua).
+Slope 1.28 (95% CI 0.85-1.64; Huber 1.29), intercept -0.36, robust scatter 0.37 dex (a factor of ~2.3),
+Spearman 0.81, median ratio 0.91. Leave-one-out median |error|: free-slope 0.33 dex, constant-ratio 0.32 dex,
+**no correction 0.28 dex** -- with this little data the fit does *not* beat using MODIS FRP as-is; the data are
+consistent with a 1:1 relation within large scatter. `harmonized_frp(frp, sensor, model)` maps MODIS onto the
+VIIRS-equivalent scale with a +/-1 sigma log-normal interval (e.g. 50 MW -> 66 MW, 28-154 MW); VIIRS passes through.
+By group (n, slope, scatter): day 20 / 1.21 / 0.29 dex; night 5 / undetermined; Asia 17 / 1.34 / 0.50;
+North America 5 / 1.20 / 0.09; Africa 3 (too few); MODIS nominal conf 22 / 1.27, high 3; S-NPP 8 / 1.30,
+NOAA-20 12 / 1.41, NOAA-21 5 / 0.61 (CI unbounded). Groups with n <= 8 are not meaningful. Caveats: regression
+dilution (MODIS FRP is noisy), fires still change within 30 min, VIIRS pixels in overlapping MODIS pixels count once.
+
+**Confidence** (`hotspots.confidence`): unified 0-1 score = MODIS conf/100; VIIRS low/nominal/high -> 0.15/0.55/0.90
+(midpoints of the MODIS class ranges); events seen by both combine as 1-(1-p_m)(1-p_v) (assumes independence --
+optimistic). Empirical check on 83 coincident matches: median MODIS score is 0.57 for VIIRS nominal (n=69, matches
+0.55) and 0.57 for VIIRS low (n=13; VIIRS "low" is mostly a sun-glint/weak-anomaly flag, not a weaker fire);
+VIIRS high n=1. Mean unified score: both 0.79, MODIS-only 0.66, VIIRS-only 0.51.
+
+**Why MODIS misses small fires** (`hotspots.detection`): each sensor's 5th-percentile FRP (a proxy for its
+detection floor) grows with pixel area. MODIS day: 5.3 MW (<=1.5 km^2, n=6,518), 8.2 (1.5-3), 15.9 (3-6),
+27.4 MW (>6 km^2); night similar (4.2 -> 28.3). VIIRS (0.14-0.62 km^2): 2.1-4.4 MW day, 0.5-1.1 MW night.
+34% of daytime and 87% of night-time VIIRS pixels have FRP < 5 MW, i.e. below MODIS's best-case floor.
+A direct detection-probability estimate (VIIRS fires within 10 km of a MODIS detection from the same overpass,
+dt <= 30 min) has only n = 130 (64% detected by MODIS); a logistic fit P = f(log FRP, log area) gives coefficients
++1.95 (FRP) and -4.08 (area): 50% detection at ~1.6 MW for a 1 km^2 pixel vs ~29 MW for 4 km^2. These numbers
+shift a lot with the neighbourhood radius (5 km: 20 MW; 50 km: 61 MW at 4 km^2, since VIIRS's wider swath leaks
+in), so treat them as qualitative support for the pixel-size effect, not calibrated thresholds.

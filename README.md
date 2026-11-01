@@ -40,3 +40,7 @@ NOAA-20/21 (J1/J2) CSVs are at `noaa-20-viirs-c2/.../J1_VIIRS_C2_Global_24h.csv`
 `noaa-21-viirs-c2/.../J2_VIIRS_C2_Global_24h.csv`. With a 30 min window, coincident MODIS matches:
 S-NPP 31 (corr 0.75), NOAA-20 29 (0.74), NOAA-21 11 (0.83) — near-simultaneous overpasses are rare.
 `python -m hotspots.map data/harmonized.csv data/map.html` writes an interactive map.
+
+## Regional comparison (`python -m hotspots.regional modis.csv viirs*.csv`, 60 min window, all 3 VIIRS sats)
+Log-FRP correlation / median VIIRS-sum÷MODIS FRP: North America 0.82 / 1.77 (n=38), Oceania 0.57 / 1.39,
+South America 0.46 / 0.98, Asia 0.42 / 0.97, Africa -0.04 / 0.90 (n=200). Regions are coarse boxes; small n in some.

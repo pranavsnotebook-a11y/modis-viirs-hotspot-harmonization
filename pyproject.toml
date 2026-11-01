@@ -1,0 +1,15 @@
+[project]
+name = "hotspots"
+version = "0.1.0"
+description = "Harmonization of MODIS and VIIRS active-fire hot spots"
+requires-python = ">=3.10"
+dependencies = ["pandas", "numpy", "scipy"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

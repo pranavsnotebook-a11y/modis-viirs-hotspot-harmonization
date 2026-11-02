@@ -40,7 +40,7 @@ Flip matches in 5 of 6 regions (limit 5); Europe's actual night ratio is 1.20 on
 against this document. (2) Criterion 3 first checked only predicted ratios and printed 6/6.
 
 **Limits on what this shows.**
-- Terra cell-days with no training-satellite detection are excluded: 2,076 of 2,382-day and 2,749 of 3,158-night cells remain before dropping edge days, so Terra-only fires are never tested.
+- Terra cell-days with no training-satellite detection are excluded: 2,076 of 2,344 day cells and 2,749 of 2,989 night cells remain (89% and 92%), so Terra-only fires are never tested.
 - Criterion 3 is weak: a global sinusoid plus Aqua's own day/night counts nearly implies a flip. Regional ratios miss by up to about 3x.
 - Controls are mixed. Gradient-boosted trees beat the model on night passes when Aqua (0.341 vs 0.359) or NOAA-21 (0.661 vs 0.888) is held out. The model's edge is at local hours no training satellite saw.
 - A second harmonic is not identified (operator -6.31, totals 0.3-0.5x), as declared.

@@ -15,8 +15,25 @@ overpass times. This project merges them into one consistent hot-spot product.
 5. **FRP harmonization** and **detection-probability** analysis — `hotspots.frp`, `hotspots.detection`,
    report via `python -m hotspots.report modis.csv viirs*.csv`
 
+## The website (`web/index.html`)
+Six sections: Overview, Map Explorer (2D maps and 3D globe), Harmonization Lab, Activity Calendar, Historical Analysis, Data Explorer.
+Run it with `cd web && python3 -m http.server`, then open http://localhost:8000. No keys or backend. Every figure is computed from `web/app-data`.
+
+Rebuild the data:
+
+    mkdir -p data/recent data/geo data/archive
+    # 1. NRT 7-day files from https://firms.modaps.eosdis.nasa.gov/data/active_fire/ into data/recent/{modis,snpp,n20,n21}.csv
+    # 2. Natural Earth ne_50m_admin_0_countries.geojson -> data/geo/countries.geojson, ne_10m_populated_places_simple.geojson -> data/geo/places.geojson
+    python -m hotspots.app_data data/recent/modis.csv data/recent/snpp.csv data/recent/n20.csv data/recent/n21.csv
+    # 3. Yearly archives from https://firms.modaps.eosdis.nasa.gov/data/country/zips/ into data/archive, listed as "ok <file>" in data/archive/fetch.log
+    python -m hotspots.archive data/archive
+
+**Definitions.** Raw detections are FIRMS pixels. A VIIRS pixel matches a MODIS pixel when their footprints overlap and their times fall within the window; the closest in time wins. A MODIS pixel and its VIIRS pixels form one harmonized record, so harmonized = raw MODIS + VIIRS with no match. A match is a candidate, not proof of one physical fire. Records are pixels, not fires.
+
+**Limits.** Record-level data covers only the bundled recent window; older months show 1 deg monthly totals. The archive uses S-NPP as its VIIRS satellite (the only one spanning 2012 onward), so it does not count NOAA-20/21. Near-real-time and archive data are not identical. Regions come from a 0.1 deg raster of Natural Earth boundaries. FRP is not corrected between sensors.
+
 ## Data
-Get CSVs from https://firms.modaps.eosdis.nasa.gov/active_fire/ into `data/`.
+NRT CSVs are at https://firms.modaps.eosdis.nasa.gov/active_fire/.
 
 ## Dev
     python3 -m venv .venv && source .venv/bin/activate

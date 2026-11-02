@@ -133,3 +133,26 @@ def test_latent_recovers_injected_operator_and_cycle_for_held_out_satellite():
     res, th = fit_predict(df, hours, ["Aqua", "NOAA-20", "NOAA-21"], "Terra")
     assert abs(th[0] - beta) < 0.1 and abs(th[1] - c) < 0.1 and abs(th[2] - s) < 0.1
     assert 0.9 < res.mu.sum() / res.truth.sum() < 1.1
+
+
+def test_archive_month_without_data_is_null_not_zero(tmp_path, monkeypatch):
+    """A year not downloaded, or an instrument gap, must stay 'no data'. A region with none that month is a real 0."""
+    import gzip, json
+    from hotspots import archive
+    monkeypatch.setattr(archive, "OUT", tmp_path)
+    (tmp_path / "cells").mkdir()
+    work = tmp_path / "w"; work.mkdir()
+    rows = "month,la,lo,c,m,v,xm,xv,h\n0,10,20,0,5,0,0,0,5\n"
+    for y in (2001, 2003):  # 2002 is absent
+        (work / f"{y}.csv").write_text(rows)
+
+    class G:
+        names, continents = ["Aland"], ["Europe"]
+    archive.assemble(work, G())
+    d = json.load(gzip.open(tmp_path / "history.json.gz"))
+    at = lambda r, p: d["regions"][r]["m"][d["months"].index(p)]
+    assert at("Global", "2001-01") == 5 and at("Aland", "2001-01") == 5
+    assert at("Global", "2002-01") is None      # year missing: no data
+    assert at("Global", "2001-02") is None      # no sensor data anywhere that month: no data
+    assert d["regions"]["Global"]["v"][0] is None and d["coverage"]["VIIRS"] is None
+    assert at("Asia", "2001-01") == 0           # observed month, nothing in this region: genuine zero

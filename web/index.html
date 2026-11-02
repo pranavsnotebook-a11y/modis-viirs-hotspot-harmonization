@@ -1,17 +1,124 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8">
-<title>MODIS + VIIRS Harmonized Hot Spots</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hot Spot Explorer — NASA Space Apps</title>
+<meta name="description" content="Interactive MODIS–VIIRS hotspot harmonization using NASA FIRMS records." />
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://unpkg.com">
+<link rel="preconnect" href="https://server.arcgisonline.com">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="app" id="app">
+<header class="topbar">
+  <div class="brand"><div class="brand-mark">♨</div><div>Hot Spot Explorer<small>NASA SPACE APPS · MODIS × VIIRS HARMONIZATION</small></div></div>
+  <div class="top-actions"><span class="pill" id="dataPill">● Loading NASA FIRMS records…</span><button class="icon-btn" id="themeToggle" title="Toggle light/dark theme" aria-label="Toggle light or dark theme">☼</button><button class="icon-btn" id="globalSearchBtn" title="Search places" aria-label="Search places">⌕</button></div>
+</header>
+<div class="shell">
+<aside class="sidebar">
+  <div class="side-label">Workspace</div>
+  <button class="nav-item active" data-page="overview"><span>⌂</span>Overview</button>
+  <button class="nav-item" data-page="map"><span>◎</span>Map Explorer</button>
+  <button class="nav-item" data-page="harmonization"><span>⛓</span>Harmonization Lab</button>
+  <button class="nav-item" data-page="calendar"><span>▦</span>Activity Calendar</button>
+  <button class="nav-item" data-page="history"><span>⌁</span>Historical Analysis</button>
+  <button class="nav-item" data-page="data"><span>▤</span>Data Explorer</button>
+  <div class="side-bottom"><b>NASA Space Apps Challenge</b><br>Real NASA FIRMS detections. Not an operational fire alert service.<br><br><a href="overview.html">Classic overview</a> · <a href="explorer.html">Classic explorer</a></div>
+</aside>
+<main class="main">
+<div class="active-filters" id="activeFilters"></div>
+
+<section class="page active" id="page-overview">
+  <div class="page-head"><div><div class="eyebrow">Global monitoring · 01</div><h1>Global <span style="color:var(--orange)">Fire Activity</span> Overview</h1><div class="subtitle">A unified view of MODIS and VIIRS fire detections, with a harmonized layer that collapses cross-sensor candidates to reduce duplicate counting.</div></div><div class="head-tools"><select class="select js-region" aria-label="Region"></select><select class="select js-from" aria-label="From date"></select><select class="select js-to" aria-label="To date"></select><button class="primary-btn" data-goto="map">Explore the globe ↗</button></div></div>
+  <div class="stats">
+    <div class="stat-card accent-cyan"><div class="stat-top"><span>MODIS detections</span><span class="stat-icon">⌁</span></div><div class="stat-value" id="statModis">—</div><div class="stat-foot" id="footModis">Raw pixels · Terra + Aqua</div></div>
+    <div class="stat-card accent-purple"><div class="stat-top"><span>VIIRS detections</span><span class="stat-icon">✣</span></div><div class="stat-value" id="statViirs">—</div><div class="stat-foot" id="footViirs">Raw pixels · S-NPP, NOAA-20, NOAA-21</div></div>
+    <div class="stat-card accent-orange"><div class="stat-top"><span>Harmonized records</span><span class="stat-icon">✺</span></div><div class="stat-value" id="statHarmonized">—</div><div class="stat-foot" id="footHarm">After matching and duplicate handling</div></div>
+    <div class="stat-card accent-green"><div class="stat-top"><span>Fire activity anomaly</span><span class="stat-icon">◔</span></div><div class="stat-value" id="statAnomaly">—</div><div class="stat-foot" id="footAnomaly">MODIS vs archive baseline</div></div>
+  </div>
+  <div class="overview-grid">
+    <div class="panel"><div class="panel-head"><div><div class="panel-title">Global Hotspot Map</div><div class="panel-sub" id="overviewMapSub">Clusters of harmonized records · click to open in Map Explorer</div></div><button class="ghost-btn" data-goto="map">Open Map Explorer ↗</button></div><div class="map-preview"><div id="overviewMap"></div></div></div>
+    <div class="right-stack">
+      <div class="panel"><div class="panel-head"><div><div class="panel-title">Daily Fire Activity</div><div class="panel-sub" id="dailySub">Click a day to open its records</div></div><span class="tiny-tag" id="dailyTag">DAYS</span></div><div class="chart-wrap"><canvas id="dailyChart"></canvas></div></div>
+      <div class="panel"><div class="panel-head"><div class="panel-title">Key Insights</div><span class="tiny-tag">FROM DATA</span></div><div id="insights"></div></div>
+    </div>
+  </div>
+  <div class="note" id="overviewNote"></div>
+</section>
+
+<section class="page" id="page-map">
+  <div class="page-head"><div><div class="eyebrow">Geospatial intelligence · 02</div><h1>Hotspot <span style="color:var(--orange)">Map Explorer</span></h1><div class="subtitle">Explore a flat map or a 3D Earth. Search a place, inspect hotspot markers, and toggle the sensor layers.</div></div><div class="head-tools"><span class="tiny-tag" id="mapDataTag">FIRMS RECORDS</span></div></div>
+  <div class="map-toolbar"><input class="search" id="placeSearch" placeholder="Search a country or place (e.g. Brazil, Oregon)" aria-label="Search a place"><button class="primary-btn" id="searchPlace">Fly to place ↗</button><select class="select js-region" aria-label="Region"></select><select class="select js-from" aria-label="From date"></select><select class="select js-to" aria-label="To date"></select></div>
+  <div class="map-layout" id="mapLayout">
+    <div class="map-stage" id="mapStage">
+      <div id="explorerMap"></div><div id="globeContainer"></div>
+      <div class="basemap-msg" id="basemapMsg" role="status"></div>
+      <div class="globe-note" id="globeNote"></div>
+      <div class="map-floating"><button id="mapLayersBtn" title="Show layer settings" aria-label="Show layer settings">☷</button><button id="locateBtn" title="Reset view" aria-label="Reset view">◎</button><button id="zoomInBtn" title="Zoom in" aria-label="Zoom in">＋</button><button id="zoomOutBtn" title="Zoom out" aria-label="Zoom out">−</button></div>
+      <div class="map-top-right" id="mapModeButtons"><button data-mode="normal">Normal</button><button data-mode="satellite" class="active">Satellite</button><button data-mode="hybrid">Hybrid</button><button data-mode="terrain">Terrain</button><button id="globeToggle" title="Switch between 2D map and 3D Earth">🌍 3D Globe</button><button id="rotateBtn" title="Start or stop automatic rotation">⟳ Auto-rotate</button><button id="fullscreenBtn" title="Full screen" aria-label="Full screen">⛶</button></div>
+      <div class="map-bottom"><div class="legend" id="mapLegend"></div><div class="scale" id="mapScale">Basemaps © Esri · hotspots: NASA FIRMS</div></div>
+    </div>
+    <aside class="map-side">
+      <div class="panel" id="layerPanel"><div class="panel-head"><div class="panel-title">Map Layers</div><span class="tiny-tag">LAYERS</span></div>
+        <label class="check-row"><input type="checkbox" id="layerHarm" checked> <span style="color:#ff493f">●</span> Harmonized records</label>
+        <label class="check-row"><input type="checkbox" id="layerModis"> <span style="color:#ffd34d">●</span> MODIS raw detections</label>
+        <label class="check-row"><input type="checkbox" id="layerViirs"> <span style="color:#a783ff">●</span> VIIRS raw detections</label>
+        <div class="filter-group" style="margin-top:17px"><label for="markerMode">Marker display</label><select class="select" id="markerMode" style="width:100%"><option value="red">Red hotspot markers (default)</option><option value="status">Color by match status</option></select></div>
+      </div>
+      <div class="panel"><div class="panel-head"><div class="panel-title">Selected Hotspot</div><span class="tiny-tag" id="selectionBadge">NONE</span></div><div id="hotspotDetails" class="details-empty">Click any marker on the map to view its details.</div></div>
+      <div class="panel"><div class="panel-head"><div class="panel-title">Current View</div></div><div class="mini-stats"><div class="mini-stat"><span id="visibleLabel">Records in view</span><b id="visiblePoints">—</b></div><div class="mini-stat"><span>Active layers</span><b id="activeLayers">1</b></div><div class="mini-stat"><span>Map mode</span><b id="currentMode">Satellite</b></div></div></div>
+    </aside>
+  </div>
+  <div class="note" id="mapNote"></div>
+</section>
+
+<section class="page" id="page-harmonization">
+  <div class="page-head"><div><div class="eyebrow">Cross-sensor methodology · 03</div><h1>Harmonization <span style="color:var(--orange)">Lab</span></h1><div class="subtitle">A transparent view of how two satellite products are compared and deduplicated into a unified observation layer. Change the time window to see how much the result depends on it.</div></div><div class="head-tools"><select class="select js-region" aria-label="Region"></select><select class="select" id="windowSel" aria-label="Maximum time difference"><option value="30">Within 30 min</option><option value="60">Within 60 min</option><option value="120">Within 120 min</option><option value="180" selected>Within 180 min</option><option value="360">Within 360 min</option></select></div></div>
+  <div class="two-col">
+    <div class="panel"><div class="panel-head"><div><div class="panel-title">MODIS–VIIRS Observation Overlap</div><div class="panel-sub" id="vennSub">Click a region to open those records · circles are not drawn to scale</div></div></div><div class="venn"><div class="circle modis" data-status="MODIS Only" role="button" tabindex="0">MODIS only<strong id="vennM">—</strong></div><div class="circle viirs" data-status="VIIRS Only" role="button" tabindex="0">VIIRS only<strong id="vennV">—</strong></div><div class="circle both" data-status="Matched" role="button" tabindex="0">Matched<strong id="vennB">—</strong></div></div><div class="panel-sub">A spatial-temporal match is a candidate relationship, not proof that two detections represent the same physical fire.</div></div>
+    <div class="panel"><div class="panel-head"><div class="panel-title">Observation Summary</div><span class="tiny-tag" id="labScope">FILTERED</span></div><div class="mini-stats"><div class="mini-stat"><span>Raw MODIS detections</span><b id="labM">—</b></div><div class="mini-stat"><span>Raw VIIRS detections</span><b id="labV">—</b></div><div class="mini-stat"><span>MODIS pixels with a VIIRS candidate</span><b id="labMM">—</b></div><div class="mini-stat"><span>VIIRS pixels matched to MODIS</span><b id="labMV">—</b></div><div class="mini-stat"><span>Unique harmonized records</span><b style="color:var(--orange)" id="labH">—</b></div></div><div class="panel-sub" style="margin-top:10px">Harmonized = raw MODIS + VIIRS with no match. Every matched group, one MODIS pixel and its VIIRS pixels, counts once.</div></div>
+  </div>
+  <div class="panel" style="margin-top:15px"><div class="panel-head"><div><div class="panel-title">Harmonization Workflow</div><div class="panel-sub">Traceable, explainable, and reproducible processing</div></div></div><div class="workflow"><div class="step"><b>◈</b>MODIS + VIIRS<br>Source observations</div><div class="step"><b>⌖</b>Spatial &amp; temporal<br>candidate matching</div><div class="step"><b>⛓</b>Duplicate handling<br>preserve provenance</div><div class="step"><b>✺</b>Harmonized<br>dataset</div></div></div>
+  <div class="two-col" style="margin-top:15px">
+    <div class="panel"><div class="panel-head"><div><div class="panel-title">How much depends on the time window?</div><div class="panel-sub">Same filter, every window. The current selection is highlighted.</div></div></div><table class="sens-table"><thead><tr><th>Window</th><th>Matched VIIRS</th><th>Matched MODIS</th><th>MODIS matched</th><th>Harmonized</th></tr></thead><tbody id="sensRows"></tbody></table></div>
+    <div class="panel"><div class="panel-head"><div class="panel-title">Limitations</div></div><ul class="limits"><li>MODIS and VIIRS satellites rarely pass together. Most matches join different overpasses, hours apart, of a fire that may have changed.</li><li>“VIIRS only” does not mean MODIS could not see it: overpass time and cloud also decide what each satellite records.</li><li>Records are pixels, not fires. One fire can yield many records, and repeat passes are kept as separate observations.</li><li>FRP is not corrected between sensors. Our test on 25 near-coincident pairs did not beat leaving it unchanged, so both values are shown side by side.</li><li>Footprint orientation is estimated from the orbit because FIRMS provides none.</li></ul></div>
+  </div>
+  <div class="insight-grid"><div class="insight-card"><div class="kicker">Spatial criterion</div><h3>Footprint overlap</h3><p>Each detection’s real pixel rectangle (FIRMS scan × track, in km) must overlap, so resolution and swath-edge growth are respected rather than one fixed radius.</p></div><div class="insight-card"><div class="kicker">Temporal criterion</div><h3>Time window</h3><p>Acquisition times, in UTC, must fall within the selected window. Among overlapping MODIS pixels, the closest in time wins, then the nearest.</p></div><div class="insight-card"><div class="kicker">Quality control</div><h3>Keep provenance</h3><p>Matched exports keep both sets of source IDs, each sensor’s FRP and confidence, the time difference and the window used.</p></div></div>
+</section>
+
+<section class="page" id="page-calendar">
+  <div class="page-head"><div><div class="eyebrow">Seasonality &amp; long-term patterns · 04</div><h1>Burning Activity <span style="color:var(--orange)">Calendar</span></h1><div class="subtitle">Months down the side, years across the top, and cell intensity showing detection counts. Click a cell to filter the map and analytics to that month.</div></div><div class="calendar-controls"><select class="select js-region" aria-label="Region"></select><select class="select js-sensor" aria-label="Sensor"></select><select class="select" id="calFrom" aria-label="First year"></select><select class="select" id="calTo" aria-label="Last year"></select></div></div>
+  <div class="panel calendar-panel"><div class="panel-head"><div><div class="panel-title">Fire Activity by Month and Year</div><div class="panel-sub" id="calendarSub">Loading archive…</div></div><span class="tiny-tag">MONTH × YEAR</span></div><div class="calendar-scroll"><div id="heatmap" class="heatmap" style="--years:27"></div></div><div class="heatmap-legend" id="heatLegend"></div><div class="calendar-summary"><div class="summary-chip">Selected month / year<b id="calSelected">Select a cell</b></div><div class="summary-chip">Detections<b id="calCount">—</b></div><div class="summary-chip">Region / sensor<b id="calScope">Global · Harmonized</b></div><div class="summary-chip">Vs same month baseline<b id="calAnom">—</b></div><button class="ghost-btn" id="calOpenMap">View month on map ↗</button></div><div class="note" id="calendarNote"></div></div>
+</section>
+
+<section class="page" id="page-history">
+  <div class="page-head"><div><div class="eyebrow">Trend exploration · 05</div><h1>Historical <span style="color:var(--orange)">Analysis</span></h1><div class="subtitle" id="histSubtitle">Seasonal patterns and long-term counts, with anomalies measured against a stated baseline.</div></div><div class="head-tools"><select class="select js-region" aria-label="Region"></select><select class="select js-sensor" aria-label="Sensor"></select><select class="select" id="baselineSel" aria-label="Baseline period"><option value="2003-2025">Baseline 2003–2025</option><option value="2003-2012">Baseline 2003–2012</option><option value="2013-2025">Baseline 2013–2025</option></select></div></div>
+  <div class="chart-grid">
+    <div class="panel chart-card"><div class="panel-head"><div><div class="panel-title">Annual Hotspot Trend</div><div class="panel-sub" id="annualSub">Complete years only</div></div></div><div class="chart-canvas-wrap"><canvas id="historyChart"></canvas></div></div>
+    <div class="panel chart-card"><div class="panel-head"><div><div class="panel-title">Seasonal Pattern</div><div class="panel-sub" id="seasonSub">Median by calendar month</div></div></div><div class="chart-canvas-wrap"><canvas id="seasonChart"></canvas></div></div>
+    <div class="panel chart-card"><div class="panel-head"><div><div class="panel-title">MODIS vs VIIRS vs Harmonized</div><div class="panel-sub" id="cmpSub">Overlap years, annual ratio to MODIS</div></div></div><div class="chart-canvas-wrap"><canvas id="cmpChart"></canvas></div></div>
+    <div class="panel chart-card"><div class="panel-head"><div><div class="panel-title">Annual Anomaly</div><div class="panel-sub" id="anomSub">% vs baseline median</div></div></div><div class="chart-canvas-wrap"><canvas id="anomChart"></canvas></div></div>
+  </div>
+  <div class="insight-grid" id="histInsights"></div>
+</section>
+
+<section class="page" id="page-data">
+  <div class="page-head"><div><div class="eyebrow">Records &amp; exports · 06</div><h1>Hotspot <span style="color:var(--orange)">Data Explorer</span></h1><div class="subtitle">Search and filter hotspot records, inspect matching status, and export exactly the records that match your filters.</div></div><div class="export-row"><button class="primary-btn" id="exportCsv">↓ Records CSV</button><button class="ghost-btn" id="exportDaily">↓ Daily summary CSV</button><button class="ghost-btn" id="exportGeo">↓ GeoJSON</button></div></div>
+  <div class="panel" style="margin-bottom:13px"><div class="map-toolbar" style="margin:0"><input class="search" id="tableSearch" placeholder="Search ID, sensor, status, place, country, coordinates…" style="flex:1" aria-label="Search records"><select class="select js-region" aria-label="Region"></select><select class="select js-sensor" aria-label="Sensor"></select><select class="select" id="tableStatus" aria-label="Match status"><option>All match statuses</option><option>Matched</option><option>MODIS Only</option><option>VIIRS Only</option></select><select class="select js-from" aria-label="From date"></select><select class="select js-to" aria-label="To date"></select></div></div>
+  <p class="table-note" id="tableNote"></p>
+  <div class="table-wrap"><table class="data-table"><thead id="dataHead"></thead><tbody id="dataRows"></tbody></table></div>
+  <div class="table-footer"><span id="tableCount">Loading…</span><div class="pagination"><button id="firstPage" aria-label="First page">«</button><button id="prevPage" aria-label="Previous page">‹</button><button class="active" id="pageNum">1</button><button id="nextPage" aria-label="Next page">›</button></div></div>
+  <div class="note" id="dataNote"></div>
+</section>
+</main></div></div>
+<div class="toast" id="toast" role="status"></div>
+<div class="load-overlay" id="loader"><div>Loading NASA FIRMS records</div><div class="load-bar"><i id="loadBar"></i></div><small id="loadTxt">Connecting…</small></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-<link rel="stylesheet" href="style.css">
-</head><body>
-<header><h1>Harmonized MODIS + VIIRS hot spots</h1><p><a href="explorer.html">Open the Hot Spot Explorer →</a></p>
-<p id="sub">Loading…</p></header>
-<section id="counts"></section>
-<main><div id="map"></div><div id="hist"></div></main>
-<footer>Map shows all dual-sensor ("both") rows plus a random sample of single-sensor rows; counts and histograms use the full dataset. Toggle layers top-right.
-Caveat: "both" means matched within a footprint and a 180 min window, often different overpasses.</footer>
-<script src="app.js"></script>
-</body></html>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/globe.gl@2.46.2/dist/globe.gl.min.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -92,3 +92,12 @@ Build data: `python web/build_data.py web/data.json modis.csv viirs.csv [more vi
 Limits: current data is 8 days (FIRMS 7-day files), so the "historical median" is a median over those days, not
 a multi-year climatology; the CSV downloads are per-cell counts, not individual hotspot rows. A MAP_KEY-based
 multi-year build would fill in the real calendar and anomalies with the same script.
+
+## Does an FRP floor close the count gap? (`python -m hotspots.floor modis.csv viirs.csv --drop-after DATE`)
+FRP summed per 0.05 deg cell / satellite / day / day-night before flooring; 26 Oct-1 Nov 2026, global.
+Floor (MW) 0 / 5 / 10 / 20 / 50 / 100: NOAA-20 / Aqua 5.45, 3.23, 2.60, 2.31, 2.11, 2.02; NOAA-20 / Terra 10.94, 6.71, 5.73, 5.15,
+4.85, 4.41; Aqua / Terra 2.01, 2.08, 2.20, 2.23, 2.30, 2.18. The VIIRS ratio levels off instead of reaching 1, and two identical
+MODIS instruments differ by about 2x. Cause not established; overpass time is untested. Similar at 0.1 and 0.25 deg grids.
+A per-pixel floor (ratio 1.08 at 20 MW, reported in an earlier commit) is invalid because VIIRS splits one fire across pixels.
+NOAA-20 pixels with no same-day MODIS overlap: 82% with no buffer, 73% with 1 km, 60% with 5 km; this is not the fire MODIS cannot see.
+Explorer "combined detections" counts pixels, not fires, and is not deduplicated across VIIRS satellites.

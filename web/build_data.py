@@ -1,4 +1,4 @@
-"""Build web/data.json: per-day, per-1deg-cell counts for MODIS, VIIRS and harmonized events.
+"""Build web/data.json: per-day, per-1deg-cell counts for MODIS, VIIRS and combined detections.
 usage: python web/build_data.py OUT.json MODIS.csv VIIRS.csv [VIIRS.csv ...]
 Data-agnostic: any number of days; a longer FIRMS history gives the multi-year calendar."""
 import json, sys
@@ -23,16 +23,17 @@ def main(out, modis_path, *viirs_paths):
     def add(df, key):
         la, lo = cell(df)
         for d, a, b in zip(df.day, la, lo):
-            rows.setdefault((d, a, b), [0, 0, 0])[key] += 1
+            rows.setdefault((d, a, b), [0] * 4)[key] += 1
     add(m, 0); add(v, 1)
     for d in days:  # per-day matching keeps the k-nearest search from mixing days
-        out_d = harmonize(m[m.day == d], v[v.day == d], max_dt_min=60)
+        out_d = harmonize(m[m.day == d], v[v.day == d], max_dt_min=1440)  # same-day overlap
         out_d["day"] = d
         add(out_d, 2)
+        add(out_d[out_d.detected_by == "viirs"], 3)
     cells = [[days.index(d), a, b, *c] for (d, a, b), c in sorted(rows.items())]
-    json.dump({"days": days, "cols": ["day", "lat", "lon", "modis", "viirs", "events"],
-               "cells": cells, "window_min": 60,
-               "note": "events = deduplicated MODIS+VIIRS detections (matched pairs counted once)"},
+    json.dump({"days": days, "cols": ["day", "lat", "lon", "modis", "viirs", "events", "viirs_only"],
+               "cells": cells, "window": "same day",
+               "note": "events = VIIRS pixels plus MODIS pixels with no overlapping VIIRS pixel that day; not deduplicated across VIIRS satellites, and pixels are not fires"},
               open(out, "w"), separators=(",", ":"))
     print(len(days), "days,", len(cells), "cells ->", out)
 

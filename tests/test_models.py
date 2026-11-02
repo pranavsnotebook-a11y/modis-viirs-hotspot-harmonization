@@ -95,3 +95,15 @@ def test_frp_floor_by_area():
                        "track_km": [1.0] * 6, "daynight": ["D"] * 6})
     t = frp_floor(df, [0, 2, 9], q=0.5)
     assert list(t.frp_q50) == [2.0, 20.0]
+
+
+def test_cell_floor_removes_pixel_splitting():
+    """One 35 MW fire: seven 5 MW VIIRS pixels vs one 35 MW MODIS pixel. A per-pixel floor
+    wrongly says VIIRS saw nothing; summing per cell first says both saw one fire."""
+    from hotspots.floor import ratio_table
+    base = {"acq_date": "2026-10-26", "daynight": "D"}
+    viirs = pd.DataFrame([{**base, "latitude": 10.01 + i * 1e-3, "longitude": 20.01, "frp": 5.0} for i in range(7)])
+    modis = pd.DataFrame([{**base, "latitude": 10.01, "longitude": 20.01, "frp": 35.0}])
+    assert (viirs.frp >= 20).sum() == 0 and (modis.frp >= 20).sum() == 1
+    t = ratio_table(viirs, modis, res=0.05, floors=(20,))
+    assert t.ratio.iloc[0] == 1.0

@@ -1,39 +1,48 @@
-"""Common detection floor: how much of the MODIS-vs-VIIRS count gap is just sensitivity?
+"""Does an FRP floor close the MODIS-vs-VIIRS count gap? A fair test.
 
-Counts MODIS vs VIIRS detections per region at increasing FRP floors. If the gap is mostly a
-detection-limit effect, the VIIRS/MODIS count ratio should fall toward 1 as the floor rises
-above what both sensors reliably see. Uses same-days, one VIIRS satellite at a time.
-usage: python -m hotspots.floor modis.csv viirs.csv [out.csv]"""
-import sys
+A floor on per-pixel FRP is NOT comparable across sensors: one fire's power is split over
+several 375 m VIIRS pixels but lands in one 1 km MODIS pixel, so per-pixel flooring removes VIIRS
+detections purely through splitting. Here FRP is summed per grid cell, per satellite, per day and
+day/night BEFORE flooring, and satellites are compared one against one.
+usage: python -m hotspots.floor modis.csv viirs.csv [--res 0.05] [--drop-after YYYY-MM-DD]"""
+import argparse
 import numpy as np
 import pandas as pd
-from .io import load_firms
-from .regional import region_of
 
-FLOORS = [0, 3, 5, 10, 20, 50]
+FLOORS = (0, 5, 10, 20, 50, 100)
 
 
-def table(m: pd.DataFrame, v: pd.DataFrame) -> pd.DataFrame:
-    days = sorted(set(m.time.dt.date) & set(v.time.dt.date))[:-1]  # drop possibly-partial last day
-    m, v = m[m.time.dt.date.isin(days)].copy(), v[v.time.dt.date.isin(days)].copy()
-    for d in (m, v):
-        d["region"] = [region_of(a, b) for a, b in zip(d.latitude, d.longitude)]
-    rows = []
-    for r in ["ALL"] + sorted(set(m.region) | set(v.region)):
-        mm = m if r == "ALL" else m[m.region == r]
-        vv = v if r == "ALL" else v[v.region == r]
-        for f in FLOORS:
-            nm, nv = int((mm.frp >= f).sum()), int((vv.frp >= f).sum())
-            rows.append((r, f, nm, nv, round(nv / nm, 2) if nm else np.nan))
-    return pd.DataFrame(rows, columns=["region", "frp_floor_mw", "modis", "viirs", "viirs_over_modis"])
+def cell_frp(df: pd.DataFrame, res: float = 0.05) -> pd.Series:
+    """Summed FRP per (date, day/night, grid cell) for ONE satellite."""
+    return df.assign(la=np.floor(df.latitude / res), lo=np.floor(df.longitude / res)) \
+        .groupby(["acq_date", "daynight", "la", "lo"]).frp.sum()
+
+
+def ratio_table(num: pd.DataFrame, den: pd.DataFrame, res: float = 0.05, floors=FLOORS) -> pd.DataFrame:
+    a, b = cell_frp(num, res), cell_frp(den, res)
+    rows = [(f, int((a >= f).sum()), int((b >= f).sum())) for f in floors]
+    t = pd.DataFrame(rows, columns=["cell_frp_floor_mw", "num_cells", "den_cells"])
+    t["ratio"] = (t.num_cells / t.den_cells.replace(0, np.nan)).round(2)
+    return t
+
+
+def read(path, drop_after=None):
+    d = pd.read_csv(path)
+    d["frp"] = pd.to_numeric(d.frp, errors="coerce")
+    return d[d.acq_date <= drop_after] if drop_after else d
 
 
 def main(argv=None):
-    a = argv or sys.argv[1:]
-    t = table(load_firms(a[0], "MODIS"), load_firms(a[1], "VIIRS"))
-    print(t[t.region.isin(["ALL", "Africa", "Asia", "South America", "North America"])].to_string(index=False))
-    if len(a) > 2:
-        t.to_csv(a[2], index=False)
+    p = argparse.ArgumentParser()
+    p.add_argument("modis"); p.add_argument("viirs")
+    p.add_argument("--res", type=float, default=0.05)
+    p.add_argument("--drop-after", help="last complete date; the newest FIRMS day is usually partial")
+    a = p.parse_args(argv)
+    m, v = read(a.modis, a.drop_after), read(a.viirs, a.drop_after)
+    sat = m.satellite.astype(str).str[0]
+    aqua, terra = m[sat == "A"], m[sat == "T"]
+    for name, n, d in (("VIIRS / Aqua", v, aqua), ("VIIRS / Terra", v, terra), ("Aqua / Terra", aqua, terra)):
+        print(f"\n{name} (grid {a.res} deg)\n" + ratio_table(n, d, a.res).to_string(index=False))
 
 
 if __name__ == "__main__":

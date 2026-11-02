@@ -18,8 +18,8 @@ function sel() {
 
 function render() {
   const {rows,k,d0,d1} = sel(), metric=$("metric").selectedOptions[0].text;
-  const perDay = D.days.map(()=>[0,0,0]);
-  D.cells.forEach(c => { if (c[1]>=Math.floor(+$("la0").value) && c[1]<Math.ceil(+$("la1").value) && c[2]>=Math.floor(+$("lo0").value) && c[2]<Math.ceil(+$("lo1").value)) { perDay[c[0]][0]+=c[3]; perDay[c[0]][1]+=c[4]; perDay[c[0]][2]+=c[5]; }});
+  const perDay = D.days.map(()=>Array(4).fill(0));
+  D.cells.forEach(c => { if (c[1]>=Math.floor(+$("la0").value) && c[1]<Math.ceil(+$("la1").value) && c[2]>=Math.floor(+$("lo0").value) && c[2]<Math.ceil(+$("lo1").value)) { for(let j=0;j<4;j++) perDay[c[0]][j]+=c[3+j]; }});
   const series = perDay.map(p=>p[k-3]), idx = D.days.map((_,i)=>i).filter(i=>i>=d0&&i<=d1);
   const total = idx.reduce((s,i)=>s+series[i],0);
   $("status").textContent = `${total.toLocaleString()} ${metric.toLowerCase()} in region, ${D.days[d0]} to ${D.days[d1]}. Note: last day may be partial.`;
@@ -54,15 +54,18 @@ function render() {
    {margin:{t:10,l:50,r:10,b:40},height:320,yaxis:{title:"% vs median of selected days"},annotations:[{xref:"paper",yref:"paper",x:0,y:1.1,showarrow:false,text:`baseline median = ${Math.round(base).toLocaleString()} (${idx.length} days only)`}]},{responsive:true});
 
   // sensor comparison
-  const sums=[0,1,2].map(j=>idx.reduce((s,i)=>s+perDay[i][j],0));
-  Plotly.react("cmp",[{x:["MODIS","VIIRS (3 sats)","Harmonized events"],y:sums,type:"bar",marker:{color:["#ff7f0e","#1f77b4","#7570b3"]}}],{margin:{t:10,l:60,r:10,b:40},height:320,yaxis:{title:"detections"}},{responsive:true});
+  const sums=[0,1,2].map(j=>idx.reduce((s,i)=>s+perDay[i][j],0)), vo=idx.reduce((s,i)=>s+perDay[i][3],0);
+  const ratio=sums[0]?(sums[1]/sums[0]).toFixed(2):"n/a";
+  Plotly.react("cmp",[{x:["MODIS","VIIRS (NOAA-20+21)","Combined detections"],y:sums,type:"bar",marker:{color:["#ff7f0e","#1f77b4","#7570b3"]}}],
+   {margin:{t:30,l:60,r:10,b:40},height:320,yaxis:{title:"detections"},title:{text:`Raw pixel counts — VIIRS/MODIS = ${ratio} (2 VIIRS vs 2 MODIS satellites)`,font:{size:13}}},{responsive:true});
+  $("gap").textContent=sums[1]?`${(100*vo/sums[1]).toFixed(1)}% of VIIRS pixels here had no overlapping MODIS detection the same day. This is not the share of fire MODIS can never see: overpass time, cloud and matching distance all move it (NOAA-20 global: 82% with no buffer, 60% with a 5 km buffer).`:"";
 
-  $("dl1").onclick=()=>csvDl("daily_counts.csv",[["date","modis","viirs","harmonized_events"],...idx.map(i=>[D.days[i],...perDay[i]])]);
-  $("dl2").onclick=()=>csvDl("cells.csv",[["date","lat_cell","lon_cell","modis","viirs","harmonized_events"],...rows.map(c=>[D.days[c[0]],c[1],c[2],c[3],c[4],c[5]])]);
+  $("dl1").onclick=()=>csvDl("daily_counts.csv",[["date","modis","viirs","combined_detections","viirs_no_modis_same_day"],...idx.map(i=>[D.days[i],...perDay[i]])]);
+  $("dl2").onclick=()=>csvDl("cells.csv",[["date","lat_cell","lon_cell","modis","viirs","combined_detections","viirs_no_modis_same_day"],...rows.map(c=>[D.days[c[0]],...c.slice(1)])]);
 }
 
 fetch("data.json").then(r=>r.json()).then(d=>{
-  D=d; $("sub").textContent=`${D.days.length} days (${D.days[0]} → ${D.days.at(-1)}), 1° cells. Harmonized events = MODIS+VIIRS detections matched within ${D.window_min} min and counted once.`;
+  D=d; $("sub").textContent=`${D.days.length} days (${D.days[0]} → ${D.days.at(-1)}), 1° cells. Combined detections = VIIRS pixels plus MODIS pixels with no overlapping VIIRS pixel that day. Pixels, not fires.`;
   $("preset").innerHTML=Object.keys(PRESETS).map(n=>`<option>${n}</option>`).join("");
   const tot=D.days.map((_,i)=>D.cells.reduce((s,c)=>s+(c[0]===i?c[5]:0),0)), partial=tot.at(-1)<0.5*med(tot);
   const lastDay=partial&&D.days.length>2?D.days.length-2:D.days.length-1;  // default-exclude a clearly partial final day

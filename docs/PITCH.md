@@ -1,30 +1,22 @@
-# 5-Minute Pitch: Harmonization of MODIS and VIIRS Hot Spots
+# 5-minute pitch: "One Fire Record"
 
-## 1. Problem (0:00-0:45)
-- MODIS (1 km) and VIIRS (375 m) both report active fires, but with different resolutions, schemas, confidence scales and overpass times.
-- Responders and researchers see two overlapping, inconsistent feeds. The same fire can appear as one MODIS pixel and many VIIRS pixels.
+**0:00 Hook.** "Fires doubled since 2012." Maybe. Or the satellite changed. Show raw counts stepping up when VIIRS arrives.
 
-## 2. Approach (0:45-1:45)
-Pipeline (package `hotspots`): **load** FIRMS CSVs -> **normalize** to one schema (sensor, lat/lon, UTC time, FRP in MW, confidence class low/nominal/high, footprint from scan/track in km) -> **match** across sensors within a spatial footprint plus a time window -> **merge** into harmonized events (best location from VIIRS, combined FRP, agreement flag, `detected_by` = modis / viirs / both).
+**0:45 Problem.** MODIS 1 km vs VIIRS 375 m: different pixels, schemas, confidence scales, overpass times. Nobody can tell
+real change from sensor change. Those most hurt are places where small agricultural fires dominate.
 
-## 3. Results (1:45-3:15) - global 24 h, 2026-10-31
-- 5,917 events seen by both sensors, 70,432 VIIRS-only, 11,494 MODIS-only.
-- Log10 FRP correlation 0.53; median (VIIRS-sum / MODIS) FRP ratio 1.23 (180 min window).
-- Window sensitivity (matches / log10-FRP corr): 30 min 31 / 0.75; 60 min 369 / 0.41; 120 min 2,737 / 0.44; 180 min 5,917 / 0.53.
-- Near-simultaneous matches by VIIRS satellite (30 min window): S-NPP 31 (0.75), NOAA-20 29 (0.74), NOAA-21 11 (0.83).
-- Regional (60 min, all 3 VIIRS sats), corr / median ratio: North America 0.82 / 1.77 (n=38), Oceania 0.57 / 1.39, South America 0.46 / 0.98, Asia 0.42 / 0.97, Africa -0.04 / 0.90 (n=200).
-- Demo: dashboard in `web/` (map layers by detection source, FRP histogram per sensor, counts) and `python -m hotspots.map`.
+**1:30 Core result.** NOAA-20 VIIRS sees 5.6x as many detections as MODIS. Raise a common FRP floor and the ratio falls:
+2.9x at 5 MW, 1.7x at 10 MW, 1.08x at 20 MW (one week, global; `python -m hotspots.floor`). Most of the gap is
+sensitivity, not fire. Honest caveats on the slide: one week, FRP definitions differ, ratio dips to 0.70 above 50 MW.
 
-## 4. Impact for wildfire response (3:15-4:00)
-- One consistent product instead of two feeds; VIIRS 375 m location with MODIS cross-check.
-- "Both" flag gives a cross-sensor confirmation signal; single-sensor detections can be prioritized or triaged.
-- Combined revisit: more looks per day at the same fire, useful for tracking evolution.
+**2:30 Method.** Footprint-overlap matching; detection floor scales with pixel area (MODIS smallest daytime fire 5.3 MW at
+<=1.5 km2 up to 27.4 MW at >6 km2); unified confidence; FRP uncertainty. Say plainly: the FRP fit (25 pairs) is not
+better than 1:1, so we do not sell a correction.
 
-## 5. Limitations (4:00-4:40) - be upfront
-- Only a few pairs are near-simultaneous (Aqua and S-NPP both cross ~13:30 local); most "both" matches at 180 min are different overpasses of an evolving fire, so FRP agreement is weak (corr 0.53).
-- Regional boxes are coarse; several regions have small n (e.g. North America n=38) and Africa shows no correlation (-0.04).
-- Single 24 h snapshot; no ground-truth validation (no perimeter or agency data); window choice is a trade-off between match count and FRP agreement.
-- Not validated for false alarms (gas flares, volcanoes etc.).
+**3:15 Demo.** Explorer: pick a region, calendar, anomaly vs median, download CSV. Then toggle raw vs floor-matched.
 
-## 6. Next steps (4:40-5:00)
-Validate against reference fire perimeters; multi-day runs; adaptive time windows; cross-sensor FRP calibration; add GOES geostationary data for time continuity; live-updating dashboard.
+**4:00 Impact.** Claim Checker (trust), Invisible Burn Ledger (equity: districts whose burning MODIS never saw), Look Ledger
+(responders: blank map = unknown). Ideas and critiques in `docs/ideas/`.
+
+**4:40 Limits and next.** 8 days of data today; multi-year build needs FIRMS MAP_KEY; validate on a famous event
+(Canada 2023 / Australia 2019-20) against perimeters or burned area.

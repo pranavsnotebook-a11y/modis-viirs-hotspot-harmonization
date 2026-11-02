@@ -101,3 +101,10 @@ MODIS instruments differ by about 2x. Cause not established; overpass time is un
 A per-pixel floor (ratio 1.08 at 20 MW, reported in an earlier commit) is invalid because VIIRS splits one fire across pixels.
 NOAA-20 pixels with no same-day MODIS overlap: 82% with no buffer, 73% with 1 km, 60% with 5 km; this is not the fire MODIS cannot see.
 Explorer "combined detections" counts pixels, not fires, and is not deduplicated across VIIRS satellites.
+
+## Overpass time (`python -m hotspots.overpass modis.csv n20.csv n21.csv --drop-after DATE`)
+26 Oct-1 Nov 2026, global, cells with summed FRP >= 20 MW at 0.05 deg. Median local solar hour day / night: Aqua 15.7 / 3.8, Terra 8.7 / 20.6,
+NOAA-20 13.5 / 1.5, NOAA-21 13.4 / 1.4. Ratios day / night: Aqua/Terra 4.89 / 0.23; NOAA-20/Aqua 2.27 / 2.84; NOAA-20/Terra 11.11 / 0.65;
+control NOAA-20/NOAA-21 0.84 / 0.86 (raw pixels 1.00 / 1.06). Aqua/Terra flips in all six regions (day 2.18-8.06, night 0.13-0.80).
+A simply weaker Terra cannot produce the flip. Not shown: separation of the fire diurnal cycle from other time-of-day effects, or any trend
+artefact from orbit drift, which needs multi-year data.

@@ -8,7 +8,14 @@ journalists) cannot tell real change from sensor change.
 before applying a floor (so one fire split across many VIIRS pixels is not penalized), NOAA-20 / Aqua falls from 5.45x with
 no floor to 2.31x at 20 MW and 2.02x at 100 MW. It levels off near 2x and does not reach 1. So a detection floor explains
 a large part of the gap but not all of it. Two identical MODIS instruments also disagree: Aqua / Terra is 2.0-2.3x at every
-floor, which instrument resolution cannot explain. Overpass time is a candidate, not yet tested. Caveat: one week of data.
+floor, which instrument resolution cannot explain.
+
+**Overpass time is a large effect (`python -m hotspots.overpass`).** Median local solar time measured from the data: Aqua 15.7 h day /
+3.8 h night, Terra 8.7 h / 20.6 h, NOAA-20 and NOAA-21 13.5 h / 1.5 h. Cells with at least 20 MW: Aqua / Terra is 4.89 by day and 0.23
+at night, flipping in all six regions, which a simply weaker Terra cannot produce. At night, 1 km Terra at 20.6 h finds more such cells than
+375 m NOAA-20 at 01:30 (NOAA-20 / Terra 0.65). Control: NOAA-20 / NOAA-21 is 0.84-0.86 at this floor (1.00-1.06 in raw pixels), so about
+15% is this method's own noise. One week only; the fire diurnal cycle is the likely cause, but this does not separate it from other
+time-of-day effects, and it does not yet show a trend artefact from orbit drift.
 A per-pixel FRP floor is not a valid test (an earlier version of this project reported 1.08x at 20 MW that way; withdrawn).
 
 **Supporting analysis.** Footprint-overlap matching of MODIS and VIIRS pixels (8,026 matched / 68,323 VIIRS-only /

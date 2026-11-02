@@ -107,3 +107,9 @@ def test_cell_floor_removes_pixel_splitting():
     assert (viirs.frp >= 20).sum() == 0 and (modis.frp >= 20).sum() == 1
     t = ratio_table(viirs, modis, res=0.05, floors=(20,))
     assert t.ratio.iloc[0] == 1.0
+
+
+def test_local_solar_hour_wraps_and_uses_longitude():
+    from hotspots.overpass import local_solar_hour
+    d = pd.DataFrame({"acq_time": [1200, 2330, 30], "longitude": [0.0, 15.0, -15.0]})
+    assert local_solar_hour(d).round(2).tolist() == [12.0, 0.5, 23.5]

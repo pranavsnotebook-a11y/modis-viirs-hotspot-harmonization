@@ -7,8 +7,10 @@ real change from sensor change. Those most hurt are places where small agricultu
 
 **1:30 Core result.** Compare one satellite with one satellite and sum FRP per grid cell before flooring: NOAA-20 / Aqua falls
 from 5.45x to about 2x (2.31x at 20 MW, 2.02x at 100 MW) and stops there. Sensitivity explains a lot, not everything. Aqua / Terra,
-two identical instruments, also differ by 2.0-2.3x at every floor (`python -m hotspots.floor`). One week of data; overpass time is
-a candidate explanation, not yet tested.
+two identical instruments, also differ by 2.0-2.3x at every floor (`python -m hotspots.floor`). Then the twist: Aqua / Terra is 4.89 by
+day and 0.23 at night, flipping in all six regions (`python -m hotspots.overpass`). Each satellite samples a different hour of the fire's day.
+At night, 1 km Terra at 20.6 h beats 375 m NOAA-20 at 01:30. When you look can matter as much as how sharply. One week of data; about
+15% method noise (NOAA-20 vs NOAA-21 control).
 
 **2:30 Method.** Footprint-overlap matching; detection floor scales with pixel area (MODIS smallest daytime fire 5.3 MW at
 <=1.5 km2 up to 27.4 MW at >6 km2); unified confidence; FRP uncertainty. Say plainly: the FRP fit (25 pairs) is not

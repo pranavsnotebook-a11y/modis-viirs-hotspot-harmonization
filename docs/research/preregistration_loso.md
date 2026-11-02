@@ -30,3 +30,19 @@ credit is possible since NOAA-20 shares its local time. Secondary: a second harm
 - Pass local times come from detection timestamps, including Terra's. That is orbit information, not fire counts, but a clean version would use orbit elements.
 - With near-identical twin local times, four phases fit three parameters plus alpha, so one sinusoid is close to exactly determined. The test is whether that shape predicts Terra's phases.
 - There is no swath exposure model, so zeros mix "no fire" with "not observed". One week only. Same-week fire activity is shared across satellites.
+
+## Result (added after the run; nothing above was changed)
+Output: `docs/research/loso_results.txt`. **Verdict: PASS, at the edge on two criteria.** Terra day / night deviance 0.742 / 0.902 versus the best baseline
+(B2, no daily cycle) 1.063 / 1.123; cell-bootstrap gain 0.321 [0.279, 0.361] and 0.222 [0.182, 0.261]. Totals predicted at 1.41x and 1.16x of actual (limit 1.5x).
+Flip matches in 5 of 6 regions (limit 5); Europe's actual night ratio is 1.20 on few cells.
+
+**Two implementation errors, found by reviewing the code and fixed before the result above.** (1) Test rows were first chosen using Terra's own detections too,
+against this document. (2) Criterion 3 first checked only predicted ratios and printed 6/6.
+
+**Limits on what this shows.**
+- Terra cell-days with no training-satellite detection are excluded: 2,076 of 2,382-day and 2,749 of 3,158-night cells remain before dropping edge days, so Terra-only fires are never tested.
+- Criterion 3 is weak: a global sinusoid plus Aqua's own day/night counts nearly implies a flip. Regional ratios miss by up to about 3x.
+- Controls are mixed. Gradient-boosted trees beat the model on night passes when Aqua (0.341 vs 0.359) or NOAA-21 (0.661 vs 0.888) is held out. The model's edge is at local hours no training satellite saw.
+- A second harmonic is not identified (operator -6.31, totals 0.3-0.5x), as declared.
+- This is a Poisson GLM with cell-day effects: the reduced baseline of C-Cox, not yet a new architecture. No FRP marks, no swath exposure.
+- Not blind, one week. Needs a later week with identical settings, and GOES to check the learned 14.7 h peak independently.

@@ -108,3 +108,7 @@ NOAA-20 13.5 / 1.5, NOAA-21 13.4 / 1.4. Ratios day / night: Aqua/Terra 4.89 / 0.
 control NOAA-20/NOAA-21 0.84 / 0.86 (raw pixels 1.00 / 1.06). Aqua/Terra flips in all six regions (day 2.18-8.06, night 0.13-0.80).
 A simply weaker Terra cannot produce the flip. Not shown: separation of the fire diurnal cycle from other time-of-day effects, or any trend
 artefact from orbit drift, which needs multi-year data.
+
+## Leave-one-satellite-out test (`python -m hotspots.latent modis.csv n20.csv n21.csv --drop-after DATE`)
+Criteria, result and limits: `docs/research/preregistration_loso.md`; full output: `docs/research/loso_results.txt`; design survey: `docs/research/novel_architectures.md`.
+Trained without Terra, the model beats all baselines on Terra (deviance day 0.742 vs 1.063, night 0.902 vs 1.123). Reduced GLM, one week, not blind.

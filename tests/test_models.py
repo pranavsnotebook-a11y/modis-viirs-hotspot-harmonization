@@ -113,3 +113,23 @@ def test_local_solar_hour_wraps_and_uses_longitude():
     from hotspots.overpass import local_solar_hour
     d = pd.DataFrame({"acq_time": [1200, 2330, 30], "longitude": [0.0, 15.0, -15.0]})
     assert local_solar_hour(d).round(2).tolist() == [12.0, 0.5, 23.5]
+
+
+def test_latent_recovers_injected_operator_and_cycle_for_held_out_satellite():
+    """Synthetic injection: known operator and daily cycle, Terra's rows never used in fitting."""
+    import numpy as np
+    from hotspots.latent import fit_predict
+    rng = np.random.default_rng(1)
+    hours = {("Aqua", "D"): 15.7, ("Aqua", "N"): 3.8, ("Terra", "D"): 8.7, ("Terra", "N"): 20.6,
+             ("NOAA-20", "D"): 13.5, ("NOAA-20", "N"): 1.5, ("NOAA-21", "D"): 13.4, ("NOAA-21", "N"): 1.4}
+    beta, c, s = 1.0, -1.0, -0.9
+    rows = []
+    for cd in range(4000):
+        alpha = rng.normal(0.5, 1.0)
+        for (sat, p), t in hours.items():
+            eta = alpha + beta * sat.startswith("NOAA") + c * np.cos(2 * np.pi * t / 24) + s * np.sin(2 * np.pi * t / 24)
+            rows.append((cd, sat, p, rng.poisson(np.exp(eta)), np.exp(eta)))
+    df = pd.DataFrame(rows, columns=["cd", "sat", "pass_", "y", "truth"])
+    res, th = fit_predict(df, hours, ["Aqua", "NOAA-20", "NOAA-21"], "Terra")
+    assert abs(th[0] - beta) < 0.1 and abs(th[1] - c) < 0.1 and abs(th[2] - s) < 0.1
+    assert 0.9 < res.mu.sum() / res.truth.sum() < 1.1

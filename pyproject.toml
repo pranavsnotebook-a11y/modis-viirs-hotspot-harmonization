@@ -3,7 +3,7 @@ name = "hotspots"
 version = "0.1.0"
 description = "Harmonization of MODIS and VIIRS active-fire hot spots"
 requires-python = ">=3.10"
-dependencies = ["pandas", "numpy", "scipy", "plotly"]
+dependencies = ["pandas", "numpy", "scipy", "plotly", "scikit-learn"]
 
 [project.optional-dependencies]
 dev = ["pytest"]

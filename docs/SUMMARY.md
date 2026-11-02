@@ -18,6 +18,12 @@ at night, flipping in all six regions, which a simply weaker Terra cannot produc
 time-of-day effects, and it does not yet show a trend artefact from orbit drift.
 A per-pixel FRP floor is not a valid test (an earlier version of this project reported 1.08x at 20 MW that way; withdrawn).
 
+**Predicting a satellite the model never saw (`python -m hotspots.latent`, criteria committed first in `docs/research/preregistration_loso.md`).** One shared
+fire activity per cell-day, one operator per instrument, one daily cycle, trained on Aqua, NOAA-20 and NOAA-21 only. It predicts Terra better than every baseline
+(deviance day 0.74 vs 1.06, night 0.90 vs 1.12), with totals at 1.41x and 1.16x of actual. Learned without Terra: activity peaks near 14.7 h local, and VIIRS sees 2.58x MODIS at
+this floor once time of day is removed (2.5-3.0x across hold-outs; swath width is not separated out). Limits: not blind, one week, a simple GLM rather than a new architecture,
+and tree models win some control hold-outs where no new local hour is involved.
+
 **Supporting analysis.** Footprint-overlap matching of MODIS and VIIRS pixels (8,026 matched / 68,323 VIIRS-only /
 10,970 MODIS-only at a 180 min window; most matches are different overpasses). The smallest daytime fire MODIS reports
 grows with pixel size (5.3 MW for pixels <=1.5 km2 to 27.4 MW for >6 km2). A robust FRP fit on only 25 near-coincident

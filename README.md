@@ -129,3 +129,9 @@ artefact from orbit drift, which needs multi-year data.
 ## Leave-one-satellite-out test (`python -m hotspots.latent modis.csv n20.csv n21.csv --drop-after DATE`)
 Criteria, result and limits: `docs/research/preregistration_loso.md`; full output: `docs/research/loso_results.txt`; design survey: `docs/research/novel_architectures.md`.
 Trained without Terra, the model beats all baselines on Terra (deviance day 0.742 vs 1.063, night 0.902 vs 1.123). Reduced GLM, one week, not blind.
+
+## Orbit drift (`python -m hotspots.drift data/archive docs/research/modis_drift.csv`)
+Median local time of daytime detections, measured from the FIRMS MODIS archive: Aqua 13.5 h and Terra 10.6 h held steady from 2003 to about 2021, then moved to 14.7 h and 9.6 h by 2025.
+Aqua/Terra pixels: day ratio 2.2-2.5 over 2003-2021, then 2.58, 2.75, 3.41, 3.89 for 2022-2025; night ratio 0.45-0.50, then down to 0.34. Both satellites have data every day of the years checked (2021, 2024, 2025).
+Applying the daily cycle fitted earlier on one week of 2026 with Terra held out, with no refit, gives a change from the 2003-2020 mean to 2025 of x1.55 by day (observed x1.64) and x0.63 by night (observed x0.70).
+Limits: the model's level is about 20% low by day; the fit used cells >= 20 MW while this table counts all pixels; agreement over time rests on the few years when orbits moved; the author saw this table before comparing. Terra's sensor ageing and changes in where fires burn are not ruled out, and this is not yet a corrected record.

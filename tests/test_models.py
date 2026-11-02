@@ -156,3 +156,10 @@ def test_archive_month_without_data_is_null_not_zero(tmp_path, monkeypatch):
     assert at("Global", "2001-02") is None      # no sensor data anywhere that month: no data
     assert d["regions"]["Global"]["v"][0] is None and d["coverage"]["VIIRS"] is None
     assert at("Asia", "2001-01") == 0           # observed month, nothing in this region: genuine zero
+
+
+def test_daily_cycle_ratio_is_symmetric_and_one_for_same_hour():
+    from hotspots.drift import predicted_ratio
+    assert predicted_ratio(13.5, 13.5) == 1
+    r = predicted_ratio(14.7, 9.6)
+    assert r > 1 and abs(r * predicted_ratio(9.6, 14.7) - 1) < 1e-12

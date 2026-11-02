@@ -31,7 +31,7 @@ async function gunzipIfNeeded(buf) {
 }
 async function jsonGz(url) { return JSON.parse(new TextDecoder().decode(await gunzipIfNeeded(await readAll(url)))); }
 
-let META, R, HIST = null, N, NM;
+let META, R, HIST = null, DRIFT = null, N, NM;
 async function loadAll() {
   META = await (await fetch('app-data/meta.json')).json();
   const buf = await gunzipIfNeeded(await readAll('app-data/records.bin.gz', (g, t) => {
@@ -45,6 +45,7 @@ async function loadAll() {
   N = META.n; NM = META.n_modis;
   T0 = Date.parse(META.t0);
   try { HIST = await jsonGz('app-data/history.json.gz'); } catch (e) { HIST = null; console.warn('archive summary unavailable', e); }
+  try { DRIFT = await (await fetch('app-data/drift.json')).json(); } catch (e) { DRIFT = null; }
 }
 let T0 = 0;
 
@@ -456,13 +457,13 @@ function windowAnomaly() {
   if (histMode()) {
     const i = monthIdx(S.period), s = hSeries('m'); if (i < 0 || s[i] == null) return null;
     const m = +S.period.slice(5, 7) - 1, y = +S.period.slice(0, 4), b = baselineFor('m', m); if (!b || !b.med) return null;
-    return { pct: 100 * (s[i] / daysIn(y, m) / b.med - 1), label: `${MONTHS[m]} baseline ${S.baseline}, MODIS` };
+    return { pct: 100 * (s[i] / daysIn(y, m) / b.med - 1), label: `vs ${MONTHS[m]} ${S.baseline} median · MODIS, not drift-corrected` };
   }
   let exp = 0, days = 0;
   for (let d = S.from; d <= S.to; d++) { if (META.partial_days.includes(META.days[d])) continue; const b = baselineFor('m', +META.days[d].slice(5, 7) - 1); if (!b) return null; exp += b.med; days++; }
   if (!days || !exp) return null;
   let obs = 0; for (let d = S.from; d <= S.to; d++) if (!META.partial_days.includes(META.days[d])) obs += stats.dayM[d];
-  return { pct: 100 * (obs / exp - 1), label: `${days} d, vs same-month ${S.baseline} median, MODIS` };
+  return { pct: 100 * (obs / exp - 1), label: `${days} d vs same-month ${S.baseline} median · MODIS, not drift-corrected` };
 }
 
 /* ---------- Overview ---------- */
@@ -662,11 +663,16 @@ function renderHistory() {
   const anom = anomY.map(y => modisBase ? 100 * (full(ym, y) / modisBase - 1) : null);
   $('anomSub').textContent = `${S.region} · MODIS only, % vs ${S.baseline} median of ${fmt(modisBase)} per year`;
   chart('anomChart', 'bar', anomY, [{ label: 'MODIS anomaly', data: anom, color: '#ff791f', bg: anom.map(x => x >= 0 ? '#ff791fcc' : '#21d9eecc'), pr: 0 }], { yTick: x => x + '%', yTitle: '% vs baseline', zero: false, tooltip: { label: c => c.parsed.y == null ? 'n/a' : c.parsed.y.toFixed(1) + '%' } });
+  if (DRIFT) {
+    const y = DRIFT.year;
+    chart('driftHourChart', 'line', y, [{ label: 'Aqua, day pass', data: DRIFT.aqua_D_h, color: '#ff791f', pr: 2 }, { label: 'Terra, day pass', data: DRIFT.terra_D_h, color: '#21d9ee', pr: 2 }], { yTick: x => x.toFixed(1) + ' h', yTitle: 'local solar hour', zero: false });
+    chart('driftRatioChart', 'line', y, [{ label: 'Observed, day', data: DRIFT.aqua_over_terra_D, color: '#ff791f', pr: 2 }, { label: 'Model, day', data: DRIFT.pred_D, color: '#ffd34d', pr: 0 }, { label: 'Observed, night', data: DRIFT.aqua_over_terra_N, color: '#21d9ee', pr: 2 }, { label: 'Model, night', data: DRIFT.pred_N, color: '#a783ff', pr: 0 }], { yTick: x => x.toFixed(1) + '×', yTitle: 'Aqua ÷ Terra pixels', zero: true });
+  }
   const ratioFirst = over.length ? full(yv, over[0]) / full(ym, over[0]) : null, ratioLast = over.length ? full(yv, over.at(-1)) / full(ym, over.at(-1)) : null;
   const latest = anomY.at(-1);
   $('histInsights').innerHTML = [
     ['Comparison period', modisBase ? `${S.baseline}` : 'Not calculated', `${S.region}. The baseline is the median of complete years, MODIS only, because it is the one record spanning the period. It is not a climatology of true fire.`],
-    ['Latest complete year', latest ? `${latest}: ${anom.at(-1) >= 0 ? '+' : ''}${anom.at(-1).toFixed(0)}%` : 'n/a', 'MODIS detections against that baseline. Terra and Aqua orbits have drifted away from their nominal times in recent years, which may affect this; we have not corrected for it.'],
+    ['Latest complete year', latest ? `${latest}: ${anom.at(-1) >= 0 ? '+' : ''}${anom.at(-1).toFixed(0)}%` : 'n/a', 'MODIS detections against that baseline, not corrected for orbit drift. Since about 2022 Terra and Aqua pass at different times of day (charts above), so recent MODIS anomalies mix fire change with when the satellites look.'],
     ['Why not splice raw counts?', ratioLast ? `VIIRS ≈ ${ratioLast.toFixed(1)}× MODIS` : 'n/a', ratioFirst ? `${over[0]}: ${ratioFirst.toFixed(1)}×. ${over.at(-1)}: ${ratioLast.toFixed(1)}×. Joining the raw records would create a false jump, so sensors are compared side by side and anomalies stay within one sensor.` : 'No complete overlap years for this filter.'],
   ].map(([k, h3, p]) => `<div class="insight-card"><div class="kicker">${k}</div><h3>${h3}</h3><p>${p}</p></div>`).join('');
 }

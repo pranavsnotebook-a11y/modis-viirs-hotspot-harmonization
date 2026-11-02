@@ -82,3 +82,13 @@ dt <= 30 min) has only n = 130 (64% detected by MODIS); a logistic fit P = f(log
 +1.95 (FRP) and -4.08 (area): 50% detection at ~1.6 MW for a 1 km^2 pixel vs ~29 MW for 4 km^2. These numbers
 shift a lot with the neighbourhood radius (5 km: 20 MW; 50 km: 61 MW at 4 km^2, since VIIRS's wider swath leaks
 in), so treat them as qualitative support for the pixel-size effect, not calibrated thresholds.
+
+## Hot Spot Explorer (`web/explorer.html`)
+Region (presets, lat/lon boxes, or "use map view") + date range; metric = harmonized events / MODIS / VIIRS.
+Shows a map, an activity calendar (day grid now, month × year once ≥ 2 years are loaded), a daily
+anomaly chart vs the median of the selected days, a sensor comparison, and CSV downloads (daily counts, 1° cells).
+Build data: `python web/build_data.py web/data.json modis.csv viirs.csv [more viirs.csv]`, serve with
+`cd web && python3 -m http.server`. Checked in a real browser (Playwright): renders, presets filter correctly.
+Limits: current data is 8 days (FIRMS 7-day files), so the "historical median" is a median over those days, not
+a multi-year climatology; the CSV downloads are per-cell counts, not individual hotspot rows. A MAP_KEY-based
+multi-year build would fill in the real calendar and anomalies with the same script.

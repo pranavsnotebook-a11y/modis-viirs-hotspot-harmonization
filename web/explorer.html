@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Hot Spot Explorer — MODIS + VIIRS harmonized</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<style>
+ .controls{display:flex;flex-wrap:wrap;gap:.6rem 1rem;padding:.6rem 1rem;align-items:end;border-bottom:1px solid #ddd}
+ .controls label{display:flex;flex-direction:column;font-size:.8rem}
+ .controls input[type=number]{width:5.5rem}
+ .grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1rem}
+ #emap{height:420px} .card{min-width:0} h2{font-size:1rem;margin:.2rem 0}
+ @media(max-width:800px){.grid{grid-template-columns:1fr}}
+ button{cursor:pointer;padding:.3rem .7rem} #status{padding:0 1rem;font-size:.85rem}
+</style></head><body>
+<header><h1>Hot Spot Explorer</h1><p id="sub">Loading…</p><p><a href="index.html" style="color:#9fd3ff">← overview</a></p></header>
+<div class="controls">
+ <label>Metric<select id="metric"><option value="events">Harmonized events (sensor-independent)</option><option value="modis">MODIS detections</option><option value="viirs">VIIRS detections (all satellites)</option></select></label>
+ <label>Preset region<select id="preset"></select></label>
+ <label>Lat min<input id="la0" type="number" step="1"></label><label>Lat max<input id="la1" type="number" step="1"></label>
+ <label>Lon min<input id="lo0" type="number" step="1"></label><label>Lon max<input id="lo1" type="number" step="1"></label>
+ <button id="usemap">Use map view</button>
+ <label>From<select id="d0"></select></label><label>To<select id="d1"></select></label>
+ <button id="dl1">Download daily counts (CSV)</button><button id="dl2">Download cells (CSV)</button>
+</div>
+<div id="status"></div>
+<div class="grid">
+ <div class="card"><h2>Map (pan/zoom, then “Use map view” to select a region)</h2><div id="emap"></div></div>
+ <div class="card"><h2 id="calt">Activity calendar</h2><div id="cal"></div></div>
+ <div class="card"><h2>Daily count vs. median (anomaly)</h2><div id="anom"></div></div>
+ <div class="card"><h2>Sensor comparison (region, date range)</h2><div id="cmp"></div></div>
+</div>
+<script src="explorer.js"></script>
+</body></html>

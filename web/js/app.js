@@ -280,7 +280,9 @@ async function monthCells() {
     a.m += r[4]; a.v += r[5]; a.h += r[6];
     if (r[6] + r[4] > a.topn) { a.topn = r[6] + r[4]; a.top = r[3]; }
   }
-  return [...agg.values()];
+  const out = [...agg.values()], r = H();
+  if (r && r.v[monthIdx(S.period)] == null) out.forEach(a => { a.v = a.h = null; }); // VIIRS not observed: no data, not zero
+  return out;
 }
 const cellMetric = c => S.sensor === 'MODIS' ? c.m : S.sensor === 'VIIRS' ? c.v : c.h;
 function monthLabel(p) { return MONTHS[+p.slice(5, 7) - 1] + ' ' + p.slice(0, 4); }
@@ -430,7 +432,7 @@ function chart(id, type, labels, datasets, opts = {}) {
 const H = () => HIST && (HIST.regions[S.region] || null);
 function hSeries(key) { // key: m, v, h monthly arrays, h derived as m + v - mv
   const r = H(); if (!r) return null;
-  if (key === 'h') return r.m.map((x, i) => { if (x == null && r.v[i] == null) return null; return (x || 0) + (r.v[i] || 0) - (r.mv[i] || 0); });
+  if (key === 'h') return r.m.map((x, i) => (x == null || r.v[i] == null) ? null : x + r.v[i] - (r.mv[i] || 0)); // needs both sensors, so it starts with VIIRS
   return r[key];
 }
 const sensorKey = () => S.sensor === 'MODIS' ? 'm' : S.sensor === 'VIIRS' ? 'v' : 'h';
@@ -446,15 +448,17 @@ function baselineFor(key, m) {
   return vals.length >= 3 ? { med: median(vals), n: vals.length } : null;
 }
 function inCoverage(key, p) {
-  const c = HIST.coverage[key === 'v' ? 'VIIRS' : 'MODIS'], i = monthIdx(p), r = H();
-  if (!c || i < 0 || !r) return false;
-  return (key === 'v' ? r.v[i] : r.m[i]) != null;  // null means not observed, never zero
+  const i = monthIdx(p), r = H();
+  if (i < 0 || !r) return false;
+  return key === 'v' ? r.v[i] != null : key === 'm' ? r.m[i] != null : r.m[i] != null && r.v[i] != null;  // null means not observed, never zero
 }
 
+const BOTH_MODIS_FROM = 2003; // Terra alone until Aqua joined in mid-2002: earlier counts are not comparable
 /* Anomaly of the current selection against the MODIS archive: MODIS only, because it spans the whole baseline. */
 function windowAnomaly() {
   if (!HIST || !H()) return null;
   if (histMode()) {
+    if (+S.period.slice(0, 4) < BOTH_MODIS_FROM) return null;
     const i = monthIdx(S.period), s = hSeries('m'); if (i < 0 || s[i] == null) return null;
     const m = +S.period.slice(5, 7) - 1, y = +S.period.slice(0, 4), b = baselineFor('m', m); if (!b || !b.med) return null;
     return { pct: 100 * (s[i] / daysIn(y, m) / b.med - 1), label: `vs ${MONTHS[m]} ${S.baseline} median · MODIS, not drift-corrected` };
@@ -472,11 +476,11 @@ function renderOverview() {
   const a = windowAnomaly();
   $('statAnomaly').classList.add('small');
   $('statAnomaly').textContent = a ? (a.pct >= 0 ? '+' : '') + a.pct.toFixed(0) + '%' : 'Not available';
-  $('footAnomaly').textContent = a ? a.label : (HIST ? 'Too few baseline months for this filter' : 'Archive summary not loaded');
+  $('footAnomaly').textContent = a ? a.label : (!HIST ? 'Archive summary not loaded' : hist && +S.period.slice(0, 4) < BOTH_MODIS_FROM ? 'Not comparable: Terra alone until mid-2002' : 'Too few baseline months for this filter');
   if (hist) {
     const i = monthIdx(S.period), mS = hSeries('m'), vS = hSeries('v'), hS = hSeries('h');
-    $('statModis').textContent = fmt(mS && mS[i]); $('statViirs').textContent = vS && vS[i] != null ? fmt(vS[i]) : 'No data'; $('statHarmonized').textContent = fmt(hS && hS[i]);
-    $('footModis').textContent = 'Raw pixels · monthly archive'; $('footViirs').textContent = vS && vS[i] != null ? 'Raw pixels · S-NPP only' : 'VIIRS S-NPP starts in 2012'; $('footHarm').textContent = `${monthLabel(S.period)}, ${HIST.window} min window`;
+    $('statModis').textContent = fmt(mS && mS[i]); $('statViirs').textContent = vS && vS[i] != null ? fmt(vS[i]) : 'No data'; $('statHarmonized').textContent = hS && hS[i] != null ? fmt(hS[i]) : 'No data';
+    $('footModis').textContent = 'Raw pixels · monthly archive'; $('footViirs').textContent = vS && vS[i] != null ? 'Raw pixels · S-NPP only' : 'VIIRS S-NPP starts in 2012'; $('footHarm').textContent = hS && hS[i] != null ? `${monthLabel(S.period)}, ${HIST.window} min window` : 'Needs both sensors, so it starts in 2012';
     const y = S.period.slice(0, 4), lab = [], m = [], v = [], h = [];
     HIST.months.forEach((p, k) => { if (p.slice(0, 4) === y) { lab.push(MONTHS[+p.slice(5, 7) - 1]); m.push(mS[k]); v.push(vS[k]); h.push(hS[k]); } });
     $('dailySub').textContent = `Monthly totals, ${y} · ${S.region}`; $('dailyTag').textContent = y;
@@ -530,7 +534,8 @@ function renderLab() {
   $('windowSel').disabled = hist;
   if (hist) {
     const i = monthIdx(S.period), r = H(), m = r.m[i] || 0, v = r.v[i] || 0, mv = r.mv[i] || 0, mm = r.mm[i] || 0;
-    setLab(m - mm, v - mv, mm, m, v, mm, mv, m + v - mv);
+    const noV = r.v[i] == null;
+    setLab(m - mm, noV ? null : v - mv, noV ? null : mm, m, noV ? null : v, noV ? null : mm, noV ? null : mv, noV ? null : m + v - mv);
     $('labScope').textContent = monthLabel(S.period).toUpperCase() + ' · S-NPP';
     $('vennSub').textContent = `${monthLabel(S.period)} archive, MODIS vs S-NPP, ${HIST.window} min window · circles not to scale`;
     $('sensRows').innerHTML = `<tr><td colspan="5" style="text-align:left">The window comparison uses bundled records (${META.days[0]} to ${META.days.at(-1)}). Clear the month filter to use it.</td></tr>`;
@@ -587,7 +592,7 @@ function renderCalendar() {
     const lab = document.createElement('div'); lab.className = 'heat-month'; lab.textContent = MONTHS[m]; frag.appendChild(lab);
     for (const y of years) {
       const p = `${y}-${String(m + 1).padStart(2, '0')}`;
-      const inArchive = val[p] != null && inCoverage(key === 'h' ? 'm' : key, p);
+      const inArchive = val[p] != null && inCoverage(key, p);
       const isPartial = !inArchive && partial[p] != null;
       const cell = document.createElement('button');
       cell.className = 'heat-cell';
@@ -600,7 +605,7 @@ function renderCalendar() {
         count = partial[p]; cell.classList.add('partial'); cell.style.background = color(Math.max(1, count));
         const nd = META.days.filter(d => d.slice(0, 7) === p).length;
         title = `${MONTHS[m]} ${y}: ${fmt(count)} so far from ${nd} of ${daysIn(y, m)} days (near-real-time, partial)`;
-      } else { cell.classList.add('missing'); title = `${MONTHS[m]} ${y}: no ${S.sensor} data for this period`; }
+      } else { cell.classList.add('missing'); title = `${MONTHS[m]} ${y}: no ${S.sensor} data for this period${key === 'h' && y < 2012 ? ' (it needs both sensors and VIIRS starts in 2012; choose MODIS to see this month)' : ''}`; }
       cell.title = title; cell.setAttribute('aria-label', title);
       if (S.period === p) cell.classList.add('selected');
       cell.addEventListener('click', () => selectMonth(p, count, inArchive, isPartial));
@@ -612,7 +617,7 @@ function renderCalendar() {
   $('heatLegend').innerHTML = `<span>Fewer</span>${HEAT.map((c, i) => `<i style="background:${c}" title="${i === 0 ? '< ' + (rng[0] || '') : i < rng.length ? rng[i - 1] + ' to ' + rng[i] : '≥ ' + (rng.at(-1) || '')}"></i>`).join('')}<span>More (${rng[0] || ''} to ${rng.at(-1) || ''}+ per month)</span><span class="gap"></span><i class="zero"></i><span>Zero detections</span><i class="missing"></i><span>No data</span><i class="partial"></i><span>Partial month</span>`;
   $('calendarSub').textContent = `Monthly ${S.sensor} detections · ${S.region} · ${S.calFrom}–${S.calTo} · colors are quantiles of this view`;
   const c = HIST.coverage;
-  $('calendarNote').textContent = `FIRMS yearly archive: MODIS ${c.MODIS ? c.MODIS.join(' to ') : 'not loaded'}, VIIRS S-NPP ${c.VIIRS ? c.VIIRS.join(' to ') : 'not loaded'}. Counts step up without any change in fire when a satellite joins: Aqua in mid-2002, then VIIRS in 2012 for Harmonized, which is MODIS alone before then. Compare like with like. Striped cells have no data and are not zero.`;
+  $('calendarNote').textContent = `FIRMS yearly archive: MODIS ${c.MODIS ? c.MODIS.join(' to ') : 'not loaded'}, VIIRS S-NPP ${c.VIIRS ? c.VIIRS.join(' to ') : 'not loaded'}. Harmonized needs both sensors, so it starts in 2012; choose MODIS for earlier months. MODIS counts step up in mid-2002 when Aqua joined Terra, with no change in fire. Striped cells have no data and are not zero.`;
   renderCalendarSummary();
 }
 function renderCalendarSummary() {
@@ -623,7 +628,7 @@ function renderCalendarSummary() {
   const n = i >= 0 && s ? s[i] : null;
   $('calCount').textContent = n != null ? fmt(n) : (partialMonths()[S.period] != null ? fmt(partialMonths()[S.period]) + ' (partial)' : 'No data');
   const m = +S.period.slice(5, 7) - 1, y = +S.period.slice(0, 4), b = baselineFor(key, m);
-  $('calAnom').textContent = n != null && b && b.med ? ((n / daysIn(y, m) / b.med - 1) * 100).toFixed(0) + '%' : '—';
+  $('calAnom').textContent = n != null && b && b.med && !(key === 'm' && y < BOTH_MODIS_FROM) ? ((n / daysIn(y, m) / b.med - 1) * 100).toFixed(0) + '%' : '—';
 }
 function selectMonth(p, count, inArchive, isPartial) {
   if (!inArchive && !isPartial) { toast(`No ${S.sensor} data for ${monthLabel(p)}. Missing data is not the same as zero.`); return; }
@@ -645,23 +650,24 @@ function renderHistory() {
     const out = {}; HIST.months.forEach((p, i) => { const y = +p.slice(0, 4); (out[y] = out[y] || { n: 0, sum: 0 }); if (s[i] != null && inCoverage(key, p)) { out[y].n++; out[y].sum += s[i]; } });
     return out;
   };
-  const ym = yearly(m, 'm'), yv = yearly(v, 'v'), yh = yearly(h, 'm');
+  const ym = yearly(m, 'm'), yv = yearly(v, 'v'), yh = yearly(h, 'h');
   const years = Object.keys(ym).map(Number).sort((a, b) => a - b);
   const full = (o, y) => o[y] && o[y].n === 12 ? o[y].sum : null;
-  $('annualSub').textContent = `${S.region} · complete calendar years only · VIIRS = S-NPP`;
+  $('annualSub').textContent = `${S.region} · complete calendar years only · VIIRS = S-NPP, Harmonized from 2012 · Terra alone before mid-2002`;
   chart('historyChart', 'line', years, [{ label: 'MODIS', data: years.map(y => full(ym, y)), color: '#ff791f' }, { label: 'VIIRS S-NPP', data: years.map(y => full(yv, y)), color: '#a783ff' }, { label: 'Harmonized', data: years.map(y => full(yh, y)), color: '#ffd34d' }], { yTitle: 'detections per year' });
   const key = sensorKey(), s = hSeries(key), [a, b] = baselineYears();
-  const byM = Array.from({ length: 12 }, () => []);
-  HIST.months.forEach((p, i) => { const y = +p.slice(0, 4); if (y >= a && y <= b && s[i] != null && inCoverage(key === 'v' ? 'v' : 'm', p)) byM[+p.slice(5, 7) - 1].push(s[i]); });
-  $('seasonSub').textContent = `${S.region} · ${S.sensor} · median by calendar month, ${S.baseline}${key === 'v' ? ' (VIIRS data from 2012)' : ''}`;
+  const byM = Array.from({ length: 12 }, () => []), used = new Set();
+  HIST.months.forEach((p, i) => { const y = +p.slice(0, 4); if (y >= a && y <= b && s[i] != null && inCoverage(key, p)) { byM[+p.slice(5, 7) - 1].push(s[i]); used.add(y); } });
+  const ys = [...used].sort((x, z) => x - z);
+  $('seasonSub').textContent = `${S.region} · ${S.sensor} · ${!ys.length ? 'no data in this period' : ys.length === 1 ? 'one year only, ' + ys[0] : 'median by calendar month, ' + ys[0] + '–' + ys.at(-1)}`;
   chart('seasonChart', 'bar', MONTHS, [{ label: S.sensor, data: byM.map(x => median(x)), color: '#ff791f', bg: '#ff791fcc', pr: 0 }], { yTitle: 'detections per month' });
   const over = years.filter(y => full(yv, y) != null && full(ym, y));
   $('cmpSub').textContent = `${S.region} · each sensor as a ratio of MODIS, complete overlap years`;
   chart('cmpChart', 'line', over, [{ label: 'VIIRS S-NPP ÷ MODIS', data: over.map(y => full(yv, y) / full(ym, y)), color: '#a783ff' }, { label: 'Harmonized ÷ MODIS', data: over.map(y => full(yh, y) / full(ym, y)), color: '#ffd34d' }], { yTick: x => x.toFixed(1) + '×', yTitle: 'ratio to MODIS', zero: true });
   const modisBase = median(years.filter(y => y >= a && y <= b).map(y => full(ym, y)));
-  const anomY = years.filter(y => full(ym, y) != null);
+  const anomY = years.filter(y => y >= BOTH_MODIS_FROM && full(ym, y) != null);
   const anom = anomY.map(y => modisBase ? 100 * (full(ym, y) / modisBase - 1) : null);
-  $('anomSub').textContent = `${S.region} · MODIS only, % vs ${S.baseline} median of ${fmt(modisBase)} per year`;
+  $('anomSub').textContent = `${S.region} · MODIS only, % vs ${S.baseline} median of ${fmt(modisBase)} per year · from ${BOTH_MODIS_FROM}, when Terra and Aqua both flew all year`;
   chart('anomChart', 'bar', anomY, [{ label: 'MODIS anomaly', data: anom, color: '#ff791f', bg: anom.map(x => x >= 0 ? '#ff791fcc' : '#21d9eecc'), pr: 0 }], { yTick: x => x + '%', yTitle: '% vs baseline', zero: false, tooltip: { label: c => c.parsed.y == null ? 'n/a' : c.parsed.y.toFixed(1) + '%' } });
   if (DRIFT) {
     const y = DRIFT.year;
@@ -750,8 +756,8 @@ async function renderData() {
 async function cellRows() {
   const y = S.period.slice(0, 4);
   if (!cellCache[y]) cellCache[y] = await jsonGz(`app-data/cells/${y}.json.gz`);
-  const m = +S.period.slice(5, 7) - 1;
-  return cellCache[y].rows.filter(r => r[0] === m && regionMember[r[3] + 1]).map(r => ({ la: r[1], lo: r[2], country: r[3] >= 0 ? META.countries[r[3]] : 'Offshore / unassigned', m: r[4], v: r[5], h: r[6] })).sort((a, b) => b.h - a.h);
+  const m = +S.period.slice(5, 7) - 1, noV = H() && H().v[monthIdx(S.period)] == null; // VIIRS not observed: no data, not zero
+  return cellCache[y].rows.filter(r => r[0] === m && regionMember[r[3] + 1]).map(r => ({ la: r[1], lo: r[2], country: r[3] >= 0 ? META.countries[r[3]] : 'Offshore / unassigned', m: r[4], v: noV ? null : r[5], h: noV ? null : r[6] })).sort((a, b) => noV ? b.m - a.m : b.h - a.h);
 }
 
 function download(name, parts, type) { const url = URL.createObjectURL(new Blob(parts, { type })); const a = document.createElement('a'); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000); }
@@ -817,7 +823,7 @@ function regionOptions() {
 function initControls() {
   const reg = regionOptions();
   $$('.js-region').forEach(e => { e.innerHTML = reg; e.addEventListener('change', () => { S.region = e.value; S.page = 0; buildRegionMember(); changed({ filter: true }); if (exMap) { if (currentPage === 'map') zoomToRegion(); else pendingFit = true; } }); });
-  $$('.js-sensor').forEach(e => { e.innerHTML = ['Harmonized', 'MODIS', 'VIIRS'].map(x => `<option>${x}</option>`).join(''); e.addEventListener('change', () => { S.sensor = e.value; S.page = 0; layers.harm = S.sensor === 'Harmonized'; layers.modis = S.sensor === 'MODIS'; layers.viirs = S.sensor === 'VIIRS'; syncLayers(); changed({}); }); });
+  $$('.js-sensor').forEach(e => { e.innerHTML = ['Harmonized', 'MODIS', 'VIIRS'].map(x => `<option>${x}</option>`).join(''); e.addEventListener('change', () => { S.sensor = e.value; S.page = 0; const dropped = S.period && HIST && monthIdx(S.period) >= 0 && !inCoverage(sensorKey(), S.period); if (dropped) { toast(`No ${S.sensor} data for ${monthLabel(S.period)}, so the month filter was cleared.`); S.period = null; S.from = 0; S.to = META.days.length - 1; } layers.harm = S.sensor === 'Harmonized'; layers.modis = S.sensor === 'MODIS'; layers.viirs = S.sensor === 'VIIRS'; syncLayers(); changed(dropped ? { filter: true } : {}); }); });
   const dayOpts = META.days.map((d, i) => `<option value="${i}">${d}${META.partial_days.includes(d) ? ' (partial)' : ''}</option>`).join('');
   $$('.js-from').forEach(e => { e.innerHTML = dayOpts; e.addEventListener('change', () => { S.from = +e.value; if (S.to < S.from) S.to = S.from; S.period = null; S.page = 0; changed({ filter: true }); }); });
   $$('.js-to').forEach(e => { e.innerHTML = dayOpts; e.addEventListener('change', () => { S.to = +e.value; if (S.from > S.to) S.from = S.to; S.period = null; S.page = 0; changed({ filter: true }); }); });

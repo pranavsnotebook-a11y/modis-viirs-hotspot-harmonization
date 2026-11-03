@@ -1,41 +1,23 @@
-# One Fire Record — project summary
+# One Fire Record: project summary
 
-**Problem.** MODIS (1 km, 2000+) and VIIRS (375 m, 2012+) report fires differently. Raw counts jump when VIIRS
-arrives, so "fires doubled" can be a sensor artefact. People who rely on the record (health officers, responders,
-journalists) cannot tell real change from sensor change.
+**Problem.** MODIS (1 km, 2000 onward) and VIIRS (375 m, 2012 onward) report fires differently. Raw counts jump when VIIRS arrives, so "fires doubled" can be a sensor artefact. People who rely on the record (health officers, responders, journalists) cannot easily tell real change from sensor change.
 
-**Key result (measured, FIRMS global, 26 Oct-1 Nov 2026, one satellite vs one satellite).** Summing FRP per 0.05 deg cell
-before applying a floor (so one fire split across many VIIRS pixels is not penalized), NOAA-20 / Aqua falls from 5.45x with
-no floor to 2.31x at 20 MW and 2.02x at 100 MW. It levels off near 2x and does not reach 1. So a detection floor explains
-a large part of the gap but not all of it. Two identical MODIS instruments also disagree: Aqua / Terra is 2.0-2.3x at every
-floor, which instrument resolution cannot explain.
+**Main result: MODIS's overpass times have moved, and its counts moved with them.** Measured from the FIRMS archives, Aqua's daytime detections held at about 13.5 h local time and Terra's at 10.6 h until about 2021, then moved to 14.7 h and 9.6 h by 2025. Aqua/Terra, two identical instruments, went from about 2.4 to 3.89 by day and from about 0.47 to 0.34 at night.
 
-**Overpass time is a large effect (`python -m hotspots.overpass`).** Median local solar time measured from the data: Aqua 15.7 h day /
-3.8 h night, Terra 8.7 h / 20.6 h, NOAA-20 and NOAA-21 13.5 h / 1.5 h. Cells with at least 20 MW: Aqua / Terra is 4.89 by day and 0.23
-at night, flipping in all six regions, which a simply weaker Terra cannot produce. At night, 1 km Terra at 20.6 h finds more such cells than
-375 m NOAA-20 at 01:30 (NOAA-20 / Terra 0.65). Control: NOAA-20 / NOAA-21 is 0.84-0.86 at this floor (1.00-1.06 in raw pixels), so about
-15% is this method's own noise. One week only; the fire diurnal cycle is the likely cause, but this does not separate it from other
-time-of-day effects, and it does not yet show a trend artefact from orbit drift.
-A per-pixel FRP floor is not a valid test (an earlier version of this project reported 1.08x at 20 MW that way; withdrawn).
+We then ran a preregistered control against VIIRS S-NPP, whose orbit held. For 2025 against 2013-2020, with the same countries and months, Terra/S-NPP is x0.61 by day (model x0.69) and x1.33 at night (model x1.51). The model is a daily cycle fitted on one week of 2026 without Terra, not refitted. Terra ageing would lower both ratios and real fire change would leave them about flat, so neither fits as the main cause. By country, the day ratio fell in 53 of 54 and the night ratio rose in 52 of 54 (exploratory). MODIS shows 2025 at -18% against its 2013-2020 mean and S-NPP at -10%.
 
-**Predicting a satellite the model never saw (`python -m hotspots.latent`, criteria committed first in `docs/research/preregistration_loso.md`).** One shared
-fire activity per cell-day, one operator per instrument, one daily cycle, trained on Aqua, NOAA-20 and NOAA-21 only. It predicts Terra better than every baseline
-(deviance day 0.74 vs 1.06, night 0.90 vs 1.12), with totals at 1.41x and 1.16x of actual. Learned without Terra: activity peaks near 14.7 h local, and VIIRS sees 2.58x MODIS at
-this floor once time of day is removed (2.5-3.0x across hold-outs; swath width is not separated out). Limits: not blind, one week, a simple GLM rather than a new architecture,
-and tree models win some control hold-outs where no new local hour is involved.
+**Limits of that result.** The MODIS data version changes in 2023, as the drift speeds up, and that year's step cannot be separated from it. Within the one version, 2023-2025, the day ratio still falls x0.73 (model x0.79). The test was not fully blind, because the Aqua/Terra table had been seen. The model overstates the night rise and misses Aqua's night ratio. Countries range from x0.31 to x0.89, so one global cycle is too simple. It measures the effect but does not yet correct it. Details: `docs/research/viirs_control_results.md`.
 
-**Supporting analysis.** Footprint-overlap matching of MODIS and VIIRS pixels (8,026 matched / 68,323 VIIRS-only /
-10,970 MODIS-only at a 180 min window; most matches are different overpasses). The smallest daytime fire MODIS reports
-grows with pixel size (5.3 MW for pixels <=1.5 km2 to 27.4 MW for >6 km2). A robust FRP fit on only 25 near-coincident
-pairs does not beat leaving MODIS FRP unchanged, so we do not claim a validated FRP correction.
+**It affects our own product.** The share of MODIS pixels matched fell from 44.3% in 2021 to 31.9% in 2025, and Harmonized / S-NPP rose from 92.0% to 100.6%. A 300 minute window barely changes that rise, and Aqua's matches fall too, cause not established. Harmonized counts after about 2021 are not comparable with earlier years, and the site says so.
 
-**One engine, three uses** (proposals in `docs/ideas/`):
-1. **Fire Claim Checker** — tests a trend claim against sensor artefacts (verdict + uncertainty).
-2. **Invisible Burn Ledger** — share of a district's burning a MODIS-only record misses. Not yet measurable as stated: 60-82% of NOAA-20 pixels have no same-day MODIS overlap, depending on matching distance, and that also reflects overpass timing and cloud.
-3. **Satellite Look Ledger** — when a blank map means "unknown", not "clear".
+**Earlier results.**
+- *Detection floor (one week, 26 Oct-1 Nov 2026).* Summing FRP per 0.05 deg cell before flooring, NOAA-20/Aqua falls from 5.45x to 2.31x at 20 MW and 2.02x at 100 MW, then levels off. A per-pixel floor is not a valid test (an earlier 1.08x at 20 MW was withdrawn).
+- *Overpass (same week).* Cells of at least 20 MW: Aqua/Terra 4.89 by day and 0.23 at night, flipping in all six regions. Control NOAA-20/NOAA-21 0.84-0.86, so about 15% is this method's own noise.
+- *Predicting a satellite the model never saw (same week, criteria committed first).* A shared fire activity per cell-day, one operator per instrument and one daily cycle, trained on Aqua, NOAA-20 and NOAA-21, beat every baseline on Terra (deviance day 0.74 vs 1.06, night 0.90 vs 1.12), with totals at 1.41x and 1.16x of actual. Not blind, one week, a simple GLM rather than a new architecture, and tree models win some control hold-outs.
+- *FRP.* A robust fit on 25 near-coincident pairs does not beat leaving MODIS FRP unchanged, so we do not claim a validated FRP correction.
 
-**Built.** Pipeline (`src/hotspots`), Explorer web app with region/date selection, calendar, anomaly view and CSV
-download (`web/explorer.html`, 8 days of data), 10 tests.
+**Built.** The pipeline (`src/hotspots`) and a static website (`web/index.html`) with six pages: Overview, Map Explorer with 2D maps and a 3D globe, Harmonization Lab, Activity Calendar, Historical Analysis and Data Explorer. It holds 1.2 million individual records for 26 Oct-2 Nov 2026 and 1 degree monthly totals from MODIS (Nov 2000 to Dec 2025) and S-NPP (Jan 2012 to Dec 2025). 16 tests.
 
-**Not yet.** Multi-year history (needs FIRMS MAP_KEY or archive downloads), external validation against fire
-perimeters/burned area, validated FRP harmonization.
+**Not yet.** A drift correction, validation against fire perimeters or burned area, a confirmation of the leave-one-satellite-out test on a separate week (a fully separate 7-day file is available from about 10 Nov 2026), and a validated FRP harmonization.
+
+**Proposals, not built** (`docs/ideas/`): Fire Claim Checker, Invisible Burn Ledger and Satellite Look Ledger.

@@ -1,6 +1,7 @@
 """VIIRS S-NPP as a control for the MODIS orbit drift result. Rules: docs/research/preregistration_viirs_control.md
 usage: python -m hotspots.drift_control data/archive docs/research/viirs_control.csv"""
 import io
+import json
 import sys
 import zipfile
 from pathlib import Path
@@ -89,6 +90,12 @@ def main(argv=None):
     out = out.join(d)
     if len(a) > 1:
         out.to_csv(a[1])
+        modis = out.Terra_D_n + out.Terra_N_n + out.Aqua_D_n + out.Aqua_N_n
+        snpp = out.SNPP_D_n + out.SNPP_N_n
+        web = out.filter(regex="^(pred_)?Terra_SNPP_[DN]_change$").copy()
+        web["modis_pct"] = (100 * (modis / modis.loc[BASE[0]:BASE[1]].mean() - 1)).round(1)
+        web["snpp_pct"] = (100 * (snpp / snpp.loc[BASE[0]:BASE[1]].mean() - 1)).round(1)
+        Path("web/app-data/control.json").write_text(json.dumps(web.reset_index().to_dict("list"), separators=(",", ":")))
     pd.set_option("display.width", 220, "display.max_columns", 80)
     print(ver.pivot_table(index="year", columns=["sat", "version"], values="n").fillna(0).astype(int).to_string())
     print(out.filter(regex="_h$|days").to_string())

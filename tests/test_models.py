@@ -163,3 +163,16 @@ def test_daily_cycle_ratio_is_symmetric_and_one_for_same_hour():
     assert predicted_ratio(13.5, 13.5) == 1
     r = predicted_ratio(14.7, 9.6)
     assert r > 1 and abs(r * predicted_ratio(9.6, 14.7) - 1) < 1e-12
+
+
+def test_control_ratio_ignores_a_shift_in_where_fires_burn():
+    from hotspots.drift_control import fixed_geography
+    rows = []
+    for year, a_share in ((2013, .9), (2020, .9), (2025, .1)):  # fires move from country A to B, ratios stay put
+        for country, share, ratio in (("A", a_share, .1), ("B", 1 - a_share, .4)):
+            snpp = 100000 * share
+            rows += [dict(year=year, country=country, month=1, daynight="D", sat="SNPP", n=snpp),
+                     dict(year=year, country=country, month=1, daynight="D", sat="Terra", n=snpp * ratio)]
+    fixed, raw = fixed_geography(pd.DataFrame(rows), "Terra", "SNPP", "D")
+    assert fixed[2025] == pytest.approx(fixed[2013])
+    assert raw[2025] > 2 * raw[2013]  # the raw total ratio is fooled by the shift

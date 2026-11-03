@@ -32,6 +32,7 @@ async function gunzipIfNeeded(buf) {
 async function jsonGz(url) { return JSON.parse(new TextDecoder().decode(await gunzipIfNeeded(await readAll(url)))); }
 
 let META, R, HIST = null, DRIFT = null, N, NM;
+let CONTROL = null;
 async function loadAll() {
   META = await (await fetch('app-data/meta.json')).json();
   const buf = await gunzipIfNeeded(await readAll('app-data/records.bin.gz', (g, t) => {
@@ -46,6 +47,7 @@ async function loadAll() {
   T0 = Date.parse(META.t0);
   try { HIST = await jsonGz('app-data/history.json.gz'); } catch (e) { HIST = null; console.warn('archive summary unavailable', e); }
   try { DRIFT = await (await fetch('app-data/drift.json')).json(); } catch (e) { DRIFT = null; }
+  try { CONTROL = await (await fetch('app-data/control.json')).json(); } catch (e) { CONTROL = null; }
 }
 let T0 = 0;
 
@@ -403,7 +405,7 @@ const css = v => getComputedStyle(document.body).getPropertyValue(v).trim();
 function chart(id, type, labels, datasets, opts = {}) {
   const el = $(id); if (!el || !window.Chart) return null;
   const muted = css('--muted') || '#90a9b7';
-  const ds = datasets.map(d => ({ label: d.label, data: d.data, borderColor: d.color, backgroundColor: d.bg || (d.fill ? d.color + '33' : d.color), borderWidth: type === 'bar' ? 0 : 2, tension: .3, fill: !!d.fill, pointRadius: d.pr ?? 2, pointHoverRadius: 5, spanGaps: false, yAxisID: d.axis || 'y' }));
+  const ds = datasets.map(d => ({ label: d.label, data: d.data, borderColor: d.color, backgroundColor: d.bg || (d.fill ? d.color + '33' : d.color), borderWidth: type === 'bar' ? 0 : 2, tension: 0, fill: !!d.fill, pointRadius: d.pr ?? 2, pointHoverRadius: 5, spanGaps: false, yAxisID: d.axis || 'y' }));
   const options = {
     responsive: true, maintainAspectRatio: false, animation: false, resizeDelay: 120,
     interaction: { mode: 'index', intersect: false },
@@ -662,7 +664,7 @@ function renderHistory() {
   $('seasonSub').textContent = `${S.region} · ${S.sensor} · ${!ys.length ? 'no data in this period' : ys.length === 1 ? 'one year only, ' + ys[0] : 'median by calendar month, ' + ys[0] + '–' + ys.at(-1)}`;
   chart('seasonChart', 'bar', MONTHS, [{ label: S.sensor, data: byM.map(x => median(x)), color: '#ff791f', bg: '#ff791fcc', pr: 0 }], { yTitle: 'detections per month' });
   const over = years.filter(y => full(yv, y) != null && full(ym, y));
-  $('cmpSub').textContent = `${S.region} · each sensor as a ratio of MODIS, complete overlap years`;
+  $('cmpSub').textContent = `${S.region} · ratio to MODIS, complete overlap years · fewer pixels match after 2021 as orbits drift, so recent Harmonized is not comparable with earlier years`;
   chart('cmpChart', 'line', over, [{ label: 'VIIRS S-NPP ÷ MODIS', data: over.map(y => full(yv, y) / full(ym, y)), color: '#a783ff' }, { label: 'Harmonized ÷ MODIS', data: over.map(y => full(yh, y) / full(ym, y)), color: '#ffd34d' }], { yTick: x => x.toFixed(1) + '×', yTitle: 'ratio to MODIS', zero: true });
   const modisBase = median(years.filter(y => y >= a && y <= b).map(y => full(ym, y)));
   const anomY = years.filter(y => y >= BOTH_MODIS_FROM && full(ym, y) != null);
@@ -673,6 +675,11 @@ function renderHistory() {
     const y = DRIFT.year;
     chart('driftHourChart', 'line', y, [{ label: 'Aqua, day pass', data: DRIFT.aqua_D_h, color: '#ff791f', pr: 2 }, { label: 'Terra, day pass', data: DRIFT.terra_D_h, color: '#21d9ee', pr: 2 }], { yTick: x => x.toFixed(1) + ' h', yTitle: 'local solar hour', zero: false });
     chart('driftRatioChart', 'line', y, [{ label: 'Observed, day', data: DRIFT.aqua_over_terra_D, color: '#ff791f', pr: 2 }, { label: 'Model, day', data: DRIFT.pred_D, color: '#ffd34d', pr: 0 }, { label: 'Observed, night', data: DRIFT.aqua_over_terra_N, color: '#21d9ee', pr: 2 }, { label: 'Model, night', data: DRIFT.pred_N, color: '#a783ff', pr: 0 }], { yTick: x => x.toFixed(1) + '×', yTitle: 'Aqua ÷ Terra pixels', zero: true });
+  }
+  if (CONTROL) {
+    const y = CONTROL.year;
+    chart('controlRatioChart', 'line', y, [{ label: 'Observed, day', data: CONTROL.Terra_SNPP_D_change, color: '#ff791f', pr: 2 }, { label: 'Model, day', data: CONTROL.pred_Terra_SNPP_D_change, color: '#ffd34d', pr: 0 }, { label: 'Observed, night', data: CONTROL.Terra_SNPP_N_change, color: '#21d9ee', pr: 2 }, { label: 'Model, night', data: CONTROL.pred_Terra_SNPP_N_change, color: '#a783ff', pr: 0 }], { yTick: x => x.toFixed(1) + '×', yTitle: 'change vs 2013–2020', zero: false });
+    chart('controlTotalChart', 'line', y, [{ label: 'MODIS', data: CONTROL.modis_pct, color: '#ff791f', pr: 2 }, { label: 'VIIRS S-NPP', data: CONTROL.snpp_pct, color: '#a783ff', pr: 2 }], { yTick: x => x + '%', yTitle: '% vs 2013–2020 mean', zero: false });
   }
   const ratioFirst = over.length ? full(yv, over[0]) / full(ym, over[0]) : null, ratioLast = over.length ? full(yv, over.at(-1)) / full(ym, over.at(-1)) : null;
   const latest = anomY.at(-1);

@@ -100,15 +100,14 @@ dt <= 30 min) has only n = 130 (64% detected by MODIS); a logistic fit P = f(log
 shift a lot with the neighbourhood radius (5 km: 20 MW; 50 km: 61 MW at 4 km^2, since VIIRS's wider swath leaks
 in), so treat them as qualitative support for the pixel-size effect, not calibrated thresholds.
 
-## Hot Spot Explorer (`web/explorer.html`)
+## Classic explorer (`web/explorer.html`)
 Region (presets, lat/lon boxes, or "use map view") + date range; metric = harmonized events / MODIS / VIIRS.
 Shows a map, an activity calendar (day grid now, month × year once ≥ 2 years are loaded), a daily
 anomaly chart vs the median of the selected days, a sensor comparison, and CSV downloads (daily counts, 1° cells).
 Build data: `python web/build_data.py web/data.json modis.csv viirs.csv [more viirs.csv]`, serve with
 `cd web && python3 -m http.server`. Checked in a real browser (Playwright): renders, presets filter correctly.
 Limits: current data is 8 days (FIRMS 7-day files), so the "historical median" is a median over those days, not
-a multi-year climatology; the CSV downloads are per-cell counts, not individual hotspot rows. A MAP_KEY-based
-multi-year build would fill in the real calendar and anomalies with the same script.
+a multi-year climatology; the CSV downloads are per-cell counts, not individual hotspot rows. This is the older page; multi-year history is in `web/index.html`.
 
 ## Does an FRP floor close the count gap? (`python -m hotspots.floor modis.csv viirs.csv --drop-after DATE`)
 FRP summed per 0.05 deg cell / satellite / day / day-night before flooring; 26 Oct-1 Nov 2026, global.
@@ -135,3 +134,9 @@ Median local time of daytime detections, measured from the FIRMS MODIS archive: 
 Aqua/Terra pixels: day ratio 2.2-2.5 over 2003-2021, then 2.58, 2.75, 3.41, 3.89 for 2022-2025; night ratio 0.45-0.50, then down to 0.34. Both satellites have data every day of the years checked (2021, 2024, 2025).
 Applying the daily cycle fitted earlier on one week of 2026 with Terra held out, with no refit, gives a change from the 2003-2020 mean to 2025 of x1.55 by day (observed x1.64) and x0.63 by night (observed x0.70).
 Limits: the model's level is about 20% low by day; the fit used cells >= 20 MW while this table counts all pixels; agreement over time rests on the few years when orbits moved; the author saw this table before comparing. Terra's sensor ageing and changes in where fires burn are not ruled out, and this is not yet a corrected record.
+
+## VIIRS control (`python -m hotspots.drift_control data/archive docs/research/viirs_control.csv`)
+Rules were committed first (`docs/research/preregistration_viirs_control.md`); full results and limits are in `docs/research/viirs_control_results.md`.
+2025 against 2013-2020, vegetation fires, same countries and months: Terra/S-NPP is x0.61 by day (model x0.69) and x1.33 at night (model x1.51), and S-NPP's local hour moved under 0.25 h. All five checks passed.
+The MODIS data version changes in 2023 as the drift speeds up, so that year's step cannot be separated from it. Within the one version, 2023-2025, the day ratio still falls x0.73 (model x0.79).
+Own method: MODIS pixels matched fell from 44.3% (2021) to 31.9% (2025), and Harmonized / S-NPP rose from 92.0% to 100.6%. A 300 minute window barely changes that rise (88.5% to 96.4%), and Aqua's matches fall too, cause not established. Harmonized counts after about 2021 are not comparable with earlier years.

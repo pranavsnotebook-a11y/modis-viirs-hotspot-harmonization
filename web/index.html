@@ -103,6 +103,8 @@
     <div class="panel chart-card"><div class="panel-head"><div><div class="panel-title">Annual Anomaly</div><div class="panel-sub" id="anomSub">% vs baseline median</div></div></div><div class="chart-canvas-wrap"><canvas id="anomChart"></canvas></div></div>
     <div class="panel chart-card"><div class="panel-head"><div><div class="panel-title">Orbit Drift: When MODIS Looks</div><div class="panel-sub">Global · median local time of daytime detections</div></div><span class="tiny-tag">MEASURED</span></div><div class="chart-canvas-wrap"><canvas id="driftHourChart"></canvas></div></div>
     <div class="panel chart-card"><div class="panel-head"><div><div class="panel-title">Orbit Drift: What It Does to Counts</div><div class="panel-sub">Global · Aqua ÷ Terra, identical instruments, vs daily-cycle model with no refit</div></div><span class="tiny-tag">MEASURED</span></div><div class="chart-canvas-wrap"><canvas id="driftRatioChart"></canvas></div></div>
+      <div class="panel chart-card"><div class="panel-head"><div><div class="panel-title">VIIRS Control: Terra ÷ S-NPP</div><div class="panel-sub">Global · vegetation fires · same countries and months · vs 2013–2020 · model not refitted · MODIS data version changes in 2023</div></div><span class="tiny-tag">PREREGISTERED</span></div><div class="chart-canvas-wrap"><canvas id="controlRatioChart"></canvas></div></div>
+    <div class="panel chart-card"><div class="panel-head"><div><div class="panel-title">VIIRS Control: Same Years, Two Records</div><div class="panel-sub">Global · vegetation fires · % vs own 2013–2020 mean · S-NPP missed days in 2022 and 2024</div></div><span class="tiny-tag">MEASURED</span></div><div class="chart-canvas-wrap"><canvas id="controlTotalChart"></canvas></div></div>
   </div>
   <div class="insight-grid" id="histInsights"></div>
 </section>
@@ -121,6 +123,6 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.46.2/dist/globe.gl.min.js"></script>
-<script src="js/app.js?v=4"></script>
+<script src="js/app.js?v=7"></script>
 </body>
 </html>

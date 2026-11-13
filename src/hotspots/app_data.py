@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 from .geo import Geo
 from .io import load_firms
-from .match import match
+from .harmonize import CRITERIA, match_days
 
 MAX_WINDOW = 360
 SAT = {"T": 0, "A": 1, "N": 2, "N20": 3, "1": 3, "J1": 3, "N21": 4, "2": 4, "J2": 4}
@@ -41,21 +41,27 @@ def load(modis_path, viirs_paths):
 
 
 def match_all(m, v, window=MAX_WINDOW):
-    """Best MODIS candidate per VIIRS pixel, day by day, so nearest-neighbour slots are not spent on other days."""
+    """Best MODIS candidate per VIIRS pixel, day by day (see hotspots.harmonize), plus what the browser needs to
+    re-derive status and match strength for any window up to MAX_WINDOW: time gap, centre distance, number of
+    MODIS candidates and the time gap of the best rival."""
     mi = np.full(len(v), -1, dtype=np.int32)
     dt = np.full(len(v), SENTINEL, dtype=np.uint16)
-    pad = pd.Timedelta(minutes=window)
-    day = v.time.dt.floor("D")
-    for d, idx in v.groupby(day).groups.items():
-        mm = m[(m.time >= d - pad) & (m.time < d + pd.Timedelta(days=1) + pad)]
-        p = match(mm, v.loc[idx], max_dt_min=window, k=32)
-        if len(p):
-            mi[v.index.get_indexer(p.viirs_idx)] = m.index.get_indexer(p.modis_idx)
-            dt[v.index.get_indexer(p.viirs_idx)] = np.round(p.dt_min.values).astype(np.uint16)
-    return mi, dt
+    dist = np.full(len(v), SENTINEL, dtype=np.uint16)
+    dt2 = np.full(len(v), SENTINEL, dtype=np.uint16)
+    nc = np.zeros(len(v), dtype=np.uint8)
+    p = match_days(m, v, window)
+    if len(p):
+        vi, j = p.viirs_idx.astype(int).values, p.modis_idx.astype(int).values
+        mi[vi] = j
+        dt[vi] = np.round(p.dt_min.values.astype(float)).astype(np.uint16)
+        dist[vi] = np.minimum(np.round(p.dist_km.values.astype(float) * 100), SENTINEL - 1).astype(np.uint16)
+        d2 = p.dt2_min.values.astype(float)
+        dt2[vi] = np.where(np.isfinite(d2), np.round(np.nan_to_num(d2)), SENTINEL).astype(np.uint16)
+        nc[vi] = np.minimum(p.n_cand.values.astype(int), 255)
+    return mi, dt, dist, dt2, nc
 
 
-def main(argv=None):
+def main(argv=None, products=None):
     a = argv or sys.argv[1:]
     out = Path("web/app-data")
     out.mkdir(parents=True, exist_ok=True)
@@ -64,7 +70,7 @@ def main(argv=None):
     m = frames[0].sort_values("time").reset_index(drop=True)
     v = pd.concat(frames[1:], ignore_index=True).sort_values("time").reset_index(drop=True)
     print(f"raw MODIS {len(m):,}  raw VIIRS {len(v):,}")
-    mi, dt = match_all(m, v)
+    mi, dt, dist, dt2, nc = match_all(m, v)
     print(f"VIIRS with a MODIS candidate within {MAX_WINDOW} min: {(mi >= 0).sum():,}")
     for w in (30, 60, 120, 180, 360):
         ok = dt <= w
@@ -84,6 +90,9 @@ def main(argv=None):
         "country": (geo.country_idx(r.latitude.values, r.longitude.values)).astype(np.int16),
         "mi": np.concatenate([np.full(n_m, -1, np.int32), mi]),
         "dt": np.concatenate([np.full(n_m, SENTINEL, np.uint16), dt]),
+        "dist": np.concatenate([np.full(n_m, SENTINEL, np.uint16), dist]),
+        "dt2": np.concatenate([np.full(n_m, SENTINEL, np.uint16), dt2]),
+        "nc": np.concatenate([np.zeros(n_m, np.uint8), nc]),
         "sat": r.sat.values.astype(np.uint8),
         "conf": r.raw_conf.values.astype(np.uint8),
         "night": (r.daynight == "N").values.astype(np.uint8),
@@ -101,6 +110,10 @@ def main(argv=None):
     days = pd.date_range(t0, last.floor("D"), freq="D")
     counts = r.groupby(r.time.dt.floor("D")).size().reindex(days, fill_value=0)
     partial = [str(d.date()) for d, c in counts.items() if c < 0.6 * counts.median()]
+    # Days each satellite delivered any record anywhere on Earth. A satellite with no global records on a day was
+    # not observing (outage or missing file), so its regional count that day is "no data", never zero.
+    day_of = (r.time.dt.floor("D") - t0).dt.days.values
+    sat_days = {SAT_NAMES[k]: sorted(int(x) for x in np.unique(day_of[r.sat.values == k])) for k in range(len(SAT_NAMES))}
     meta = {
         "n": len(r), "n_modis": n_m, "t0": t0.isoformat(), "columns": meta_cols, "max_window": MAX_WINDOW, "default_window": 180,
         "days": [str(d.date()) for d in days], "partial_days": partial, "generated_at": pd.Timestamp.utcnow().isoformat(),
@@ -108,6 +121,7 @@ def main(argv=None):
         "places": {"name": geo.place_names, "country": geo.place_country,
                    "lat": np.round(geo.place_lat, 2).tolist(), "lon": np.round(geo.place_lon, 2).tolist()},
         "source": "NASA FIRMS near-real-time 7-day global files: MODIS C6.1 (Terra, Aqua), VIIRS C2 375 m (S-NPP, NOAA-20, NOAA-21)",
+        "sat_days": sat_days, "products": products or {}, "harmonization": CRITERIA,
     }
     json.dump(meta, open(out / "meta.json", "w"), separators=(",", ":"))
     print((out / "records.bin.gz").stat().st_size / 1e6, "MB;", len(r), "records; days", meta["days"][0], meta["days"][-1], "partial", partial)

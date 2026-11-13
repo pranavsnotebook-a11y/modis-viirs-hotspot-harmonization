@@ -29,8 +29,11 @@ def match(modis: pd.DataFrame, viirs: pd.DataFrame, max_dt_min: float = 180.0,
     one closest in time wins, then the nearest centre. Returns viirs_idx, modis_idx
     (index labels), dist_km, dt_min. Each VIIRS pixel is assigned to at most one MODIS
     pixel even where MODIS pixels overlap each other.
+
+    Also returned, so ambiguous assignments stay visible: n_cand, the number of distinct MODIS pixels that pass
+    both tests, and dt2_min, the time gap of the best competing MODIS pixel (NaN if there is none).
     """
-    cols = ["viirs_idx", "modis_idx", "dist_km", "dt_min"]
+    cols = ["viirs_idx", "modis_idx", "dist_km", "dt_min", "n_cand", "dt2_min"]
     if modis.empty or viirs.empty:
         return pd.DataFrame(columns=cols)
     k = min(k, len(modis))
@@ -55,7 +58,11 @@ def match(modis: pd.DataFrame, viirs: pd.DataFrame, max_dt_min: float = 180.0,
     j = score.argmin(axis=1)
     r = np.arange(len(viirs))
     sel = ok[r, j]
+    other = np.where(ok, dt, np.inf)
+    other[r, j] = np.inf
+    dt2 = other.min(axis=1)
     return pd.DataFrame({
         "viirs_idx": viirs.index.values[sel],
         "modis_idx": modis.index.values[j_[r, j][sel]],
-        "dist_km": km[r, j][sel], "dt_min": dt[r, j][sel]}, columns=cols)
+        "dist_km": km[r, j][sel], "dt_min": dt[r, j][sel],
+        "n_cand": ok.sum(axis=1)[sel], "dt2_min": np.where(np.isfinite(dt2), dt2, np.nan)[sel]}, columns=cols)

@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Hot Spot Explorer — NASA Space Apps</title>
+<title>FIREVERSE × FIRELAB · Hot Spot Explorer — NASA Space Apps</title>
 <meta name="description" content="Interactive MODIS–VIIRS hotspot harmonization using NASA FIRMS records." />
 <link rel="icon" href="data:,">
 <link rel="preconnect" href="https://unpkg.com">
 <link rel="preconnect" href="https://server.arcgisonline.com">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="css/app.css?v=2">
+<link rel="stylesheet" href="css/app.css?v=3">
 </head>
 <body>
 <div class="app" id="app">
 <header class="topbar">
-  <div class="brand"><div class="brand-mark">♨</div><div>Hot Spot Explorer<small>NASA SPACE APPS · MODIS × VIIRS HARMONIZATION</small></div></div>
+  <div class="brand"><div class="brand-mark">♨</div><div>Hot Spot Explorer<small>FIREVERSE × FIRELAB · MODIS × VIIRS HARMONIZATION</small></div></div>
   <div class="top-actions"><span class="pill" id="dataPill">● Loading NASA FIRMS records…</span><button class="icon-btn" id="themeToggle" title="Toggle light/dark theme" aria-label="Toggle light or dark theme">☼</button><button class="icon-btn" id="globalSearchBtn" title="Search places" aria-label="Search places">⌕</button></div>
 </header>
 <div class="shell">
@@ -26,7 +26,9 @@
   <button class="nav-item" data-page="calendar"><span>▦</span>Activity Calendar</button>
   <button class="nav-item" data-page="history"><span>⌁</span>Historical Analysis</button>
   <button class="nav-item" data-page="data"><span>▤</span>Data Explorer</button>
-  <div class="side-bottom"><b>NASA Space Apps Challenge</b><br>Real NASA FIRMS detections. Not an operational fire alert service.<br><br><a href="overview.html">Classic overview</a> · <a href="explorer.html">Classic explorer</a></div>
+  <div class="side-label">Simulation</div>
+  <button class="nav-item" data-page="firelab"><span>☁</span>FIRELAB</button>
+  <div class="side-bottom"><b>FIREVERSE × FIRELAB</b><br>NASA Space Apps Challenge 2026.<br>Real NASA FIRMS detections. Not an operational fire alert service.<br><span id="serverState">Checking server…</span><br><br><a href="overview.html">Classic overview</a> · <a href="explorer.html">Classic explorer</a></div>
 </aside>
 <main class="main">
 <div class="active-filters" id="activeFilters"></div>
@@ -66,9 +68,11 @@
         <label class="check-row"><input type="checkbox" id="layerHarm" checked> <span style="color:#ff493f">●</span> Harmonized records</label>
         <label class="check-row"><input type="checkbox" id="layerModis"> <span style="color:#ffd34d">●</span> MODIS raw detections</label>
         <label class="check-row"><input type="checkbox" id="layerViirs"> <span style="color:#a783ff">●</span> VIIRS raw detections</label>
-        <div class="filter-group" style="margin-top:17px"><label for="markerMode">Marker display</label><select class="select" id="markerMode" style="width:100%"><option value="red">Red hotspot markers (default)</option><option value="status">Color by match status</option></select></div>
+        <div class="filter-group" style="margin-top:14px"><label>Satellites shown</label><div class="sat-checks" id="satChecks"></div></div>
+        <div class="filter-group" style="margin-top:6px"><label for="markerMode">Marker display</label><select class="select" id="markerMode" style="width:100%"><option value="red">Red hotspot markers (default)</option><option value="status">Color by match status</option><option value="strength">Color by match strength</option></select></div>
       </div>
       <div class="panel"><div class="panel-head"><div class="panel-title">Selected Hotspot</div><span class="tiny-tag" id="selectionBadge">NONE</span></div><div id="hotspotDetails" class="details-empty">Click any marker on the map to view its details.</div></div>
+      <div class="panel" id="livePanel"><div class="panel-head"><div class="panel-title">Live FIRMS query</div><span class="tiny-tag" id="liveTag">SERVER</span></div><div class="panel-sub" id="liveSub" style="margin:0 0 9px">Fetch the latest MODIS, S-NPP, NOAA-20 and NOAA-21 detections for this map view from NASA FIRMS through our server, then match them.</div><div class="live-row"><select class="select" id="liveDays" aria-label="Days"><option value="1">Last 24 h</option><option value="2" selected>Last 48 h</option><option value="5">Last 5 days</option></select><button class="primary-btn" id="liveRun">Query view ↗</button></div><div id="liveOut" class="live-out"></div></div>
       <div class="panel"><div class="panel-head"><div class="panel-title">Current View</div></div><div class="mini-stats"><div class="mini-stat"><span id="visibleLabel">Records in view</span><b id="visiblePoints">—</b></div><div class="mini-stat"><span>Active layers</span><b id="activeLayers">1</b></div><div class="mini-stat"><span>Map mode</span><b id="currentMode">Satellite</b></div></div></div>
     </aside>
   </div>
@@ -81,17 +85,24 @@
     <div class="panel"><div class="panel-head"><div><div class="panel-title">MODIS–VIIRS Observation Overlap</div><div class="panel-sub" id="vennSub">Click a region to open those records · circles are not drawn to scale</div></div></div><div class="venn"><div class="circle modis" data-status="MODIS Only" role="button" tabindex="0">MODIS only<strong id="vennM">—</strong></div><div class="circle viirs" data-status="VIIRS Only" role="button" tabindex="0">VIIRS only<strong id="vennV">—</strong></div><div class="circle both" data-status="Matched" role="button" tabindex="0">Matched<strong id="vennB">—</strong></div></div><div class="panel-sub">A spatial-temporal match is a candidate relationship, not proof that two detections represent the same physical fire.</div></div>
     <div class="panel"><div class="panel-head"><div class="panel-title">Observation Summary</div><span class="tiny-tag" id="labScope">FILTERED</span></div><div class="mini-stats"><div class="mini-stat"><span>Raw MODIS detections</span><b id="labM">—</b></div><div class="mini-stat"><span>Raw VIIRS detections</span><b id="labV">—</b></div><div class="mini-stat"><span>MODIS pixels with a VIIRS candidate</span><b id="labMM">—</b></div><div class="mini-stat"><span>VIIRS pixels matched to MODIS</span><b id="labMV">—</b></div><div class="mini-stat"><span>Unique harmonized records</span><b style="color:var(--orange)" id="labH">—</b></div></div><div class="panel-sub" style="margin-top:10px">Harmonized = raw MODIS + VIIRS with no match. Every matched group, one MODIS pixel and its VIIRS pixels, counts once.</div></div>
   </div>
+  <div class="two-col" style="margin-top:15px">
+    <div class="panel"><div class="panel-head"><div><div class="panel-title">Time Gap Between Matched Pixels</div><div class="panel-sub" id="gapSub">Matched VIIRS pixels by satellite pair · 15 min bins</div></div><span class="tiny-tag">FROM RECORDS</span></div><div class="chart-wrap" style="height:230px"><canvas id="gapChart"></canvas></div><div class="panel-sub" id="gapNote"></div></div>
+    <div class="panel"><div class="panel-head"><div><div class="panel-title">Match Strength</div><div class="panel-sub">Rule-based label for how direct the evidence is. Not a probability.</div></div><span class="tiny-tag" id="strengthTag">VIIRS PIXELS</span></div><div id="strengthBars" class="strength-bars"></div><div class="mini-stats" style="margin-top:8px"><div class="mini-stat"><span>Ambiguous assignments</span><b id="labAmb">—</b></div><div class="mini-stat"><span>Median time gap of matches</span><b id="labGap">—</b></div></div></div>
+  </div>
+  <div class="panel" style="margin-top:15px"><div class="panel-head"><div><div class="panel-title">Match Inspector</div><div class="panel-sub" id="inspSub">One MODIS pixel and the VIIRS pixels assigned to it, drawn to scale, with every criterion that was tested</div></div><div class="head-tools"><select class="select" id="inspPick" aria-label="Which match to inspect"><option value="frp">Strongest fire in filter</option><option value="ambiguous">An ambiguous assignment</option><option value="strong">A strong match</option><option value="weak">A weak match</option><option value="random">Random match</option></select><button class="ghost-btn" id="inspNext">Next ↻</button></div></div><div class="inspector"><div id="inspMap" class="insp-map"></div><div id="inspText" class="insp-text details-empty">Loading…</div></div></div>
   <div class="panel" style="margin-top:15px"><div class="panel-head"><div><div class="panel-title">Harmonization Workflow</div><div class="panel-sub">Traceable, explainable, and reproducible processing</div></div></div><div class="workflow"><div class="step"><b>◈</b>MODIS + VIIRS<br>Source observations</div><div class="step"><b>⌖</b>Spatial &amp; temporal<br>candidate matching</div><div class="step"><b>⛓</b>Duplicate handling<br>preserve provenance</div><div class="step"><b>✺</b>Harmonized<br>dataset</div></div></div>
   <div class="two-col" style="margin-top:15px">
     <div class="panel"><div class="panel-head"><div><div class="panel-title">How much depends on the time window?</div><div class="panel-sub">Same filter, every window. The current selection is highlighted.</div></div></div><table class="sens-table"><thead><tr><th>Window</th><th>Matched VIIRS</th><th>Matched MODIS</th><th>MODIS matched</th><th>Harmonized</th></tr></thead><tbody id="sensRows"></tbody></table></div>
-    <div class="panel"><div class="panel-head"><div class="panel-title">Limitations</div></div><ul class="limits"><li>MODIS and VIIRS satellites rarely pass together. Most matches join different overpasses, hours apart, of a fire that may have changed.</li><li>“VIIRS only” does not mean MODIS could not see it: overpass time and cloud also decide what each satellite records.</li><li>Records are pixels, not fires. One fire can yield many records, and repeat passes are kept as separate observations.</li><li>FRP is not corrected between sensors. Our test on 25 near-coincident pairs did not beat leaving it unchanged, so both values are shown side by side.</li><li>Footprint orientation is estimated from the orbit because FIRMS provides none.</li></ul></div>
+    <div class="panel"><div class="panel-head"><div class="panel-title">Limitations</div></div><ul class="limits"><li>MODIS and VIIRS satellites rarely pass together. Most matches join different overpasses, hours apart, of a fire that may have changed.</li><li>“VIIRS only” does not mean MODIS could not see it: overpass time and cloud also decide what each satellite records.</li><li>Records are pixels, not fires. One fire can yield many records, and repeat passes are kept as separate observations.</li><li>FRP is not corrected between sensors. Our test on 25 near-coincident pairs did not beat leaving it unchanged, so both values are shown side by side.</li><li>Footprint orientation is estimated from the orbit because FIRMS provides none.</li><li>Aqua has drifted to a later afternoon pass, so it now trails NOAA-20 and NOAA-21 by one to three hours. Very few pairs are within 30 minutes, so most matches are “weak” or “moderate” by design.</li><li>When a satellite delivered no data (for example S-NPP in an outage), its pixels are absent, not zero, and its fires cannot be matched.</li></ul></div>
   </div>
-  <div class="insight-grid"><div class="insight-card"><div class="kicker">Spatial criterion</div><h3>Footprint overlap</h3><p>Each detection’s real pixel rectangle (FIRMS scan × track, in km) must overlap, so resolution and swath-edge growth are respected rather than one fixed radius.</p></div><div class="insight-card"><div class="kicker">Temporal criterion</div><h3>Time window</h3><p>Acquisition times, in UTC, must fall within the selected window. Among overlapping MODIS pixels, the closest in time wins, then the nearest.</p></div><div class="insight-card"><div class="kicker">Quality control</div><h3>Keep provenance</h3><p>Matched exports keep both sets of source IDs, each sensor’s FRP and confidence, the time difference and the window used.</p></div></div>
+  <div class="insight-grid"><div class="insight-card"><div class="kicker">Spatial criterion</div><h3>Footprint overlap</h3><p>Each detection’s real pixel rectangle (FIRMS scan × track, in km) must overlap, so resolution and swath-edge growth are respected rather than one fixed radius.</p></div><div class="insight-card"><div class="kicker">Temporal criterion</div><h3>Time window</h3><p>Acquisition times, in UTC, must fall within the selected window. Among overlapping MODIS pixels, the closest in time wins, then the nearest.</p></div><div class="insight-card"><div class="kicker">Quality control</div><h3>Keep provenance</h3><p>Matched exports keep both sets of source IDs, each sensor’s FRP and confidence, the time difference, centre distance, rival candidates, match strength and the window used. No source record is altered or deleted.</p></div></div>
+  <div class="insight-grid"><div class="insight-card"><div class="kicker">Strength · strong</div><h3>Same pass, core hit</h3><p>Time gap ≤ 30 min, the VIIRS centre inside the core of the MODIS pixel, and no rival MODIS pixel within 15 min. Both sensors very likely saw the same fire at almost the same moment.</p></div><div class="insight-card"><div class="kicker">Strength · moderate</div><h3>Close, one doubt</h3><p>Time gap ≤ 30 min with an edge overlap or a rival, or ≤ 120 min with a core hit and no rival. Probably the same burning area, seen up to two hours apart.</p></div><div class="insight-card"><div class="kicker">Strength · weak / ambiguous</div><h3>Same place, different moment</h3><p>Every other pair inside the window: usually a different overpass of a fire that may have grown, moved or ended. Ambiguous means a second MODIS pixel qualifies almost as well, so the group is a rule choice.</p></div></div>
 </section>
 
 <section class="page" id="page-calendar">
   <div class="page-head"><div><div class="eyebrow">Seasonality &amp; long-term patterns · 04</div><h1>Burning Activity <span style="color:var(--orange)">Calendar</span></h1><div class="subtitle">Months down the side, years across the top, and cell intensity showing detection counts. Click a cell to filter the map and analytics to that month.</div></div><div class="calendar-controls"><select class="select js-region" aria-label="Region"></select><select class="select js-sensor" aria-label="Sensor"></select><select class="select" id="calFrom" aria-label="First year"></select><select class="select" id="calTo" aria-label="Last year"></select></div></div>
   <div class="panel calendar-panel"><div class="panel-head"><div><div class="panel-title">Fire Activity by Month and Year</div><div class="panel-sub" id="calendarSub">Loading archive…</div></div><span class="tiny-tag">MONTH × YEAR</span></div><div class="calendar-scroll"><div id="heatmap" class="heatmap" style="--years:27"></div></div><div class="heatmap-legend" id="heatLegend"></div><div class="calendar-summary"><div class="summary-chip">Selected month / year<b id="calSelected">Select a cell</b></div><div class="summary-chip">Detections<b id="calCount">—</b></div><div class="summary-chip">Region / sensor<b id="calScope">Global · Harmonized</b></div><div class="summary-chip">Vs same month baseline<b id="calAnom">—</b></div><button class="ghost-btn" id="calOpenMap">View month on map ↗</button></div><div class="note" id="calendarNote"></div></div>
+  <div class="panel calendar-panel" style="margin-top:15px"><div class="panel-head"><div><div class="panel-title">Daily Fire Activity</div><div class="panel-sub" id="dailyCalSub">Loading daily counts…</div></div><div class="head-tools"><select class="select" id="dayYear" aria-label="Year"></select><span class="tiny-tag">DAY × WEEK</span></div></div><div class="calendar-scroll"><div id="dayGrid" class="day-grid"></div></div><div class="heatmap-legend" id="dayLegend"></div><div class="calendar-summary"><div class="summary-chip">Selected day<b id="daySel">Select a day</b></div><div class="summary-chip">MODIS<b id="dayM">—</b></div><div class="summary-chip">VIIRS<b id="dayV">—</b></div><div class="summary-chip">Harmonized<b id="dayH">—</b></div><button class="ghost-btn" id="dayOpen" style="display:none">Open day in records ↗</button></div></div>
 </section>
 
 <section class="page" id="page-history">
@@ -111,11 +122,46 @@
 
 <section class="page" id="page-data">
   <div class="page-head"><div><div class="eyebrow">Records &amp; exports · 06</div><h1>Hotspot <span style="color:var(--orange)">Data Explorer</span></h1><div class="subtitle">Search and filter hotspot records, inspect matching status, and export exactly the records that match your filters.</div></div><div class="export-row"><button class="primary-btn" id="exportCsv">↓ Records CSV</button><button class="ghost-btn" id="exportDaily">↓ Daily summary CSV</button><button class="ghost-btn" id="exportGeo">↓ GeoJSON</button></div></div>
-  <div class="panel" style="margin-bottom:13px"><div class="map-toolbar" style="margin:0"><input class="search" id="tableSearch" placeholder="Search ID, sensor, status, place, country, coordinates…" style="flex:1" aria-label="Search records"><select class="select js-region" aria-label="Region"></select><select class="select js-sensor" aria-label="Sensor"></select><select class="select" id="tableStatus" aria-label="Match status"><option>All match statuses</option><option>Matched</option><option>MODIS Only</option><option>VIIRS Only</option></select><select class="select js-from" aria-label="From date"></select><select class="select js-to" aria-label="To date"></select></div></div>
+  <div class="panel" style="margin-bottom:13px"><div class="map-toolbar" style="margin:0"><input class="search" id="tableSearch" placeholder="Search ID, sensor, status, place, country, coordinates…" style="flex:1" aria-label="Search records"><select class="select js-region" aria-label="Region"></select><select class="select js-sensor" aria-label="Sensor"></select><select class="select" id="tableStatus" aria-label="Match status"><option>All match statuses</option><option>Matched</option><option>Matched · strong</option><option>Matched · moderate</option><option>Matched · weak</option><option>Ambiguous assignment</option><option>MODIS Only</option><option>VIIRS Only</option></select><select class="select js-from" aria-label="From date"></select><select class="select js-to" aria-label="To date"></select></div></div>
   <p class="table-note" id="tableNote"></p>
   <div class="table-wrap"><table class="data-table"><thead id="dataHead"></thead><tbody id="dataRows"></tbody></table></div>
   <div class="table-footer"><span id="tableCount">Loading…</span><div class="pagination"><button id="firstPage" aria-label="First page">«</button><button id="prevPage" aria-label="Previous page">‹</button><button class="active" id="pageNum">1</button><button id="nextPage" aria-label="Next page">›</button></div></div>
   <div class="note" id="dataNote"></div>
+</section>
+<section class="page" id="page-firelab">
+  <div class="page-head"><div><div class="eyebrow">Smoke &amp; exposure simulator · 07</div><h1>FIRE<span style="color:var(--orange)">LAB</span></h1><div class="subtitle">Pick a real fire observation, then explore where its smoke could go, how much PM2.5 it could add, and how many people live under the modelled plume. Everything here is a model scenario built on one satellite snapshot, not a measurement or a forecast.</div></div><div class="head-tools"><span class="dtag obs">OBSERVED</span><span class="dtag mod">MODELLED</span><span class="dtag scn">SCENARIO</span></div></div>
+  <div class="fl-grid">
+    <div class="fl-col">
+      <div class="panel"><div class="panel-head"><div class="panel-title">1 · Fire observation</div><span class="dtag obs">OBSERVED</span></div>
+        <div class="filter-group"><label for="flPick">Real FIRMS records in the current filter</label><select class="select" id="flPick" style="width:100%"></select></div>
+        <button class="ghost-btn" id="flUseSel" style="width:100%">Use the hotspot selected on the map</button>
+        <label class="check-row"><input type="checkbox" id="flCluster"> Add pixels from the same overpass within 2 km <small style="color:var(--muted)">(assumes one fire)</small></label>
+        <div id="flFire" class="hotspot-detail"></div></div>
+      <div class="panel"><div class="panel-head"><div class="panel-title">2 · Weather at the overpass</div><span class="dtag mod">MODELLED</span></div><div id="flWx" class="hotspot-detail details-empty">Choose a fire.</div></div>
+      <div class="panel"><div class="panel-head"><div class="panel-title">3 · Scenario settings</div><span class="dtag scn">SCENARIO</span></div>
+        <div class="filter-group"><label for="flBiome">Vegetation type (sets the PM2.5 emission factor)</label><select class="select" id="flBiome" style="width:100%"></select></div>
+        <div class="filter-group"><label for="flHours">Hours the fire keeps burning at the observed FRP: <b id="flHoursV">3</b></label><input type="range" id="flHours" min="1" max="24" value="3"></div>
+        <label class="check-row"><input type="checkbox" id="flTrap"> Worst case: hold all smoke in the boundary layer, even the part the plume would lift above it</label>
+        <label class="check-row"><input type="checkbox" id="flWindOverride"> Override the modelled wind</label>
+        <div id="flWindBox" style="display:none"><div class="filter-group"><label for="flWs">Wind speed: <b id="flWsV">5</b> m/s</label><input type="range" id="flWs" min="0.5" max="20" step="0.5" value="5"></div><div class="filter-group"><label for="flWd">Wind from: <b id="flWdV">90</b>°</label><input type="range" id="flWd" min="0" max="359" value="90"></div></div>
+        <div class="panel-sub" id="flStab"></div></div>
+    </div>
+    <div class="fl-col fl-main">
+      <div class="panel"><div class="panel-head"><div><div class="panel-title">Modelled smoke plume · hourly-mean PM2.5 added at ground level</div><div class="panel-sub" id="flMapSub">Gaussian plume with FRP-based plume height and a mixing-height lid</div></div><span class="dtag scn">SCENARIO</span></div><div class="fl-map-wrap"><div id="flMap"></div><div class="legend fl-legend" id="flLegend"></div></div></div>
+      <div class="stats fl-stats">
+        <div class="stat-card accent-orange"><div class="stat-top"><span>PM2.5 emission rate</span><span class="dtag scn">SCENARIO</span></div><div class="stat-value small" id="flQ">—</div><div class="stat-foot" id="flQf">From FRP</div></div>
+        <div class="stat-card accent-purple"><div class="stat-top"><span>Peak ground-level PM2.5 added</span><span class="dtag scn">SCENARIO</span></div><div class="stat-value small" id="flCmax">—</div><div class="stat-foot" id="flCmaxF">—</div></div>
+        <div class="stat-card accent-cyan"><div class="stat-top"><span>People under ≥ 15 µg/m³</span><span class="dtag mod">MODELLED</span></div><div class="stat-value small" id="flPop">—</div><div class="stat-foot" id="flPopF">GHS-POP 2025</div></div>
+        <div class="stat-card accent-green"><div class="stat-top"><span>CAMS PM2.5 at the fire</span><span class="dtag mod">MODELLED</span></div><div class="stat-value small" id="flCams">—</div><div class="stat-foot" id="flCamsF">All sources, model</div></div>
+      </div>
+      <div class="two-col fl-two">
+        <div class="panel"><div class="panel-head"><div class="panel-title">Exposure by concentration band</div><span class="dtag mod">MODELLED</span></div><table class="sens-table"><thead><tr><th>Added PM2.5 (hourly mean)</th><th>Area km²</th><th>People living there</th></tr></thead><tbody id="flBands"></tbody></table><div class="panel-sub" style="margin-top:8px">Residential population in cells the plume covers, not people confirmed exposed. WHO 24-hour guideline: 15 µg/m³. Hourly plume values are not directly comparable with 24-hour limits.</div></div>
+        <div class="panel"><div class="panel-head"><div class="panel-title">Wind and CAMS PM2.5 around the overpass</div><span class="dtag mod">MODELLED</span></div><div class="chart-wrap" style="height:200px"><canvas id="flChart"></canvas></div></div>
+      </div>
+      <div class="panel" style="margin-top:15px"><div class="panel-head"><div class="panel-title">Method, sources and limits</div><span class="tiny-tag">READ BEFORE USING</span></div><ul class="limits" id="flMethod"></ul></div>
+    </div>
+  </div>
+  <div class="note" id="flNote">FIRELAB is a teaching and exploration tool. Its plume is a scenario from a single satellite snapshot and textbook dispersion formulas, not validated against measurements, and must not be used for health or evacuation decisions. Use official air-quality services for that.</div>
 </section>
 </main></div></div>
 <div class="toast" id="toast" role="status"></div>
@@ -123,6 +169,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.46.2/dist/globe.gl.min.js"></script>
-<script src="js/app.js?v=7"></script>
+<script src="js/app.js?v=10"></script>
+<script src="js/firelab.js?v=7"></script>
 </body>
 </html>

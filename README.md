@@ -84,13 +84,19 @@ Finding from these rules: in November 2026 Aqua passes on average about 2 h afte
 matches are *moderate* or *weak*. The Lab shows the time-gap distribution for each satellite pair, and a match
 inspector draws every footprint to scale.
 
-### FIRELAB (`web/js/firelab.js`)
-Pick a real fire record (or "Open in FIRELAB" from the map), then explore:
-- **wind:** modelled, Open-Meteo best-match models; ERA5 for older dates;
-- **smoke dispersion:** a steady-state Gaussian plume. Plume-top height from FRP follows Sofiev et al. 2012; Pasquill–Turner stability; Briggs open-country σ; mixing-height lid;
-- **PM2.5 added:** FRP × 0.368 kg/MJ (Wooster et al. 2005) × the emission factor (Akagi et al. 2011, Table 1);
-- **population living under each concentration band:** GHS-POP R2023A 2025;
-- **CAMS PM2.5 at the fire:** for context.
+### FIRELAB simulation space (`web/firelab.html`, `web/js/sim.js`, model in `web/js/firelab-core.js`)
+The FIRELAB tab opens a separate, full-screen simulation page. You can also reach it from any hotspot through *Open in FIRELAB*, which links to `firelab.html?fire=HS-…`. On that page you can:
+- **choose a fire:** pick a region (or fly to a place) and click any real fire on the map, or choose one from the list;
+- **adjust the scenario:** vegetation type, hours burning (with **▶ Play**, hour by hour), worst case, your own wind, and the emission-factor uncertainty range;
+- **compare:** pin a run as **A** and compare it with the next;
+- **watch the live results:** result cards, ground PM2.5 along the plume, people under each concentration band, a wind-speed sweep, and modelled wind with CAMS PM2.5.
+
+How the model works:
+- **Wind:** modelled, from Open-Meteo best-match models; ERA5 for older dates.
+- **Smoke dispersion:** a steady-state Gaussian plume. Plume-top height from FRP follows Sofiev et al. 2012, with Pasquill–Turner stability, Briggs open-country σ and a mixing-height lid.
+- **PM2.5 added:** FRP × 0.368 kg/MJ (Wooster et al. 2005) × the emission factor (Akagi et al. 2011, Table 1).
+- **Population under each concentration band:** GHS-POP R2023A 2025.
+- **Speed:** a 200 km square around the fire is loaded once, so every setting change recomputes instantly in the browser.
 
 The plume is an unvalidated scenario from a single satellite snapshot. It is not a measurement or forecast, and the page says so.
 Build the population grid once (about 484 MB download):

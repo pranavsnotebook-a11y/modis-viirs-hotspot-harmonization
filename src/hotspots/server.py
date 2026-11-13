@@ -213,7 +213,7 @@ def api_weather(q):
 
 
 def api_population(q):
-    w, s, e, n = bbox_arg(q, max_deg=30)
+    w, s, e, n = bbox_arg(q, max_deg=70)  # FIRELAB asks for a fixed 200 km half-width square around a fire
     g = population.window(w, s, e, n)
     if g is None:
         raise BadRequest("population grid not built on this server: python -m hotspots.population build <GHS-POP tif>")

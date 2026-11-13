@@ -148,7 +148,7 @@ function applyFilter() {
 function changed(what) {
   if (what.window) applyWindow();
   if (what.window || what.filter) applyFilter();
-  ['overview', 'map', 'harmonization', 'calendar', 'history', 'data', 'firelab'].forEach(p => dirty.add(p));
+  ['overview', 'map', 'harmonization', 'calendar', 'history', 'data'].forEach(p => dirty.add(p));
   renderFilterChips(); syncControls();
   renderCurrent();
 }
@@ -208,7 +208,7 @@ function selectRecord(i, asHarm) {
     + `<div class="panel-sub" style="margin-top:8px">Pixel ${v.scan.toFixed(2)} × ${v.track.toFixed(2)} km. Product: ${i < NM ? 'MODIS C6.1' : 'VIIRS 375 m'} NRT. ID assigned by this project; FIRMS records carry none.</div>`
     + `<div class="export-row" style="margin-top:10px">${v.status === 'Matched' ? '<button class="ghost-btn" id="selInspect">Inspect match</button>' : ''}<button class="primary-btn" id="selFirelab">Open in FIRELAB ☁</button></div>`;
   const bi = $('selInspect'); if (bi) bi.addEventListener('click', () => { inspectId = i < NM ? i : R.mi[i]; goPage('harmonization'); });
-  $('selFirelab').addEventListener('click', () => { if (window.FIRELAB) window.FIRELAB.useRecord(i); goPage('firelab'); });
+  $('selFirelab').addEventListener('click', () => { location.href = 'firelab.html?fire=' + hsId(i); });
 }
 
 /* ---------- Basemaps ---------- */
@@ -1127,7 +1127,7 @@ function initControls() {
     ['overview', 'history'].forEach(p => dirty.add(p)); renderCurrent();
   });
   window.addEventListener('resize', () => { clearTimeout(window._rz); window._rz = setTimeout(resizeMaps, 150); });
-  $$('.nav-item').forEach(b => b.addEventListener('click', () => goPage(b.dataset.page)));
+  $$('.nav-item[data-page]').forEach(b => b.addEventListener('click', () => goPage(b.dataset.page)));
   $$('[data-goto]').forEach(b => b.addEventListener('click', () => goPage(b.dataset.goto)));
 }
 function resizeMaps() { if (ovMap) ovMap.invalidateSize(); if (exMap) exMap.invalidateSize(); sizeGlobe(); }
@@ -1164,7 +1164,7 @@ function renderLegend() {
 }
 
 /* ---------- Navigation ---------- */
-const RENDER = { overview: () => { renderOverview(); renderOverviewMap(); }, map: renderExplorer, harmonization: renderLab, calendar: renderCalendar, history: renderHistory, data: renderData, firelab: () => { if (window.FIRELAB) window.FIRELAB.render(); } };
+const RENDER = { overview: () => { renderOverview(); renderOverviewMap(); }, map: renderExplorer, harmonization: renderLab, calendar: renderCalendar, history: renderHistory, data: renderData };
 function renderCurrent() {
   if (!dirty.has(currentPage)) return;
   dirty.delete(currentPage);
@@ -1179,7 +1179,6 @@ function goPage(name) {
     if (name === 'map' && exMap) { exMap.invalidateSize(); sizeGlobe(); if (pendingFit) zoomToRegion(); }
     if (name === 'overview' && ovMap) ovMap.invalidateSize();
     if (name === 'harmonization' && inspMap) inspMap.invalidateSize();
-    if (name === 'firelab' && window.FIRELAB) window.FIRELAB.resize();
     renderCurrent();
     $$(`#page-${name} canvas`).forEach(c => { if (CH[c.id]) CH[c.id].resize(); });
   });

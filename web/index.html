@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://unpkg.com">
 <link rel="preconnect" href="https://server.arcgisonline.com">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="css/app.css?v=6">
+<link rel="stylesheet" href="css/app.css?v=7">
 </head>
 <body>
 <div class="app" id="app">
@@ -27,7 +27,7 @@
   <button class="nav-item" data-page="history"><span>⌁</span>Historical Analysis</button>
   <button class="nav-item" data-page="data"><span>▤</span>Data Explorer</button>
   <div class="side-label">Simulation</div>
-  <button class="nav-item" data-page="firelab"><span>☁</span>FIRELAB</button>
+  <a class="nav-item" href="firelab.html" title="Open the FIRELAB simulation space"><span>☁</span>FIRELAB <small class="nav-ext">↗</small></a>
   <div class="side-bottom"><b>FIREVERSE × FIRELAB</b><br>NASA Space Apps Challenge 2026.<br>Real NASA FIRMS detections. Not an operational fire alert service.<br><span id="serverState">Checking server…</span><br><br><a href="overview.html">Classic overview</a> · <a href="explorer.html">Classic explorer</a></div>
 </aside>
 <main class="main">
@@ -128,57 +128,12 @@
   <div class="table-footer"><span id="tableCount">Loading…</span><div class="pagination"><button id="firstPage" aria-label="First page">«</button><button id="prevPage" aria-label="Previous page">‹</button><button class="active" id="pageNum">1</button><button id="nextPage" aria-label="Next page">›</button></div></div>
   <div class="note" id="dataNote"></div>
 </section>
-<section class="page" id="page-firelab">
-  <div class="page-head"><div><div class="eyebrow">Smoke &amp; exposure simulator · 07</div><h1>FIRE<span style="color:var(--orange)">LAB</span></h1><div class="subtitle">Pick a real fire observation, then explore where its smoke could go, how much PM2.5 it could add, and how many people live under the modelled plume. Everything here is a model scenario built on one satellite snapshot, not a measurement or a forecast.</div></div><div class="head-tools"><span class="dtag obs">OBSERVED</span><span class="dtag mod">MODELLED</span><span class="dtag scn">SCENARIO</span><button class="ghost-btn" id="flHowBtn" aria-expanded="true" aria-controls="flHow">? How to use</button></div></div>
-  <div class="panel fl-how" id="flHow"><div class="panel-head"><div class="panel-title">How to use FIRELAB</div><button class="ghost-btn" id="flHowClose" aria-label="Hide instructions">Hide ✕</button></div>
-    <ol class="fl-steps">
-      <li><b>Choose a fire.</b> Pick one from the list on the left (typical daytime fires come first), or click a hotspot in the Map Explorer and press <i>Open in FIRELAB</i>.</li>
-      <li><b>Check the weather.</b> Panel 2 shows the modelled wind, boundary layer and cloud at the hour of the satellite pass. The dashed cyan line on the map points where the wind carries the smoke.</li>
-      <li><b>Set the scenario.</b> Choose the vegetation type, how many hours the fire keeps burning, and optionally the worst case or your own wind. The map and numbers update straight away.</li>
-      <li><b>Read the map.</b> Coloured squares are the modelled PM2.5 the smoke adds near the ground. The label on the fire marker gives the peak and the people affected at any zoom. Use <i>Zoom to plume</i> for detail and <i>⛶ Expand</i> for full screen.</li>
-      <li><b>Read the results.</b> The cards and band table give emission, peak concentration and residents under each band. Everything marked <span class="dtag scn">SCENARIO</span> is a model estimate, not a measurement.</li>
-    </ol>
-    <div class="panel-sub">No coloured squares? The smoke added at ground level is below 1 µg/m³. That happens with a small fire, strong winds, or a plume lifted above the boundary layer. Try a larger fire, more hours or the worst case.</div></div>
-  <div class="fl-grid">
-    <div class="fl-col">
-      <div class="panel"><div class="panel-head"><div class="panel-title">1 · Fire observation</div><span class="dtag obs">OBSERVED</span></div>
-        <div class="filter-group"><label for="flPick">Real FIRMS records in the current filter</label><select class="select" id="flPick" style="width:100%"></select></div>
-        <button class="ghost-btn" id="flUseSel" style="width:100%">Use the hotspot selected on the map</button>
-        <label class="check-row"><input type="checkbox" id="flCluster"> Add pixels from the same overpass within 2 km <small style="color:var(--muted)">(assumes one fire)</small></label>
-        <div id="flFire" class="hotspot-detail"></div></div>
-      <div class="panel"><div class="panel-head"><div class="panel-title">2 · Weather at the overpass</div><span class="dtag mod">MODELLED</span></div><div id="flWx" class="hotspot-detail details-empty">Choose a fire.</div></div>
-      <div class="panel"><div class="panel-head"><div class="panel-title">3 · Scenario settings</div><span class="dtag scn">SCENARIO</span></div>
-        <div class="filter-group"><label for="flBiome">Vegetation type (sets the PM2.5 emission factor)</label><select class="select" id="flBiome" style="width:100%"></select></div>
-        <div class="filter-group"><label for="flHours">Hours the fire keeps burning at the observed FRP: <b id="flHoursV">3</b></label><input type="range" id="flHours" min="1" max="24" value="3"></div>
-        <label class="check-row"><input type="checkbox" id="flTrap"> Worst case: hold all smoke in the boundary layer, even the part the plume would lift above it</label>
-        <label class="check-row"><input type="checkbox" id="flWindOverride"> Override the modelled wind</label>
-        <div id="flWindBox" style="display:none"><div class="filter-group"><label for="flWs">Wind speed: <b id="flWsV">5</b> m/s</label><input type="range" id="flWs" min="0.5" max="20" step="0.5" value="5"></div><div class="filter-group"><label for="flWd">Wind from: <b id="flWdV">90</b>°</label><input type="range" id="flWd" min="0" max="359" value="90"></div></div>
-        <div class="panel-sub" id="flStab"></div></div>
-    </div>
-    <div class="fl-col fl-main">
-      <div class="panel"><div class="panel-head"><div><div class="panel-title">Modelled smoke plume · hourly-mean PM2.5 added at ground level</div><div class="panel-sub" id="flMapSub">Gaussian plume with FRP-based plume height and a mixing-height lid</div></div><span class="dtag scn">SCENARIO</span></div><div class="fl-map-wrap" id="flMapWrap"><div id="flMap"></div><div class="fl-map-tools"><button class="ghost-btn" id="flZoomPlume" title="Zoom to the plume">⌖ Zoom to plume</button><button class="ghost-btn" id="flZoomOut" title="Show the region around the fire">◎ Region</button><button class="ghost-btn" id="flExpand" title="Full screen" aria-label="Expand map to full screen">⛶ Expand</button></div><div class="fl-overlay" id="flOverlay" aria-live="polite"></div><div class="fl-empty" id="flEmpty"></div><div class="legend fl-legend" id="flLegend"></div></div></div>
-      <div class="stats fl-stats">
-        <div class="stat-card accent-orange"><div class="stat-top"><span>PM2.5 emission rate</span><span class="dtag scn">SCENARIO</span></div><div class="stat-value small" id="flQ">—</div><div class="stat-foot" id="flQf">From FRP</div></div>
-        <div class="stat-card accent-purple"><div class="stat-top"><span>Peak ground-level PM2.5 added</span><span class="dtag scn">SCENARIO</span></div><div class="stat-value small" id="flCmax">—</div><div class="stat-foot" id="flCmaxF">—</div></div>
-        <div class="stat-card accent-cyan"><div class="stat-top"><span>People under ≥ 15 µg/m³</span><span class="dtag mod">MODELLED</span></div><div class="stat-value small" id="flPop">—</div><div class="stat-foot" id="flPopF">GHS-POP 2025</div></div>
-        <div class="stat-card accent-green"><div class="stat-top"><span>CAMS PM2.5 at the fire</span><span class="dtag mod">MODELLED</span></div><div class="stat-value small" id="flCams">—</div><div class="stat-foot" id="flCamsF">All sources, model</div></div>
-      </div>
-      <div class="two-col fl-two">
-        <div class="panel"><div class="panel-head"><div class="panel-title">Exposure by concentration band</div><span class="dtag mod">MODELLED</span></div><table class="sens-table"><thead><tr><th>Added PM2.5 (hourly mean)</th><th>Area km²</th><th>People living there</th></tr></thead><tbody id="flBands"></tbody></table><div class="panel-sub" style="margin-top:8px">Residential population in cells the plume covers, not people confirmed exposed. WHO 24-hour guideline: 15 µg/m³. Hourly plume values are not directly comparable with 24-hour limits.</div></div>
-        <div class="panel"><div class="panel-head"><div class="panel-title">Wind and CAMS PM2.5 around the overpass</div><span class="dtag mod">MODELLED</span></div><div class="chart-wrap" style="height:200px"><canvas id="flChart"></canvas></div></div>
-      </div>
-      <div class="panel" style="margin-top:15px"><div class="panel-head"><div class="panel-title">Method, sources and limits</div><span class="tiny-tag">READ BEFORE USING</span></div><ul class="limits" id="flMethod"></ul></div>
-    </div>
-  </div>
-  <div class="note" id="flNote">FIRELAB is a teaching and exploration tool. Its plume is a scenario from a single satellite snapshot and textbook dispersion formulas, not validated against measurements, and must not be used for health or evacuation decisions. Use official air-quality services for that.</div>
-</section>
 </main></div></div>
 <div class="toast" id="toast" role="status"></div>
 <div class="load-overlay" id="loader"><div>Loading NASA FIRMS records</div><div class="load-bar"><i id="loadBar"></i></div><small id="loadTxt">Connecting…</small></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.46.2/dist/globe.gl.min.js"></script>
-<script src="js/app.js?v=10"></script>
-<script src="js/firelab.js?v=8"></script>
+<script src="js/app.js?v=11"></script>
 </body>
 </html>

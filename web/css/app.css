@@ -90,3 +90,4 @@
 .fl-overlay{top:auto;bottom:34px;right:10px}.fl-map-wrap.fullscreen .fl-overlay,.fl-map-wrap:fullscreen .fl-overlay{top:50px;bottom:auto}
 @media(max-width:760px){.fl-overlay{bottom:auto;top:48px;max-width:70%}.fl-legend{max-width:calc(100% - 20px)}}
 @media(max-width:760px){.fl-map-wrap{height:460px}.fl-overlay{top:auto;bottom:62px;left:8px;right:8px;max-width:none;font-size:10px;padding:6px 8px}.fl-fire .lab{display:none}.fl-legend{font-size:9px;gap:6px;padding:6px 8px}.fl-map-wrap.fullscreen .fl-overlay,.fl-map-wrap:fullscreen .fl-overlay{top:auto;bottom:62px}}
+a.nav-item{text-decoration:none}.nav-ext{margin-left:auto;color:var(--orange);font-size:10px}

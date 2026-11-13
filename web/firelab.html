@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FIRELAB Simulation Space · FIREVERSE × FIRELAB</title>
+<meta name="description" content="Smoke and exposure simulation for real NASA FIRMS fire detections.">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://unpkg.com">
+<link rel="preconnect" href="https://server.arcgisonline.com">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="css/app.css?v=6">
+<link rel="stylesheet" href="css/sim.css?v=2">
+</head>
+<body class="sim-body">
+<header class="topbar">
+  <div class="brand"><a href="index.html" class="brand-mark" title="Back to the Hot Spot Explorer" style="text-decoration:none;color:#fff">♨</a><div>FIRELAB <span style="color:var(--orange)">Simulation Space</span><small>FIREVERSE × FIRELAB · SMOKE &amp; EXPOSURE SCENARIOS FOR REAL FIRMS FIRES</small></div></div>
+  <div class="top-actions"><span class="pill" id="simPill">● Loading NASA FIRMS records…</span><a class="ghost-btn sim-back" href="index.html">← Hot Spot Explorer</a><button class="icon-btn" id="simHelp" title="How to use the simulation space" aria-label="How to use">?</button><button class="icon-btn" id="themeToggle" title="Toggle light/dark theme" aria-label="Toggle light or dark theme">☼</button></div>
+</header>
+
+<div class="sim-shell">
+  <!-- left dock: choose the fire and the scenario -->
+  <aside class="sim-dock sim-left" aria-label="Simulation controls">
+    <section class="sim-sec">
+      <div class="sim-h"><span>1 · Region &amp; fire</span><span class="dtag obs">OBSERVED</span></div>
+      <label class="sim-l" for="simRegion">Region</label>
+      <select class="select sim-w" id="simRegion"></select>
+      <div class="sim-row"><input class="search sim-w" id="simPlace" placeholder="Fly to a place (e.g. Kota, Darwin)" aria-label="Fly to a place"><button class="ghost-btn" id="simPlaceGo" aria-label="Fly to place">↗</button></div>
+      <label class="sim-l" for="simFire">Fire (real FIRMS record) · or click a fire on the map</label>
+      <select class="select sim-w" id="simFire"></select>
+      <label class="check-row"><input type="checkbox" id="simCluster"> Add pixels from the same overpass within 2 km <small>(assumes one fire)</small></label>
+      <div id="simFireInfo" class="hotspot-detail sim-mini"></div>
+    </section>
+    <section class="sim-sec">
+      <div class="sim-h"><span>2 · Scenario</span><span class="dtag scn">SCENARIO</span></div>
+      <label class="sim-l" for="simBiome">Vegetation type (PM2.5 emission factor)</label>
+      <select class="select sim-w" id="simBiome"></select>
+      <label class="sim-l" for="simHours">Hours burning at the observed FRP: <b id="simHoursV">3</b> h</label>
+      <div class="sim-row"><input type="range" id="simHours" min="1" max="24" value="3" class="sim-w"><button class="primary-btn sim-play" id="simPlay" title="Play the plume hour by hour">▶ Play</button></div>
+      <label class="check-row"><input type="checkbox" id="simTrap"> Worst case: hold all smoke in the boundary layer</label>
+      <label class="check-row"><input type="checkbox" id="simWindOverride"> Override the modelled wind</label>
+      <div id="simWindBox" class="sim-wind" hidden>
+        <label class="sim-l" for="simWs">Wind speed: <b id="simWsV">5</b> m/s</label><input type="range" id="simWs" min="0.5" max="20" step="0.5" value="5" class="sim-w">
+        <label class="sim-l" for="simWd">Wind from: <b id="simWdV">90</b>°</label><div class="sim-row"><input type="range" id="simWd" min="0" max="359" value="90" class="sim-w"><span class="sim-compass" id="simCompass">↓</span></div>
+      </div>
+      <label class="check-row"><input type="checkbox" id="simRange" checked> Show the range from emission-factor uncertainty (mean ± 1 sd)</label>
+      <div class="panel-sub" id="simStab"></div>
+    </section>
+    <section class="sim-sec">
+      <div class="sim-h"><span>3 · Compare</span><span class="tiny-tag">A / B</span></div>
+      <div class="sim-row"><button class="ghost-btn sim-w" id="simPin">📌 Pin this as A</button><button class="ghost-btn" id="simUnpin" disabled>Clear</button></div>
+      <div id="simPinned" class="panel-sub">Pin a scenario, change a setting or the fire, and the charts show A (dashed) beside the current run.</div>
+    </section>
+    <section class="sim-sec">
+      <div class="sim-h"><span>Weather at the overpass</span><span class="dtag mod">MODELLED</span></div>
+      <div id="simWx" class="hotspot-detail sim-mini details-empty">Choose a fire.</div>
+    </section>
+  </aside>
+
+  <!-- centre: the map -->
+  <main class="sim-stage" id="simStage">
+    <div id="simMap"></div>
+    <div class="fl-map-tools"><button class="ghost-btn" id="simShowFires" aria-pressed="true" title="Show or hide the region's fires">🔥 Fires: on</button><button class="ghost-btn" id="simZoomPlume">⌖ Plume</button><button class="ghost-btn" id="simZoomRegion">◎ Region</button><button class="ghost-btn" id="simFull" aria-label="Full screen">⛶</button></div>
+    <div class="fl-overlay sim-overlay" id="simOverlay" aria-live="polite"></div>
+    <div class="fl-empty" id="simEmpty"></div>
+    <div class="sim-hours" id="simHoursBadge"></div>
+    <div class="legend fl-legend" id="simLegend"></div>
+    <div class="sim-loading" id="simLoading"><div>Loading NASA FIRMS records</div><div class="load-bar"><i id="simLoadBar"></i></div><small id="simLoadTxt">Connecting…</small></div>
+  </main>
+
+  <!-- right dock: live results -->
+  <aside class="sim-dock sim-right" aria-label="Simulation results">
+    <div class="sim-cards">
+      <div class="sim-card"><span>PM2.5 emitted</span><b id="rQ">—</b><small id="rQf">SCENARIO</small></div>
+      <div class="sim-card"><span>Peak added at ground</span><b id="rC">—</b><small id="rCf">SCENARIO · point value</small></div>
+      <div class="sim-card"><span>People ≥ 15 µg/m³</span><b id="rP">—</b><small id="rPf">GHS-POP 2025 · MODELLED</small></div>
+      <div class="sim-card"><span>CAMS PM2.5 at fire</span><b id="rM">—</b><small>All sources · MODELLED</small></div>
+    </div>
+    <section class="sim-sec"><div class="sim-h"><span>Ground PM2.5 along the plume</span><span class="dtag scn">SCENARIO</span></div><div class="sim-chart"><canvas id="cProfile"></canvas></div><div class="panel-sub">Centreline point values, hourly mean, by distance downwind. The line ends where the smoke has travelled in the chosen hours.</div></section>
+    <section class="sim-sec"><div class="sim-h"><span>People living under each band</span><span class="dtag mod">MODELLED</span></div><div class="sim-chart"><canvas id="cBands"></canvas></div><table class="sens-table sim-table"><thead><tr><th>Added PM2.5</th><th>km²</th><th>People</th><th>Range</th></tr></thead><tbody id="simBands"></tbody></table></section>
+    <section class="sim-sec"><div class="sim-h"><span>What if the wind were different?</span><span class="dtag scn">SCENARIO</span></div><div class="sim-chart"><canvas id="cSweep"></canvas></div><div class="panel-sub">The same fire and settings run again at wind speeds from 1 to 15 m/s. The marker is the current wind.</div></section>
+    <section class="sim-sec"><div class="sim-h"><span>Wind and CAMS PM2.5 around the overpass</span><span class="dtag mod">MODELLED</span></div><div class="sim-chart"><canvas id="cWx"></canvas></div></section>
+  </aside>
+</div>
+
+<details class="sim-method" id="simMethod"><summary>Method, sources and limits · read before using</summary><ul class="limits" id="simMethodList"></ul><div class="note">This is a teaching and exploration tool. The plume is a scenario from a single satellite snapshot and published formulas. It has not been validated against measurements, and it must not be used for health or evacuation decisions. Use official air-quality services for those.</div></details>
+
+<div class="sim-how" id="simHow" role="dialog" aria-modal="true" aria-labelledby="simHowT" hidden><div class="sim-how-box panel">
+  <div class="panel-head"><div class="panel-title" id="simHowT">Welcome to the FIRELAB simulation space</div><button class="ghost-btn" id="simHowClose">Start ✕</button></div>
+  <ol class="fl-steps sim-steps">
+    <li><b>Pick a region and a fire.</b> Choose a region on the left, then click any orange dot on the map or pick from the list. Every dot is a real NASA FIRMS detection.</li>
+    <li><b>Read the weather.</b> The modelled wind at the satellite pass sets where the smoke goes. The cyan arrow on the map shows the direction.</li>
+    <li><b>Play with the scenario.</b> Drag the hours, change vegetation, try the worst case or your own wind. Press <i>▶ Play</i> to watch the plume grow hour by hour.</li>
+    <li><b>Watch the results.</b> The cards and charts on the right update with the map. Pin a run as A to compare it with the next one.</li>
+    <li><b>Remember what it is.</b> Orange <span class="dtag scn">SCENARIO</span> values are model estimates, not measurements. The method is at the bottom of the page.</li>
+  </ol>
+</div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="js/firelab-core.js?v=1"></script>
+<script src="js/sim.js?v=2"></script>
+</body>
+</html>

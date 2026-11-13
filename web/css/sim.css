@@ -1,0 +1,54 @@
+/* FIRELAB simulation space: a full-viewport workspace built on the Hot Spot Explorer theme (app.css). */
+.sim-body{overflow:hidden}
+.sim-shell{display:grid;grid-template-columns:320px minmax(0,1fr) 380px;height:calc(100vh - 68px)}
+.sim-dock{overflow-y:auto;padding:14px 14px 30px;display:flex;flex-direction:column;gap:12px;background:#06141e;border-right:1px solid #123443}
+.sim-right{border-right:0;border-left:1px solid #123443}
+.sim-sec{border:1px solid #154252;background:linear-gradient(145deg,#0a202d,#081823);border-radius:12px;padding:12px 13px}
+.sim-h{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;font-weight:800;margin-bottom:9px}
+.sim-l{display:block;color:#8caab8;font-size:10px;margin:9px 0 5px}
+.sim-w{width:100%;min-width:0}
+.sim-row{display:flex;gap:6px;align-items:center;margin-top:6px}.sim-row .sim-w{flex:1}
+.sim-play{padding:7px 11px;font-size:11px;white-space:nowrap}
+.sim-mini{font-size:10.5px}.sim-mini .detail-row{padding:6px 0}
+.sim-wind{border-left:2px solid #8a5420;padding-left:9px;margin:4px 0 6px}
+.sim-compass{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;border:1px solid #1b6b7c;color:var(--cyan);font-weight:800;transition:transform .15s}
+.sim-dock input[type=range]{accent-color:var(--orange)}
+.sim-dock .check-row small{color:var(--muted)}
+.sim-back{text-decoration:none;font-size:11px}
+.sim-stage{position:relative;min-width:0;background:#020a11}
+#simMap{position:absolute;inset:0}
+.sim-stage .fl-overlay{top:52px;bottom:auto;right:10px}
+.sim-hours{position:absolute;z-index:600;left:60px;top:12px;background:#3b2410ee;border:1px solid #8a5420;color:#ffd7a5;border-radius:9px;padding:6px 10px;font-size:11px;font-weight:700}.sim-hours:empty{display:none}
+.sim-loading{position:absolute;inset:0;z-index:900;background:#06111bee;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-size:13px}.sim-loading small{color:var(--muted);font-size:10px}.sim-loading[hidden]{display:none}
+.sim-stage.fullscreen{position:fixed;inset:0;z-index:3000}
+.sim-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sim-card{border:1px solid #154252;background:linear-gradient(145deg,#0a202d,#081823);border-radius:11px;padding:10px 11px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.sim-card span{font-size:10px;color:#9eb8c4}.sim-card b{font-size:21px;letter-spacing:-.6px}.sim-card small{font-size:9.5px;color:#8ba6b3;line-height:1.35}
+.sim-chart{position:relative;height:190px}
+.sim-table{margin-top:8px;font-size:10.5px}.sim-table td,.sim-table th{padding:5px 6px}
+.sim-method{border-top:1px solid #123443;background:#06141e;padding:0 20px;position:fixed;left:0;right:0;bottom:0;z-index:1500;max-height:55vh;overflow:auto}
+.sim-method summary{cursor:pointer;padding:9px 0;font-size:11px;color:var(--cyan);font-weight:700}
+.sim-method[open]{box-shadow:0 -10px 40px #0008;padding-bottom:16px}
+.sim-shell{height:calc(100vh - 68px - 36px)}
+.sim-how{position:fixed;inset:0;z-index:5000;background:#020a11cc;display:grid;place-items:center;padding:20px}.sim-how[hidden]{display:none}
+.sim-how-box{max-width:1000px;width:100%}.sim-steps{grid-template-columns:repeat(5,minmax(0,1fr))}
+.sim-fire-pt{cursor:pointer}
+/* light theme */
+.light .sim-dock,.light .sim-method{background:#f9fcfd;border-color:#d6e4ea}
+.light .sim-sec,.light .sim-card{background:linear-gradient(145deg,#fff,#f3f9fb);border-color:#d2e2e9}
+.light .sim-card b{color:#18313d}.light .sim-card span,.light .sim-card small,.light .sim-l{color:#58717e}
+.light .sim-stage{background:#e8f0f3}.light .sim-loading{background:#f2f7faee}
+.light .sim-how{background:#e8f0f3cc}
+/* smaller screens: stack the docks around the map */
+@media(max-width:1250px){.sim-shell{grid-template-columns:290px minmax(0,1fr) 330px}}
+@media(max-width:1000px){
+  .sim-body{overflow:auto}
+  .sim-shell{display:flex;flex-direction:column;height:auto}
+  .sim-stage{height:70vh;min-height:420px;order:1}
+  .sim-left{order:2}.sim-right{order:3}
+  .sim-dock{overflow:visible;border:0}
+  .sim-method{position:static;max-height:none}
+  .sim-steps{grid-template-columns:1fr 1fr}
+}
+@media(max-width:760px){.sim-back{display:none}.sim-steps{grid-template-columns:1fr}.sim-how-box{max-height:90vh;overflow:auto}.sim-stage .fl-overlay{top:auto;bottom:62px;left:8px;right:8px;max-width:none}.sim-hours{left:56px}}
+.sim-dock button:disabled{opacity:.45;cursor:not-allowed}

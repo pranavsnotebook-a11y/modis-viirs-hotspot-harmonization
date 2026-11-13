@@ -20,6 +20,12 @@ Seven sections: Overview, Map Explorer (2D maps and 3D globe), Harmonization Lab
 Data Explorer and **FIRELAB**, a smoke and exposure simulator. Every fire shown is a real NASA FIRMS detection. Nothing is
 randomly generated, and modelled or scenario values are labelled OBSERVED / MODELLED / SCENARIO on the page.
 
+### See it in your browser, nothing to install (GitHub Codespaces)
+On the repository page: **Code → Codespaces → Create codespace on main**. The first start takes a few minutes: it
+installs the package and builds the population grid. Then the site opens in a new tab on port 8000 (if it does
+not, open the **Ports** tab and click the globe next to 8000). The forwarded port is private to your GitHub
+account. To use a FIRMS MAP_KEY there, add it as a Codespaces secret named `FIRMS_MAP_KEY` (Settings → Codespaces).
+
 ### Quick start
 
     python3 -m venv .venv && source .venv/bin/activate

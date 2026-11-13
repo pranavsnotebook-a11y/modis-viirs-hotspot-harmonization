@@ -25,7 +25,8 @@ def build(tif):
     z = zarr.open(t.pages[0].aszarr(), mode="r")
     H, W = z.shape
     h, w = H // F, W // F
-    out = np.lib.format.open_memmap(GRID, mode="w+", dtype=np.float32, shape=(h, w))
+    tmp = GRID.with_suffix(".part.npy")
+    out = np.lib.format.open_memmap(tmp, mode="w+", dtype=np.float32, shape=(h, w))
     step = 256 * F
     for r in range(0, h * F, step):
         a = np.asarray(z[r:min(r + step, h * F), : w * F], dtype=np.float64)
@@ -34,6 +35,8 @@ def build(tif):
     out.flush()
     meta = {"x0": x0, "y0": y0, "dx": sx * F, "dy": sy * F, "rows": h, "cols": w, "total": float(out.sum(dtype=np.float64)), "source": SOURCE}
     META.write_text(json.dumps(meta))
+    del out
+    tmp.replace(GRID)  # appears only when complete
     print(meta)
 
 

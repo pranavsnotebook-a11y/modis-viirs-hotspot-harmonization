@@ -1,12 +1,24 @@
 {
   "name": "FIREVERSE x FIRELAB Hot Spot Explorer",
   "image": "mcr.microsoft.com/devcontainers/python:3.12",
-  "hostRequirements": { "cpus": 2, "memory": "8gb" },
-  "postCreateCommand": "pip install -q -e '.[dev,pop]' && bash scripts/setup_population.sh",
-  "postAttachCommand": "nohup python -m hotspots.server --host 0.0.0.0 --port 8000 > /tmp/server.log 2>&1 &",
-  "forwardPorts": [8000],
-  "portsAttributes": { "8000": { "label": "Hot Spot Explorer", "onAutoForward": "openBrowser" } },
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "8gb"
+  },
+  "postCreateCommand": "pip install -q -e '.[dev,pop]'",
+  "forwardPorts": [
+    8000
+  ],
+  "portsAttributes": {
+    "8000": {
+      "label": "Hot Spot Explorer",
+      "onAutoForward": "openBrowser"
+    }
+  },
   "secrets": {
-    "FIRMS_MAP_KEY": { "description": "Optional NASA FIRMS MAP_KEY. Without it the app uses the public 7-day files." }
-  }
+    "FIRMS_MAP_KEY": {
+      "description": "Optional NASA FIRMS MAP_KEY. Without it the app uses the public 7-day files."
+    }
+  },
+  "postAttachCommand": "bash scripts/start.sh"
 }

@@ -4,6 +4,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p data/pop
 [ -f data/pop/ghs_pop_2025_0025deg.npy ] && { echo "population grid already built"; exit 0; }
+mkdir data/pop/.building 2>/dev/null || { echo "another build is running"; exit 0; }
+trap 'rmdir data/pop/.building' EXIT
 URL=https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2025_GLOBE_R2023A_4326_30ss/V1-0/GHS_POP_E2025_GLOBE_R2023A_4326_30ss_V1_0.zip
 curl -sSL -o data/pop/ghs.zip "$URL"
 (cd data/pop && unzip -o -q ghs.zip 'GHS_POP_E2025_GLOBE_R2023A_4326_30ss_V1_0.tif')

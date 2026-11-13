@@ -24,7 +24,7 @@ const BANDS = [1, 5, 15, 35, 55, 150];
 const BAND_COL = ['#fff6d6', '#ffe9a3', '#ffc04d', '#ff8a2b', '#f2462b', '#9b1238'];
 const MAX_KM = 200, CELL = 0.025;
 
-let map = null, plumeLayer = null, fireId = null, wx = null, wxFor = null, popGrid = null, popFor = null, chartObj = null, inited = false;
+let map = null, plumeLayer = null, plumeBounds = null, regionBounds = null, fittedFire = null, pendingFit = false, fireId = null, wx = null, wxFor = null, popGrid = null, popFor = null, chartObj = null, inited = false;
 
 /* ---------- dispersion ---------- */
 const SIG = { // Briggs (1973) open-country dispersion coefficients, x in m
@@ -133,7 +133,35 @@ function init() {
   map = L.map('flMap', { worldCopyJump: true }).setView([0, 0], 2);
   H().baseLayer('hybrid').addTo(map);
   plumeLayer = L.layerGroup().addTo(map);
+  // instructions: shown until the user hides them
+  const how = $('flHow'), setHow = on => { how.classList.toggle('hidden', !on); $('flHowBtn').setAttribute('aria-expanded', on); try { localStorage.setItem('flHow', on ? '1' : '0'); } catch (e) { /* storage unavailable */ } };
+  let showHow = true; try { showHow = localStorage.getItem('flHow') !== '0'; } catch (e) { /* storage unavailable */ }
+  setHow(showHow);
+  $('flHowClose').addEventListener('click', () => setHow(false));
+  $('flHowBtn').addEventListener('click', () => setHow(how.classList.contains('hidden')));
+  // map tools
+  $('flZoomPlume').addEventListener('click', () => fit(plumeBounds));
+  $('flZoomOut').addEventListener('click', () => fit(regionBounds));
+  const wrap = $('flMapWrap');
+  $('flExpand').addEventListener('click', async () => {
+    if (document.fullscreenElement === wrap) { await document.exitFullscreen(); return; }
+    if (wrap.classList.contains('fullscreen')) { wrap.classList.remove('fullscreen'); afterResize(); return; }
+    try { await wrap.requestFullscreen(); } catch (e) { wrap.classList.add('fullscreen'); afterResize(); }
+  });
+  document.addEventListener('fullscreenchange', afterResize);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && wrap.classList.contains('fullscreen')) { wrap.classList.remove('fullscreen'); afterResize(); } });
   $('flLegend').innerHTML = BANDS.map((b, k) => `<span><i style="background:${BAND_COL[k]};border-radius:2px"></i>≥ ${b}</span>`).join('') + '<span>µg/m³ added, hourly mean · scenario</span>';
+}
+function isFull() { const w = $('flMapWrap'); return document.fullscreenElement === w || w.classList.contains('fullscreen'); }
+function afterResize() {
+  $('flExpand').textContent = isFull() ? '✕ Exit full screen' : '⛶ Expand';
+  setTimeout(() => { if (!map) return; map.invalidateSize(); if (pendingFit || isFull()) fit(plumeBounds); }, 120);
+}
+function fit(b) {
+  if (!map || !b) return;
+  if (!$('flMap').offsetWidth) { pendingFit = true; return; } // hidden page: fit when it is shown
+  pendingFit = false;
+  map.fitBounds(b, { padding: [30, 30], maxZoom: 12 });
 }
 let deb; const debounce = () => { clearTimeout(deb); deb = setTimeout(run, 160); };
 function autoBiome() {
@@ -153,7 +181,7 @@ function fillPicker() {
   if (fireId == null) { fireId = c.typ[Math.floor(c.typ.length / 2)] ?? c.top[0]; autoBiome(); }
   if (fireId != null) $('flPick').value = fireId;
 }
-function render() { init(); fillPicker(); setTimeout(() => map.invalidateSize(), 60); run(); }
+function render() { init(); fillPicker(); setTimeout(() => { map.invalidateSize(); if (pendingFit) fit(plumeBounds); }, 60); run(); }
 function useRecord(i) { init(); fireId = i; autoBiome(); fillPicker(); run(); }
 
 let runSeq = 0;
@@ -220,11 +248,29 @@ async function run() {
       cellsDrawn.push([la, lo, b, C]);
     }
   }
+  // 1 µg/m³ envelope of the point (centreline) field: a fixed-width outline that stays visible at every zoom
+  const env = [[], []];
+  for (let x = 100; x <= xmax; x *= 1.06) {
+    const cc = conc(Q * share, u, he, Lmix, cls, x, 0, 0); if (cc <= BANDS[0]) continue;
+    const half = SIG[cls](x)[0] * Math.sqrt(2 * Math.log(cc / BANDS[0]));
+    for (const [side, sgn] of [[0, 1], [1, -1]]) { const e = x * de + sgn * half * dn, nn = x * dn - sgn * half * de; env[side].push([f.lat + nn / 111195, f.lon + e / (111195 * clat)]); }
+  }
   const rend = L.canvas({ padding: .2 });
   cellsDrawn.forEach(([la, lo, b, C]) => L.rectangle([[la - grid.dy / 2, lo - grid.dx / 2], [la + grid.dy / 2, lo + grid.dx / 2]], { renderer: rend, stroke: false, fillColor: BAND_COL[b], fillOpacity: .55 }).bindTooltip(`Scenario · ${sig(C)} µg/m³ added (hourly mean, cell average)${grid.values ? ` · ${fmt(grid.values[Math.round((grid.north - la) / grid.dy - .5) * grid.cols + Math.round((lo - grid.west) / grid.dx - .5)])} residents` : ''}`, { sticky: true }).addTo(plumeLayer));
   L.polyline([[f.lat, f.lon], [f.lat + dn * km / 111.195, f.lon + de * km / (111.195 * clat)]], { color: '#21d9ee', weight: 2, dashArray: '6 6' }).bindTooltip(`Wind toward ${fmt((wd + 180) % 360)}° at ${sig(u)} m/s (${override ? 'scenario' : 'modelled'})`).addTo(plumeLayer);
-  L.circleMarker([f.lat, f.lon], { radius: 8, color: '#fff', weight: 2, fillColor: '#ff493f', fillOpacity: 1 }).bindTooltip(`Observed fire · ${v.id} · ${f.frp.toFixed(1)} MW`).addTo(plumeLayer);
-  const fit = L.latLngBounds([[bbox[1], bbox[0]], [bbox[3], bbox[2]]]); map.fitBounds(fit, { padding: [10, 10] });
+  if (env[0].length > 1) L.polygon([[f.lat, f.lon], ...env[0], ...env[1].reverse()], { color: '#ff7a3d', weight: 2, dashArray: '5 4', fill: false, interactive: false }).addTo(plumeLayer);
+  const peakTxt = cmax >= .1 ? `peak ${sig(cmax)} µg/m³` : 'peak < 0.1 µg/m³';
+  const popTxt = grid.values ? `${fmt(people[2])} people ≥ 15 µg/m³` : 'population: needs server';
+  const icon = L.divIcon({ className: '', iconSize: [0, 0], html: `<div class="fl-fire"><div class="arrow" style="transform:rotate(${(wd + 180) % 360}deg)"></div><div class="dot"></div><div class="lab">${esc(v.id)} · ${f.frp.toFixed(0)} MW<small>${peakTxt} · ${popTxt}</small></div></div>` });
+  L.marker([f.lat, f.lon], { icon, keyboard: false, zIndexOffset: 1000 }).bindTooltip(`Observed fire · ${v.id} · ${f.frp.toFixed(1)} MW · arrow: wind toward ${fmt((wd + 180) % 360)}°`).addTo(plumeLayer);
+  // bounds: the coloured area (or the plume line), and a wider regional view
+  const pts = cellsDrawn.map(([la, lo]) => [la, lo]).concat(env[0], env[1], [[f.lat, f.lon], [f.lat + dn * km / 111.195, f.lon + de * km / (111.195 * clat)]]);
+  plumeBounds = L.latLngBounds(pts).pad(.15);
+  const span = Math.max(3, 4 * km / 111.195);
+  regionBounds = L.latLngBounds([[f.lat - span, f.lon - span / clat], [f.lat + span, f.lon + span / clat]]);
+  if (fittedFire !== fireId || pendingFit) { fittedFire = fireId; fit(plumeBounds); } // a new fire re-frames; slider changes keep the user's view
+  $('flOverlay').innerHTML = `<b>${esc(v.id)}</b> · ${f.frp.toFixed(1)} MW · ${v.time} UTC<br>Wind ${sig(u)} m/s toward ${fmt((wd + 180) % 360)}° <span class="dtag ${override ? 'scn' : 'mod'}" style="padding:1px 5px">${override ? 'SCENARIO' : 'MODELLED'}</span><br>${share < 1 ? Math.round(100 * share) + '% of smoke in boundary layer · ' : ''}${peakTxt}<br>${popTxt} <span class="dtag scn" style="padding:1px 5px">SCENARIO</span>`;
+  $('flEmpty').textContent = cellsDrawn.length ? '' : `No ground-level PM2.5 above ${BANDS[0]} µg/m³ in this scenario (peak ${cmax >= .1 ? sig(cmax) + ' µg/m³' : 'below 0.1 µg/m³'}). Try more hours, the worst case, or a larger fire.`;
   $('flMapSub').textContent = `${biome.label} · stability ${cls} · plume top ${fmt(top)} m · ${Math.round(100 * share)}% in boundary layer · lid ${fmt(Lmix)} m · ${hours} h at ${f.frp.toFixed(1)} MW`;
   setStats({ Q, hours, cmax, xAt, area, people, hasPop: !!grid.values, popErr, cams, biome, lofted });
 }
@@ -256,5 +302,5 @@ function drawChart(w, T) {
   if (chartObj) chartObj.destroy();
   chartObj = new Chart($('flChart'), { type: 'line', data, options: opts });
 }
-window.FIRELAB = { render, useRecord, resize: () => { if (map) map.invalidateSize(); if (chartObj) chartObj.resize(); }, _model: { conc, plumeTop, stability, BIOMES, COMBUSTION } };
+window.FIRELAB = { render, useRecord, resize: () => { if (map) { map.invalidateSize(); if (pendingFit) fit(plumeBounds); } if (chartObj) chartObj.resize(); }, _model: { conc, plumeTop, stability, BIOMES, COMBUSTION } };
 })();

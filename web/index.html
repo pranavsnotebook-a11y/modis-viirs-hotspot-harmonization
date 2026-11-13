@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://unpkg.com">
 <link rel="preconnect" href="https://server.arcgisonline.com">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="css/app.css?v=3">
+<link rel="stylesheet" href="css/app.css?v=6">
 </head>
 <body>
 <div class="app" id="app">
@@ -129,7 +129,16 @@
   <div class="note" id="dataNote"></div>
 </section>
 <section class="page" id="page-firelab">
-  <div class="page-head"><div><div class="eyebrow">Smoke &amp; exposure simulator · 07</div><h1>FIRE<span style="color:var(--orange)">LAB</span></h1><div class="subtitle">Pick a real fire observation, then explore where its smoke could go, how much PM2.5 it could add, and how many people live under the modelled plume. Everything here is a model scenario built on one satellite snapshot, not a measurement or a forecast.</div></div><div class="head-tools"><span class="dtag obs">OBSERVED</span><span class="dtag mod">MODELLED</span><span class="dtag scn">SCENARIO</span></div></div>
+  <div class="page-head"><div><div class="eyebrow">Smoke &amp; exposure simulator · 07</div><h1>FIRE<span style="color:var(--orange)">LAB</span></h1><div class="subtitle">Pick a real fire observation, then explore where its smoke could go, how much PM2.5 it could add, and how many people live under the modelled plume. Everything here is a model scenario built on one satellite snapshot, not a measurement or a forecast.</div></div><div class="head-tools"><span class="dtag obs">OBSERVED</span><span class="dtag mod">MODELLED</span><span class="dtag scn">SCENARIO</span><button class="ghost-btn" id="flHowBtn" aria-expanded="true" aria-controls="flHow">? How to use</button></div></div>
+  <div class="panel fl-how" id="flHow"><div class="panel-head"><div class="panel-title">How to use FIRELAB</div><button class="ghost-btn" id="flHowClose" aria-label="Hide instructions">Hide ✕</button></div>
+    <ol class="fl-steps">
+      <li><b>Choose a fire.</b> Pick one from the list on the left (typical daytime fires come first), or click a hotspot in the Map Explorer and press <i>Open in FIRELAB</i>.</li>
+      <li><b>Check the weather.</b> Panel 2 shows the modelled wind, boundary layer and cloud at the hour of the satellite pass. The dashed cyan line on the map points where the wind carries the smoke.</li>
+      <li><b>Set the scenario.</b> Choose the vegetation type, how many hours the fire keeps burning, and optionally the worst case or your own wind. The map and numbers update straight away.</li>
+      <li><b>Read the map.</b> Coloured squares are the modelled PM2.5 the smoke adds near the ground. The label on the fire marker gives the peak and the people affected at any zoom. Use <i>Zoom to plume</i> for detail and <i>⛶ Expand</i> for full screen.</li>
+      <li><b>Read the results.</b> The cards and band table give emission, peak concentration and residents under each band. Everything marked <span class="dtag scn">SCENARIO</span> is a model estimate, not a measurement.</li>
+    </ol>
+    <div class="panel-sub">No coloured squares? The smoke added at ground level is below 1 µg/m³. That happens with a small fire, strong winds, or a plume lifted above the boundary layer. Try a larger fire, more hours or the worst case.</div></div>
   <div class="fl-grid">
     <div class="fl-col">
       <div class="panel"><div class="panel-head"><div class="panel-title">1 · Fire observation</div><span class="dtag obs">OBSERVED</span></div>
@@ -147,7 +156,7 @@
         <div class="panel-sub" id="flStab"></div></div>
     </div>
     <div class="fl-col fl-main">
-      <div class="panel"><div class="panel-head"><div><div class="panel-title">Modelled smoke plume · hourly-mean PM2.5 added at ground level</div><div class="panel-sub" id="flMapSub">Gaussian plume with FRP-based plume height and a mixing-height lid</div></div><span class="dtag scn">SCENARIO</span></div><div class="fl-map-wrap"><div id="flMap"></div><div class="legend fl-legend" id="flLegend"></div></div></div>
+      <div class="panel"><div class="panel-head"><div><div class="panel-title">Modelled smoke plume · hourly-mean PM2.5 added at ground level</div><div class="panel-sub" id="flMapSub">Gaussian plume with FRP-based plume height and a mixing-height lid</div></div><span class="dtag scn">SCENARIO</span></div><div class="fl-map-wrap" id="flMapWrap"><div id="flMap"></div><div class="fl-map-tools"><button class="ghost-btn" id="flZoomPlume" title="Zoom to the plume">⌖ Zoom to plume</button><button class="ghost-btn" id="flZoomOut" title="Show the region around the fire">◎ Region</button><button class="ghost-btn" id="flExpand" title="Full screen" aria-label="Expand map to full screen">⛶ Expand</button></div><div class="fl-overlay" id="flOverlay" aria-live="polite"></div><div class="fl-empty" id="flEmpty"></div><div class="legend fl-legend" id="flLegend"></div></div></div>
       <div class="stats fl-stats">
         <div class="stat-card accent-orange"><div class="stat-top"><span>PM2.5 emission rate</span><span class="dtag scn">SCENARIO</span></div><div class="stat-value small" id="flQ">—</div><div class="stat-foot" id="flQf">From FRP</div></div>
         <div class="stat-card accent-purple"><div class="stat-top"><span>Peak ground-level PM2.5 added</span><span class="dtag scn">SCENARIO</span></div><div class="stat-value small" id="flCmax">—</div><div class="stat-foot" id="flCmaxF">—</div></div>
@@ -170,6 +179,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.46.2/dist/globe.gl.min.js"></script>
 <script src="js/app.js?v=10"></script>
-<script src="js/firelab.js?v=7"></script>
+<script src="js/firelab.js?v=8"></script>
 </body>
 </html>

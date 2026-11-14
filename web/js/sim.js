@@ -84,17 +84,51 @@ function fireInfo(i) {
 
 const facts = rows => rows.map(([k, v, wide]) => `<div class="fact${wide ? ' wide' : ''}"><span>${k}</span><b title="${String(v).replace(/<[^>]+>/g, '').replace(/"/g, '&quot;')}">${v}</b></div>`).join('');
 function showTab(name) {
-  document.querySelectorAll('.sim-tabs [role=tab]').forEach(t => t.setAttribute('aria-selected', t.dataset.tab === name));
+  document.querySelectorAll('.sim-tabs [role=tab]').forEach(t => { t.setAttribute('aria-selected', t.dataset.tab === name); t.tabIndex = t.dataset.tab === name ? 0 : -1; });
   document.querySelectorAll('.sim-pane').forEach(p => { p.hidden = p.dataset.pane !== name; });
   requestAnimationFrame(() => Object.values(charts).forEach(c => c.resize()));
 }
 
+/* ---------- floating panels: map first, settings and results beside it ---------- */
+const mq = q => window.matchMedia && matchMedia(q).matches;
+const P = { left: true, right: true };
+function layout() {
+  const stage = $('simStage'), wide = !mq('(max-width: 1099px)');
+  stage.classList.toggle('l-open', P.left); stage.classList.toggle('r-open', P.right);
+  document.querySelectorAll('[data-panel-open]').forEach(b => b.setAttribute('aria-expanded', P[b.dataset.panelOpen]));
+  if (wide) try { localStorage.setItem('simPanels', JSON.stringify(P)); } catch (e) { /* storage off */ }
+  setTimeout(() => Object.values(charts).forEach(c => c.resize()), 230);
+}
+function setPanel(side, on) {
+  if (on && mq('(max-width: 1099px)')) P[side === 'left' ? 'right' : 'left'] = false; // one sheet at a time on smaller screens
+  P[side] = on; layout();
+  if (on) { const el = $(side === 'left' ? 'simLeft' : 'simRight'), f = el.querySelector('select,button,input'); if (f && mq('(max-width: 1099px)')) f.focus({ preventScroll: true }); }
+}
+function initPanels() {
+  if (mq('(max-width: 1099px)')) { P.left = false; P.right = false; }
+  else { try { const s = JSON.parse(localStorage.getItem('simPanels') || 'null'); if (s) Object.assign(P, s); } catch (e) { /* default */ } }
+  document.querySelectorAll('[data-panel-open]').forEach(b => b.addEventListener('click', () => setPanel(b.dataset.panelOpen, !P[b.dataset.panelOpen])));
+  document.querySelectorAll('[data-panel-close]').forEach(b => b.addEventListener('click', () => setPanel(b.dataset.panelClose, false)));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && mq('(max-width: 1099px)') && (P.left || P.right) && !document.querySelector('.modal-wrap:not([hidden])')) { P.left = P.right = false; layout(); } });
+  layout();
+}
+// keep the plume clear of the floating panels and bars when framing it
+function fitPad() {
+  const r = id => { const el = $(id); return el && el.offsetParent !== null ? el.getBoundingClientRect() : null; }, stage = $('simStage').getBoundingClientRect();
+  const wide = !mq('(max-width: 1099px)'), L0 = wide && P.left && r('simLeft') ? r('simLeft').right - stage.left : 0, R0 = wide && P.right && r('simRight') ? stage.right - r('simRight').left : 0;
+  const top = Math.max(r('simIdBar') ? r('simIdBar').bottom - stage.top : 60, r('simLegend') ? r('simLegend').bottom - stage.top : 0), bot = r('simPlayBar') ? stage.bottom - r('simPlayBar').top : 80;
+  return { paddingTopLeft: [L0 + 30, top + 24], paddingBottomRight: [R0 + 30, bot + 24], maxZoom: 12 };
+}
+
 /* ---------- UI setup ---------- */
 function initUI() {
+  initPanels();
   const names = [...new Set(META.countries)].sort();
   $('simRegion').innerHTML = `<option>Global</option><optgroup label="Regions">${CONT.map(c => `<option>${c}</option>`).join('')}</optgroup><optgroup label="Countries">${names.map(c => `<option>${esc(c)}</option>`).join('')}</optgroup>`;
   $('simBiome').innerHTML = F.BIOMES.map(b => `<option value="${b.k}">${b.label} · ${b.ef} ± ${b.sd} g/kg</option>`).join('');
-  $('simLegend').innerHTML = `<div class="ttl">Added PM2.5 · µg/m³ · scenario</div><div class="bar">${F.BAND_COL.map(c => `<i style="background:${c}"></i>`).join('')}</div><div class="ticks">${F.BANDS.map(b => `<span>${b}</span>`).join('')}</div>`;
+  $('simLegend').innerHTML = `<details open><summary>Legend</summary><div class="ttl">Added PM2.5 at ground · µg/m³ <span class="dtag scn">SCENARIO</span></div><div class="bar">${F.BAND_COL.map(c => `<i style="background:${c}"></i>`).join('')}</div><div class="ticks">${F.BANDS.map(b => `<span>${b}</span>`).join('')}</div>`
+    + `<ul class="keys"><li><i class="k-fire"></i>Observed fire (FIRMS)</li><li><i class="k-env"></i>Edge of the ${F.BANDS[0]} µg/m³ band, centre-line point value</li><li><i class="k-wind"></i>Wind direction · one uniform overpass wind</li><li><i class="k-streak"></i>Moving streaks and smoke: the same run, sped up</li></ul></details>`;
+  if (mq('(max-width: 1599px)')) $('simLegend').querySelector('details').open = false; // a click away on smaller screens
   $('simMethodList').innerHTML = [
     '<b>Observed:</b> each fire is one NASA FIRMS detection (MODIS C6.1 or VIIRS 375 m NRT): position, time and fire radiative power (FRP) at the overpass. The fires listed are the harmonized layer (180 min window), so a MODIS–VIIRS duplicate appears once.',
     `<b>Emission (scenario):</b> PM2.5 = FRP × ${F.COMBUSTION} kg/MJ (Wooster et al., 2005) × emission factor (Akagi et al., 2011, Table 1). The range shown uses the factor's mean ± 1 standard deviation. The fire is assumed to burn at the observed FRP for the hours chosen; real fires change within minutes. A single pixel's FRP undercounts a fire spread over several pixels; the 2 km option sums them, assuming one fire.`,
@@ -109,11 +143,12 @@ function initUI() {
   base = L.layerGroup([L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, maxNativeZoom: 17, attribution: 'Imagery © Esri and its contributors' }), L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, maxNativeZoom: 17, attribution: 'Labels © Esri' })]).addTo(map);
   firesLayer = L.layerGroup().addTo(map); plumeLayer = L.layerGroup().addTo(map);
   anim = window.SIMANIM ? SIMANIM.create(map) : null;
+  if (anim && anim.reducedMotion) { $('simPlay').textContent = 'Step +1 h'; $('simPlay').title = 'Reduced motion is on: step the plume one hour at a time'; }
   [['simAnimWind', 'wind'], ['simAnimSmoke', 'smoke']].forEach(([id, kind]) => {
     const b = $(id);
     if (!anim) { b.disabled = true; b.setAttribute('aria-pressed', 'false'); return; }
     b.setAttribute('aria-pressed', anim.on[kind]);
-    b.addEventListener('click', () => { const on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', on); anim.set(kind, on); });
+    b.addEventListener('click', () => { const on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', on); anim.set(kind, on); toast(`${kind === 'wind' ? 'Wind' : 'Smoke'} animation ${on ? 'on' : 'off'}`); });
   });
   document.querySelectorAll('.sim-tabs [role=tab]').forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
 
@@ -127,8 +162,8 @@ function initUI() {
   $('simPlay').addEventListener('click', () => S.playing ? stopPlay() : startPlay());
   $('simPin').addEventListener('click', pin);
   $('simUnpin').addEventListener('click', () => { S.pinned = null; $('simUnpin').disabled = true; $('simPinned').textContent = 'Pin a scenario, change a setting or the fire, and the charts show A (dashed) beside the current run.'; schedule(); });
-  $('simZoomPlume').addEventListener('click', () => plumeBounds && map.fitBounds(plumeBounds, { padding: [30, 30], maxZoom: 12 }));
-  $('simZoomRegion').addEventListener('click', () => regionBounds && map.fitBounds(regionBounds, { padding: [20, 20] }));
+  $('simZoomPlume').addEventListener('click', () => plumeBounds && map.fitBounds(plumeBounds, fitPad()));
+  $('simZoomRegion').addEventListener('click', () => regionBounds && map.fitBounds(regionBounds, { ...fitPad(), maxZoom: 18 }));
   $('simShowFires').addEventListener('click', () => { const on = !map.hasLayer(firesLayer); if (on) firesLayer.addTo(map); else map.removeLayer(firesLayer); $('simShowFires').setAttribute('aria-pressed', on); });
   const stage = $('simStage');
   $('simFull').addEventListener('click', async () => {
@@ -136,8 +171,8 @@ function initUI() {
     if (stage.classList.contains('fullscreen')) { stage.classList.remove('fullscreen'); setTimeout(() => map.invalidateSize(), 100); return; }
     try { await stage.requestFullscreen(); } catch (e) { stage.classList.add('fullscreen'); setTimeout(() => map.invalidateSize(), 100); }
   });
-  document.addEventListener('fullscreenchange', () => { $('simFull').textContent = document.fullscreenElement ? '✕' : '⛶'; setTimeout(() => map.invalidateSize(), 150); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (stage.classList.contains('fullscreen')) { stage.classList.remove('fullscreen'); setTimeout(() => map.invalidateSize(), 100); } if (!$('simHow').hidden) $('simHow').hidden = true; } });
+  document.addEventListener('fullscreenchange', () => { $('simFull').setAttribute('aria-pressed', !!document.fullscreenElement); setTimeout(() => map.invalidateSize(), 150); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && stage.classList.contains('fullscreen')) { stage.classList.remove('fullscreen'); setTimeout(() => map.invalidateSize(), 100); } });
   const placeGo = async () => {
     const q = $('simPlace').value.trim(); if (!q) return;
     try {
@@ -147,11 +182,9 @@ function initUI() {
     toast('Place not found. Try a city or country.');
   };
   $('simPlaceGo').addEventListener('click', placeGo); $('simPlace').addEventListener('keydown', e => { if (e.key === 'Enter') placeGo(); });
-  const how = $('simHow');
-  $('simHelp').addEventListener('click', () => { how.hidden = false; });
-  $('simHowClose').addEventListener('click', () => { how.hidden = true; try { localStorage.setItem('simHow', '1'); } catch (e) { /* no storage */ } });
-  how.addEventListener('click', e => { if (e.target === how) how.hidden = true; });
-  $('themeToggle').addEventListener('click', () => { document.body.classList.toggle('light'); try { localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark'); } catch (e) { /* no storage */ } $('themeToggle').textContent = document.body.classList.contains('light') ? '☾' : '☼'; Object.values(charts).forEach(c => c.destroy()); charts = {}; schedule(); });
+  $('simHelp').addEventListener('click', e => UI.open('simHow', e.currentTarget));
+  $('simHowClose').addEventListener('click', () => { UI.close('simHow'); try { localStorage.setItem('simHow', '1'); } catch (e) { /* no storage */ } });
+  $('themeToggle').addEventListener('click', () => { document.body.classList.toggle('light'); Object.values(charts).forEach(c => c.destroy()); charts = {}; schedule(); });
   window.addEventListener('resize', () => { clearTimeout(window._rz); window._rz = setTimeout(() => { map.invalidateSize(); Object.values(charts).forEach(c => c.resize()); }, 150); });
 }
 
@@ -191,6 +224,7 @@ async function selectFire(i, keepView) {
   if ($('simFire').querySelector(`option[value="${i}"]`)) $('simFire').value = i; else buildFires(false);
   const f = fireInfo(i);
   history.replaceState(null, '', `?fire=${hsId(i)}`);
+  $('simIdName').textContent = `${hsId(i)} · ${f.frp.toFixed(0)} MW`; $('simIdMeta').textContent = `${place(i).replace(/ \(\d+ km\)$/, '')} · ${isoTime(i).slice(5)} UTC · ${satName(i)}`;
   $('simFireInfo').innerHTML = facts([['Location', esc(place(i)), 1], ['Fire power', `${f.frp.toFixed(1)} MW${f.n > 1 ? ` · ${f.n} px` : ''}`], ['Seen (UTC)', isoTime(i).slice(5)], ['Satellite', `${esc(satName(i))} · ${f.night ? 'night' : 'day'}`], ['Record', `${hsId(i)}`], ['Match', status(i), 1]]);
   const lat = Math.abs(f.lat); $('simBiome').value = lat >= 50 ? 'boreal' : lat >= 30 ? 'temperate' : 'savanna';
   $('simWx').className = 'sim-facts'; $('simWx').innerHTML = '<div class="fact wide"><span>Weather</span><b>Loading modelled weather…</b></div>';
@@ -199,7 +233,7 @@ async function selectFire(i, keepView) {
   ['rQ', 'rC', 'rP', 'rM'].forEach(id => { $(id).textContent = '…'; });
   $('simEmpty').textContent = `Loading modelled weather and population for ${hsId(i)}…`;
   L.marker([f.lat, f.lon], { icon: L.divIcon({ className: '', iconSize: [0, 0], html: `<div class="fl-fire"><div class="dot"></div><div class="lab">${hsId(i)} · ${f.frp.toFixed(0)} MW<small>loading…</small></div></div>` }), keyboard: false }).addTo(plumeLayer);
-  if (!keepView) map.setView([f.lat, f.lon], Math.max(map.getZoom(), 7));
+  if (!keepView) map.setView([f.lat, f.lon], Math.max(map.getZoom(), 7), { animate: false });
   const dom = F.domain(f.lat, f.lon);
   let wx, pop = null, popErr = null;
   try { wx = await F.weather(+f.lat.toFixed(3), +f.lon.toFixed(3), f.iso, !!SERVER); } catch (e) { wx = { errors: { weather: 'weather service unreachable' } }; }
@@ -258,13 +292,13 @@ function drawPlume(p, r) {
   L.polyline([[f.lat, f.lon], end], { color: '#21d9ee', weight: 2, dashArray: '6 6' }).bindTooltip(`Wind toward ${fmt(r.toward)}° at ${sig(r.u)} m/s (${p.override ? 'scenario' : 'modelled'}) · smoke front after ${p.hours} h`).addTo(plumeLayer);
   const peak = r.cmax >= .1 ? `peak ${sig(r.cmax)} µg/m³` : 'peak < 0.1 µg/m³', ppl = ctx.hasPop ? `${fmt(r.people[2])} people ≥ 15` : 'population: needs server';
   L.marker([f.lat, f.lon], { icon: L.divIcon({ className: '', iconSize: [0, 0], html: `<div class="fl-fire"><div class="arrow" style="transform:rotate(${r.toward}deg)"></div><div class="dot"></div><div class="lab">${hsId(f.i)} · ${f.frp.toFixed(0)} MW<small>${peak} · ${ppl}</small></div></div>` }), keyboard: false, zIndexOffset: 1000 }).addTo(plumeLayer);
-  if (anim) anim.setScene({ f, p, r });
+  if (anim) anim.setScene({ f, p, r, g: ctx.grid });
   $('simHud').hidden = false; $('simHudArrow').style.transform = `rotate(${r.toward}deg)`;
   $('simHudSpeed').textContent = `${sig(r.u)} m/s`; $('simHudDir').textContent = `from ${fmt(p.wd % 360)}° · ${p.override ? 'your wind' : 'modelled'}`;
   const pts = r.cells.map(c => [c[0], c[1]]).concat(r.env[0], r.env[1], [[f.lat, f.lon], end]);
   plumeBounds = L.latLngBounds(pts).pad(.15);
   const span = Math.max(3, 4 * km / 111.195); regionBounds = L.latLngBounds([[f.lat - span, f.lon - span / r.clat], [f.lat + span, f.lon + span / r.clat]]);
-  if (fitted !== f.i) { fitted = f.i; const b = plumeBounds, fit = () => map.fitBounds(b, { padding: [30, 30], maxZoom: 12 }); if (map._animatingZoom) map.once('zoomend', fit); else fit(); } // Leaflet drops a new view while a zoom animation runs
+  if (fitted !== f.i) { fitted = f.i; const b = plumeBounds, fit = () => map.fitBounds(b, fitPad()); if (map._animatingZoom) map.once('zoomend', fit); else fit(); } // Leaflet drops a new view while a zoom animation runs
   $('simEmpty').textContent = r.cells.length ? '' : `No ground-level PM2.5 above ${F.BANDS[0]} µg/m³ in this scenario (peak ${r.cmax >= .1 ? sig(r.cmax) + ' µg/m³' : 'below 0.1 µg/m³'}). Try more hours, the worst case, or a larger fire.`;
   $('simOverlay').innerHTML = `<b>${hsId(f.i)}</b> · ${f.frp.toFixed(1)} MW · ${isoTime(f.i)} UTC<br>Wind ${sig(r.u)} m/s toward ${fmt(r.toward)}° <span class="dtag ${p.override ? 'scn' : 'mod'}" style="padding:1px 5px">${p.override ? 'SCENARIO' : 'MODELLED'}</span><br>Plume top ${fmt(r.top)} m · ${Math.round(100 * r.share)}% in boundary layer · class ${r.cls}<br>${peak} · ${ppl} <span class="dtag scn" style="padding:1px 5px">SCENARIO</span>`;
   const air = { A: 'very unstable', B: 'unstable', C: 'slightly unstable', D: 'neutral', E: 'slightly stable', F: 'stable' }[r.cls];
@@ -344,13 +378,20 @@ function pin() {
 }
 function startPlay() {
   if (!ctx) return;
-  let h = 1; $('simHours').value = h; $('simPlay').textContent = '⏸ Stop';
+  const badge = h => { $('simHoursBadge').textContent = `${h} h · separate model run, weather held fixed`; };
+  if (anim && anim.reducedMotion) { const h = +$('simHours').value % 24 + 1; $('simHours').value = h; badge(h); compute(true); return; } // no auto-animation
+  let h = 1; $('simHours').value = h; $('simPlay').textContent = '⏸ Pause'; $('simPlay').setAttribute('aria-pressed', 'true'); $('simPlayBar').classList.add('playing');
   S.playing = setInterval(() => {
-    $('simHours').value = h; $('simHoursBadge').textContent = `▶ ${h} h after the overpass`; compute(h === 24);
+    $('simHours').value = h; badge(h); compute(h === 24);
     if (++h > 24) stopPlay();
   }, 450);
 }
-function stopPlay() { if (S.playing) { clearInterval(S.playing); S.playing = null; } $('simPlay').textContent = '▶ Play'; $('simHoursBadge').textContent = ''; }
+function stopPlay() {
+  if (S.playing) { clearInterval(S.playing); S.playing = null; }
+  $('simHoursBadge').textContent = '';
+  if (!(anim && anim.reducedMotion)) $('simPlay').textContent = '▶ Play';
+  $('simPlay').setAttribute('aria-pressed', 'false'); $('simPlayBar').classList.remove('playing');
+}
 
 /* ---------- start ---------- */
 async function main() {
@@ -364,9 +405,9 @@ async function main() {
   if (want != null) selectFire(want);
   else { const typ = fires.filter(i => R.frp[i] >= 2000 && R.frp[i] <= 30000 && !R.night[i]); selectFire(typ[Math.floor(typ.length / 2)] ?? fires[0]); }
   let seen = false; try { seen = localStorage.getItem('simHow') === '1'; } catch (e) { /* no storage */ }
-  if (!seen) $('simHow').hidden = false;
+  if (!seen) UI.open('simHow');
   if (!SERVER) toast('Static mode: start python -m hotspots.server for population exposure.');
 }
 main();
-window.__SIM = { get last() { return last; }, get ctx() { return ctx; }, selectFire, map: () => map, S };
+window.__SIM = { get last() { return last; }, get ctx() { return ctx; }, selectFire, map: () => map, anim: () => anim, S };
 })();

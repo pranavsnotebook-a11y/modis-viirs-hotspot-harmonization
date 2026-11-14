@@ -193,22 +193,43 @@ function tipHTML(v) {
   return `<div class="hs-tip"><b class="t">🔥 ${v.id}</b><hr><div><b>Location:</b> ${esc(locText(v))}</div><div><b>Lat/Lon:</b> ${v.lat.toFixed(4)}, ${v.lon.toFixed(4)}</div><div><b>Sensor:</b> ${v.sensor} <small>(${esc(v.sats)})</small></div><div><b>Acquired:</b> ${v.time} UTC</div><div><b>FRP:</b> ${frpText(v)}</div><div><b>Confidence:</b> ${v.conf}</div><div><b>Status:</b> ${v.status}${v.strength ? ` (${v.strength}${v.amb ? ', ambiguous' : ''})` : ''}${v.count ? ` · ${v.count} VIIRS pixels, closest ${v.dt} min` : ''}</div></div>`;
 }
 let selected = null;
+/* One record, summary first; technical fields and provenance one click away. Empty fields are left out. */
+function detailHTML(v, i, withMap) {
+  const row = ([k, x]) => `<div class="detail-row"><span>${k}</span><b>${x}</b></div>`;
+  const key = [['Sensor', `${v.sensor} <small>${esc(v.sats)}</small>`], ['Acquired', `<span class="mono">${v.time}</span> UTC`], ['Fire radiative power', frpText(v)], ['Confidence', v.conf]];
+  const tech = [['Latitude', v.lat.toFixed(4) + '°'], ['Longitude', v.lon.toFixed(4) + '°'], ['Country', esc(v.country || 'Offshore / unassigned')], ['Pass', v.night ? 'Night' : 'Day'],
+    v.dt != null ? ['Closest time gap', v.dt + ' min'] : null, v.distKm != null ? ['Centre distance', v.distKm.toFixed(2) + ' km'] : null,
+    v.nCand != null ? ['MODIS candidates', v.nCand] : null, v.rivalDt != null ? ['Rival candidate', `Δt ${v.rivalDt} min`] : null,
+    v.count ? ['VIIRS pixels in group', v.count] : null, ['Pixel footprint', `${v.scan.toFixed(2)} × ${v.track.toFixed(2)} km`], ['Product', i < NM ? 'MODIS C6.1 NRT' : 'VIIRS 375 m NRT']].filter(Boolean);
+  return `<div class="rec-head"><span class="rec-id mono">${v.id}</span><span class="dtag obs">OBSERVED</span></div>`
+    + `<div class="rec-status">${badge(v.status)} ${strBadge(v)}</div>`
+    + `<div class="rec-loc">${esc(locText(v))}</div>`
+    + `<div class="kv">${key.map(([k, x]) => `<div><span>${k}</span><b>${x}</b></div>`).join('')}</div>`
+    + `<details class="adv"><summary>Technical details &amp; provenance</summary>${tech.map(row).join('')}<p class="hint">Hotspot ID assigned by this project; FIRMS records carry none. A match is a candidate link, not proof of one physical fire.</p></details>`
+    + `<div class="rec-actions">${withMap ? '<button class="ghost-btn" data-act="map">Show on map</button>' : ''}${v.status === 'Matched' ? '<button class="ghost-btn" data-act="inspect">Why this match?</button>' : ''}<button class="primary-btn fire" data-act="firelab">Simulate smoke in FIRELAB</button></div>`;
+}
+function bindDetail(root, i, asHarm) {
+  root.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => {
+    const a = b.dataset.act;
+    if (a === 'firelab') location.href = 'firelab.html?fire=' + hsId(i);
+    else if (a === 'inspect') { if (window.UI) UI.close('recDrawer'); inspectId = i < NM ? i : R.mi[i]; goPage('harmonization'); }
+    else if (a === 'map') { if (window.UI) UI.close('recDrawer'); const v = recordView(i, asHarm); goPage('map'); setTimeout(() => { flyTo(v.lat, v.lon, 9); selectRecord(i, asHarm); }, 120); }
+  }));
+}
 function selectRecord(i, asHarm) {
   selected = { i, asHarm };
   const v = recordView(i, asHarm);
   $('selectionBadge').textContent = v.id;
   const d = $('hotspotDetails'); d.className = 'hotspot-detail';
-  d.innerHTML = `<div style="font-size:13px;font-weight:800;color:var(--orange);margin-bottom:10px">🔥 ${v.id}</div>`
-    + [['Location', esc(locText(v))], ['Country', esc(v.country || 'Offshore / unassigned')], ['Latitude', v.lat.toFixed(4) + '°'], ['Longitude', v.lon.toFixed(4) + '°'], ['Sensor(s)', v.sensor], ['Satellite(s)', esc(v.sats)], ['Acquired (UTC)', v.time], ['Pass', v.night ? 'Night' : 'Day'], ['FRP', frpText(v)], ['Confidence', v.conf]]
-      .map(([k, x]) => `<div class="detail-row"><span>${k}</span><b>${x}</b></div>`).join('')
-    + `<div class="detail-row"><span>Match status</span><b>${badge(v.status)}</b></div>`
-    + (v.strength ? `<div class="detail-row"><span>Match strength</span><b>${strBadge(v)}</b></div>` : '')
-    + (v.dt != null ? `<div class="detail-row"><span>Closest time gap</span><b>${v.dt} min</b></div>` : '')
-    + (v.distKm != null ? `<div class="detail-row"><span>Centre distance</span><b>${v.distKm.toFixed(2)} km</b></div>` : '')
-    + `<div class="panel-sub" style="margin-top:8px">Pixel ${v.scan.toFixed(2)} × ${v.track.toFixed(2)} km. Product: ${i < NM ? 'MODIS C6.1' : 'VIIRS 375 m'} NRT. ID assigned by this project; FIRMS records carry none.</div>`
-    + `<div class="export-row" style="margin-top:10px">${v.status === 'Matched' ? '<button class="ghost-btn" id="selInspect">Inspect match</button>' : ''}<button class="primary-btn" id="selFirelab">Open in FIRELAB ☁</button></div>`;
-  const bi = $('selInspect'); if (bi) bi.addEventListener('click', () => { inspectId = i < NM ? i : R.mi[i]; goPage('harmonization'); });
-  $('selFirelab').addEventListener('click', () => { location.href = 'firelab.html?fire=' + hsId(i); });
+  d.innerHTML = detailHTML(v, i, false);
+  bindDetail(d, i, asHarm);
+  if (window.UI) UI.mapPanel('details', true);
+}
+function openRecord(i, asHarm) {
+  const v = recordView(i, asHarm);
+  $('recTitle').textContent = v.id; $('recBody').innerHTML = detailHTML(v, i, true);
+  bindDetail($('recBody'), i, asHarm);
+  if (window.UI) UI.open('recDrawer');
 }
 
 /* ---------- Basemaps ---------- */
@@ -496,6 +517,7 @@ function inCoverage(key, p) {
   return key === 'v' ? r.v[i] != null : key === 'm' ? r.m[i] != null : r.m[i] != null && r.v[i] != null;  // null means not observed, never zero
 }
 
+const SENSOR_COL = { MODIS: '#e7c04a', VIIRS: '#a783ff', Harmonized: '#ff6b3d' }; // same identity as the map layers
 const BOTH_MODIS_FROM = 2003; // Terra alone until Aqua joined in mid-2002: earlier counts are not comparable
 /* Anomaly of the current selection against the MODIS archive: MODIS only, because it spans the whole baseline. */
 function windowAnomaly() {
@@ -535,14 +557,14 @@ function renderOverview() {
     const y = S.period.slice(0, 4), lab = [], m = [], v = [], h = [];
     HIST.months.forEach((p, k) => { if (p.slice(0, 4) === y) { lab.push(MONTHS[+p.slice(5, 7) - 1]); m.push(mS[k]); v.push(vS[k]); h.push(hS[k]); } });
     $('dailySub').textContent = `Monthly totals, ${y} · ${S.region}`; $('dailyTag').textContent = y;
-    chart('dailyChart', 'line', lab, [{ label: 'MODIS', data: m, color: '#ff791f', fill: true }, { label: 'VIIRS S-NPP', data: v, color: '#a783ff' }, { label: 'Harmonized', data: h, color: '#ffd34d' }]);
+    chart('dailyChart', 'line', lab, [{ label: 'MODIS', data: m, color: '#e7c04a', fill: true }, { label: 'VIIRS S-NPP', data: v, color: '#a783ff' }, { label: 'Harmonized', data: h, color: '#ff6b3d' }]);
     $('overviewMapSub').textContent = `${monthLabel(S.period)} · 1° monthly totals from the archive`;
   } else {
     $('statModis').textContent = fmt(stats.m); $('statViirs').textContent = fmt(stats.v); $('statHarmonized').textContent = fmt(stats.h);
     $('footModis').textContent = 'Raw pixels · ' + satList([0, 1]); $('footViirs').textContent = 'Raw pixels · ' + satList([2, 3, 4]); $('footHarm').textContent = `Unique records, ${S.window} min window`;
     const idx = []; for (let d = S.from; d <= S.to; d++) idx.push(d);
     $('dailySub').textContent = `Detections per UTC day · ${S.region} · click a day to open its records`; $('dailyTag').textContent = idx.length + ' DAYS';
-    const data = S.sensor === 'MODIS' ? [{ label: 'MODIS', data: idx.map(d => stats.dayM[d]), color: '#ff791f', fill: true }] : S.sensor === 'VIIRS' ? [{ label: 'VIIRS', data: idx.map(d => stats.dayV[d]), color: '#a783ff', fill: true }] : [{ label: 'Harmonized', data: idx.map(d => stats.dayH[d]), color: '#ffd34d', fill: true }, { label: 'VIIRS', data: idx.map(d => stats.dayV[d]), color: '#a783ff' }, { label: 'MODIS', data: idx.map(d => stats.dayM[d]), color: '#ff791f' }];
+    const data = S.sensor === 'MODIS' ? [{ label: 'MODIS', data: idx.map(d => stats.dayM[d]), color: '#e7c04a', fill: true }] : S.sensor === 'VIIRS' ? [{ label: 'VIIRS', data: idx.map(d => stats.dayV[d]), color: '#a783ff', fill: true }] : [{ label: 'Harmonized', data: idx.map(d => stats.dayH[d]), color: '#ff6b3d', fill: true }, { label: 'VIIRS', data: idx.map(d => stats.dayV[d]), color: '#a783ff' }, { label: 'MODIS', data: idx.map(d => stats.dayM[d]), color: '#e7c04a' }];
     chart('dailyChart', 'line', idx.map(d => META.days[d].slice(5) + (META.partial_days.includes(META.days[d]) ? '*' : '')), data, {
       tooltip: { footer: items => { const d = idx[items[0].dataIndex], miss = missingSatDays(d); return (META.partial_days.includes(META.days[d]) ? 'Partial day (file cut-off)\n' : '') + (miss.length ? 'No data from ' + miss.join(', ') : ''); } },
       onClick: (e, el) => { if (el && el.length) { const d = idx[el[0].index]; S.from = S.to = d; S.period = null; S.page = 0; changed({ filter: true }); goPage('data'); } },
@@ -592,16 +614,18 @@ function renderLab() {
     const noV = r.v[i] == null;
     setLab(m - mm, noV ? null : v - mv, noV ? null : mm, m, noV ? null : v, noV ? null : mm, noV ? null : mv, noV ? null : m + v - mv);
     $('labScope').textContent = monthLabel(S.period).toUpperCase() + ' · S-NPP';
-    $('vennSub').textContent = `${monthLabel(S.period)} archive, MODIS vs S-NPP, ${HIST.window} min window · circles not to scale`;
+    $('vennSub').textContent = `${monthLabel(S.period)} archive, MODIS vs S-NPP, ${HIST.window} min window · click a category to open its cells`;
     $('strengthBars').innerHTML = '<div class="panel-sub">Match strength needs record-level data. Clear the month filter.</div>'; $('labAmb').textContent = '—'; $('labGap').textContent = '—';
     $('inspText').innerHTML = 'The inspector needs record-level data. Clear the month filter.';
+    $('winImpact').textContent = '';
     $('sensRows').innerHTML = `<tr><td colspan="5" style="text-align:left">The window comparison uses bundled records (${META.days[0]} to ${META.days.at(-1)}). Clear the month filter to use it.</td></tr>`;
     return;
   }
   setLab(stats.mo, stats.vo, stats.mm, stats.m, stats.v, stats.mm, stats.mv, stats.h);
   renderStrength(); renderGapChart(); renderInspector();
   $('labScope').textContent = `${S.window} MIN · ${S.region.toUpperCase()}`;
-  $('vennSub').textContent = 'Click a region to open those records · circles are not drawn to scale';
+  $('vennSub').textContent = 'Click a category above to open those records';
+  { const cur = windowCounts(S.window), ref = windowCounts(S.window === 30 ? 180 : 30); $('winImpact').innerHTML = `At <b>${S.window} min</b>, ${fmt(cur.mv)} VIIRS pixels have a MODIS candidate. At ${S.window === 30 ? 180 : 30} min it would be ${fmt(ref.mv)} (${fmt(Math.abs(cur.mv - ref.mv))} ${cur.mv >= ref.mv ? 'fewer' : 'more'}), and the harmonized count ${fmt(ref.h)} instead of ${fmt(cur.h)}.`; }
   $('sensRows').innerHTML = WINDOWS.map(w => { const c = windowCounts(w); return `<tr class="${w === S.window ? 'current' : ''}"><td>${w} min</td><td>${fmt(c.mv)}</td><td>${fmt(c.mm)}</td><td>${c.m ? (100 * c.mm / c.m).toFixed(1) + '%' : '—'}</td><td>${fmt(c.h)}</td></tr>`; }).join('');
 }
 function renderStrength() {
@@ -790,16 +814,16 @@ function renderHistory() {
   const years = Object.keys(ym).map(Number).sort((a, b) => a - b);
   const full = (o, y) => o[y] && o[y].n === 12 ? o[y].sum : null;
   $('annualSub').textContent = `${S.region} · complete calendar years only · VIIRS = S-NPP, Harmonized from 2012 · Terra alone before mid-2002`;
-  chart('historyChart', 'line', years, [{ label: 'MODIS', data: years.map(y => full(ym, y)), color: '#ff791f' }, { label: 'VIIRS S-NPP', data: years.map(y => full(yv, y)), color: '#a783ff' }, { label: 'Harmonized', data: years.map(y => full(yh, y)), color: '#ffd34d' }], { yTitle: 'detections per year' });
+  chart('historyChart', 'line', years, [{ label: 'MODIS', data: years.map(y => full(ym, y)), color: '#e7c04a' }, { label: 'VIIRS S-NPP', data: years.map(y => full(yv, y)), color: '#a783ff' }, { label: 'Harmonized', data: years.map(y => full(yh, y)), color: '#ff6b3d' }], { yTitle: 'detections per year' });
   const key = sensorKey(), s = hSeries(key), [a, b] = baselineYears();
   const byM = Array.from({ length: 12 }, () => []), used = new Set();
   HIST.months.forEach((p, i) => { const y = +p.slice(0, 4); if (y >= a && y <= b && s[i] != null && inCoverage(key, p)) { byM[+p.slice(5, 7) - 1].push(s[i]); used.add(y); } });
   const ys = [...used].sort((x, z) => x - z);
   $('seasonSub').textContent = `${S.region} · ${S.sensor} · ${!ys.length ? 'no data in this period' : ys.length === 1 ? 'one year only, ' + ys[0] : 'median by calendar month, ' + ys[0] + '–' + ys.at(-1)}`;
-  chart('seasonChart', 'bar', MONTHS, [{ label: S.sensor, data: byM.map(x => median(x)), color: '#ff791f', bg: '#ff791fcc', pr: 0 }], { yTitle: 'detections per month' });
+  chart('seasonChart', 'bar', MONTHS, [{ label: S.sensor, data: byM.map(x => median(x)), color: SENSOR_COL[S.sensor], bg: SENSOR_COL[S.sensor] + 'cc', pr: 0 }], { yTitle: 'detections per month' });
   const over = years.filter(y => full(yv, y) != null && full(ym, y));
   $('cmpSub').textContent = `${S.region} · ratio to MODIS, complete overlap years · fewer pixels match after 2021 as orbits drift, so recent Harmonized is not comparable with earlier years`;
-  chart('cmpChart', 'line', over, [{ label: 'VIIRS S-NPP ÷ MODIS', data: over.map(y => full(yv, y) / full(ym, y)), color: '#a783ff' }, { label: 'Harmonized ÷ MODIS', data: over.map(y => full(yh, y) / full(ym, y)), color: '#ffd34d' }], { yTick: x => x.toFixed(1) + '×', yTitle: 'ratio to MODIS', zero: true });
+  chart('cmpChart', 'line', over, [{ label: 'VIIRS S-NPP ÷ MODIS', data: over.map(y => full(yv, y) / full(ym, y)), color: '#a783ff' }, { label: 'Harmonized ÷ MODIS', data: over.map(y => full(yh, y) / full(ym, y)), color: '#ff6b3d' }], { yTick: x => x.toFixed(1) + '×', yTitle: 'ratio to MODIS', zero: true });
   const modisBase = median(years.filter(y => y >= a && y <= b).map(y => full(ym, y)));
   const anomY = years.filter(y => y >= BOTH_MODIS_FROM && full(ym, y) != null);
   const anom = anomY.map(y => modisBase ? 100 * (full(ym, y) / modisBase - 1) : null);
@@ -813,7 +837,7 @@ function renderHistory() {
   if (CONTROL) {
     const y = CONTROL.year;
     chart('controlRatioChart', 'line', y, [{ label: 'Observed, day', data: CONTROL.Terra_SNPP_D_change, color: '#ff791f', pr: 2 }, { label: 'Model, day', data: CONTROL.pred_Terra_SNPP_D_change, color: '#ffd34d', pr: 0 }, { label: 'Observed, night', data: CONTROL.Terra_SNPP_N_change, color: '#21d9ee', pr: 2 }, { label: 'Model, night', data: CONTROL.pred_Terra_SNPP_N_change, color: '#a783ff', pr: 0 }], { yTick: x => x.toFixed(1) + '×', yTitle: 'change vs 2013–2020', zero: false });
-    chart('controlTotalChart', 'line', y, [{ label: 'MODIS', data: CONTROL.modis_pct, color: '#ff791f', pr: 2 }, { label: 'VIIRS S-NPP', data: CONTROL.snpp_pct, color: '#a783ff', pr: 2 }], { yTick: x => x + '%', yTitle: '% vs 2013–2020 mean', zero: false });
+    chart('controlTotalChart', 'line', y, [{ label: 'MODIS', data: CONTROL.modis_pct, color: '#e7c04a', pr: 2 }, { label: 'VIIRS S-NPP', data: CONTROL.snpp_pct, color: '#a783ff', pr: 2 }], { yTick: x => x + '%', yTitle: '% vs 2013–2020 mean', zero: false });
   }
   const ratioFirst = over.length ? full(yv, over[0]) / full(ym, over[0]) : null, ratioLast = over.length ? full(yv, over.at(-1)) / full(ym, over.at(-1)) : null;
   const latest = anomY.at(-1);
@@ -869,32 +893,36 @@ function rowsForFilter() {
   for (const i of ids) out[start[R.t[i]]++] = i;
   return out;
 }
-const HEAD_REC = ['Hotspot ID', 'Acquired (UTC)', 'Latitude', 'Longitude', 'Sensor', 'Status', 'Strength', 'FRP (MW)', 'Confidence', 'Nearest listed place'];
+const HEAD_REC = ['Acquired (UTC)', 'Location', 'Sensor', 'FRP (MW)', 'Confidence', 'Match status', 'Hotspot ID'];
+const NUMCOL = new Set(['FRP (MW)', 'MODIS', 'VIIRS (S-NPP)', 'Harmonized']);
+const headRow = h => '<tr>' + h.map(x => `<th scope="col"${NUMCOL.has(x) ? ' class="num"' : ''}>${x}</th>`).join('') + '</tr>';
 const HEAD_CELL = ['1° cell (lat, lon)', 'Period', 'Country', 'MODIS', 'VIIRS (S-NPP)', 'Harmonized'];
 async function renderData() {
   const hist = histMode();
   $('tableStatus').disabled = hist; $('tableSearch').disabled = hist;
   if (hist) {
-    $('dataHead').innerHTML = '<tr>' + HEAD_CELL.map(x => `<th>${x}</th>`).join('') + '</tr>';
+    $('dataHead').innerHTML = headRow(HEAD_CELL);
     const cells = await cellRows();
     tableRows = cells; tableIds = null;
     const per = PER, maxP = Math.max(0, Math.ceil(cells.length / per) - 1); S.page = Math.min(S.page, maxP);
-    $('dataRows').innerHTML = cells.slice(S.page * per, (S.page + 1) * per).map(c => `<tr><td><b>${c.la}°, ${c.lo}°</b></td><td>${monthLabel(S.period)}</td><td>${esc(c.country)}</td><td>${fmt(c.m)}</td><td>${fmt(c.v)}</td><td>${fmt(c.h)}</td></tr>`).join('') || '<tr><td colspan="6" class="empty-state">No detections for these filters.</td></tr>';
+    $('dataRows').innerHTML = cells.slice(S.page * per, (S.page + 1) * per).map(c => `<tr><td data-l="Cell"><b class="mono">${c.la}°, ${c.lo}°</b></td><td data-l="Period">${monthLabel(S.period)}</td><td data-l="Country">${esc(c.country)}</td><td class="num" data-l="MODIS">${fmt(c.m)}</td><td class="num" data-l="VIIRS">${c.v == null ? 'No data' : fmt(c.v)}</td><td class="num" data-l="Harmonized">${c.h == null ? 'No data' : fmt(c.h)}</td></tr>`).join('') || '<tr><td colspan="6" class="empty-state">No detections for these filters.</td></tr>';
     $('tableCount').textContent = `Showing ${cells.length ? S.page * per + 1 : 0}–${Math.min((S.page + 1) * per, cells.length)} of ${fmt(cells.length)} monthly 1° cell rows`;
     $('pageNum').textContent = S.page + 1;
     $('tableNote').textContent = `${monthLabel(S.period)} is in the yearly archive, so this table holds 1° monthly totals. Individual records are bundled for ${META.days[0]} to ${META.days.at(-1)}.`;
     $('dataNote').textContent = 'Source: FIRMS yearly country archives. Exports contain these cell totals, restricted to the selected region.';
     $('exportDaily').disabled = true;
+    $('dataScope').textContent = `${fmt(cells.length)} monthly 1° cells in scope.`;
     return;
   }
   $('exportDaily').disabled = false;
-  $('dataHead').innerHTML = '<tr>' + HEAD_REC.map(x => `<th>${x}</th>`).join('') + '</tr>';
+  $('dataHead').innerHTML = headRow(HEAD_REC);
   tableIds = rowsForFilter(); tableRows = null;
   const maxP = Math.max(0, Math.ceil(tableIds.length / PER) - 1); S.page = Math.min(S.page, maxP);
   const raw = rawView(), sub = tableIds.subarray(S.page * PER, (S.page + 1) * PER);
-  $('dataRows').innerHTML = [...sub].map(i => { const v = recordView(i, !raw); return `<tr><td><b>${v.id}</b></td><td>${v.time}</td><td>${v.lat.toFixed(4)}</td><td>${v.lon.toFixed(4)}</td><td>${v.sensor} <small style="color:var(--muted)">${esc(v.sats)}</small></td><td>${badge(v.status)}</td><td>${strBadge(v) || '—'}</td><td>${v.frpM != null && v.frpV != null ? `M ${v.frpM.toFixed(1)} · V ${v.frpV.toFixed(1)}` : (v.frpM ?? v.frpV).toFixed(1)}</td><td>${v.conf}</td><td>${esc(v.place)}${v.placeCountry ? ', ' + esc(v.placeCountry) : ''}</td></tr>`; }).join('') || '<tr><td colspan="10" class="empty-state">No records match these filters.</td></tr>';
+  $('dataRows').innerHTML = [...sub].map(i => { const v = recordView(i, !raw); return `<tr class="rec-row" data-i="${i}" tabindex="0" aria-label="Open details for ${v.id}"><td data-l="Acquired (UTC)"><span class="mono">${v.time}</span></td><td data-l="Location" class="loc">${esc(v.place)}${v.placeCountry ? ', ' + esc(v.placeCountry) : ''}<small class="mono">${v.lat.toFixed(4)}, ${v.lon.toFixed(4)}</small></td><td data-l="Sensor"><span class="sensor-chip ${v.sensor === 'MODIS' ? 'm' : v.sensor === 'VIIRS' ? 'v' : 'mv'}">${v.sensor}</span><small>${esc(v.sats)}</small></td><td class="num" data-l="FRP (MW)">${v.frpM != null && v.frpV != null ? `M ${v.frpM.toFixed(1)} · V ${v.frpV.toFixed(1)}` : (v.frpM ?? v.frpV).toFixed(1)}</td><td data-l="Confidence">${v.conf}</td><td data-l="Match status">${badge(v.status)} ${strBadge(v)}</td><td data-l="Hotspot ID"><span class="mono id">${v.id}</span></td></tr>`; }).join('') || '<tr><td colspan="7" class="empty-state"><b>No records match these filters.</b><br>Clear the search or widen the date range. This is an empty selection, not missing data.</td></tr>';
   $('tableCount').textContent = `Showing ${tableIds.length ? S.page * PER + 1 : 0}–${Math.min((S.page + 1) * PER, tableIds.length)} of ${fmt(tableIds.length)} ${raw ? 'raw ' + S.sensor : 'harmonized'} records`;
   $('pageNum').textContent = S.page + 1;
+  $('dataScope').textContent = `${fmt(tableIds.length)} ${raw ? 'raw ' + S.sensor : 'harmonized'} records in scope.`;
   $('tableNote').textContent = raw ? `Raw ${S.sensor} detections, one row per pixel. Sensor filter set to Harmonized shows unique records.` : `Harmonized records: each matched group (one MODIS pixel and its VIIRS pixels within ${S.window} min) is one row, at the FRP-weighted VIIRS position. Newest first.`;
   $('dataNote').textContent = 'Source: NASA FIRMS near-real-time files (MODIS_NRT, VIIRS_*_NRT), not standard-processing science data. Hotspot IDs are assigned by this project and stay stable only within this data bundle. Exports contain exactly the records that match your filters.';
 }
@@ -1085,11 +1113,14 @@ function initControls() {
   ['calFrom', 'calTo'].forEach(id => { $(id).innerHTML = yrs.map(y => `<option>${y}</option>`).join(''); $(id).addEventListener('change', () => { S.calFrom = +$('calFrom').value; S.calTo = +$('calTo').value; if (S.calFrom > S.calTo) [S.calFrom, S.calTo] = [S.calTo, S.calFrom]; dirty.add('calendar'); syncControls(); renderCurrent(); }); });
   $('windowSel').addEventListener('change', e => { S.window = +e.target.value; S.page = 0; changed({ window: true }); });
   $('baselineSel').addEventListener('change', e => { S.baseline = e.target.value; changed({}); });
-  $('tableStatus').addEventListener('change', e => { S.status = e.target.value; S.page = 0; dirty.add('data'); renderCurrent(); });
-  let deb; $('tableSearch').addEventListener('input', e => { clearTimeout(deb); deb = setTimeout(() => { S.search = e.target.value; S.page = 0; dirty.add('data'); renderCurrent(); }, 220); });
+  $('tableStatus').addEventListener('change', e => { S.status = e.target.value; S.page = 0; dirty.add('data'); renderFilterChips(); renderCurrent(); });
+  let deb; $('tableSearch').addEventListener('input', e => { clearTimeout(deb); deb = setTimeout(() => { S.search = e.target.value; S.page = 0; dirty.add('data'); renderFilterChips(); renderCurrent(); }, 220); });
   $('prevPage').addEventListener('click', () => { S.page = Math.max(0, S.page - 1); dirty.add('data'); renderCurrent(); });
   $('nextPage').addEventListener('click', () => { S.page++; dirty.add('data'); renderCurrent(); });
   $('firstPage').addEventListener('click', () => { S.page = 0; dirty.add('data'); renderCurrent(); });
+  const openRow = tr => { if (tr && tr.dataset.i != null) openRecord(+tr.dataset.i, !rawView()); };
+  $('dataRows').addEventListener('click', e => openRow(e.target.closest('tr.rec-row')));
+  $('dataRows').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { const tr = e.target.closest('tr.rec-row'); if (tr) { e.preventDefault(); openRow(tr); } } });
   $('exportCsv').addEventListener('click', exportCsv); $('exportDaily').addEventListener('click', exportDaily); $('exportGeo').addEventListener('click', exportGeo);
   $('calOpenMap').addEventListener('click', () => goPage('map'));
   $$('.venn .circle').forEach(c => { const open = () => { S.status = c.dataset.status; S.sensor = 'Harmonized'; S.page = 0; $('tableStatus').value = S.status; layers.harm = true; syncLayers(); dirty.add('data'); syncControls(); goPage('data'); }; c.addEventListener('click', open); c.addEventListener('keydown', e => { if (e.key === 'Enter') open(); }); });
@@ -1113,17 +1144,17 @@ function initControls() {
   $('zoomInBtn').addEventListener('click', () => { if (globeMode && globe) { const p = globe.pointOfView(); setRotate(false); globe.pointOfView({ ...p, altitude: Math.max(.1, p.altitude * .7) }, 300); } else exMap.zoomIn(); });
   $('zoomOutBtn').addEventListener('click', () => { if (globeMode && globe) { const p = globe.pointOfView(); globe.pointOfView({ ...p, altitude: Math.min(6, p.altitude * 1.4) }, 300); } else exMap.zoomOut(); });
   $('locateBtn').addEventListener('click', () => { if (globeMode && globe) { globe.pointOfView({ lat: 14, lng: 5, altitude: 2.5 }, 900); } else exMap.setView([14, 5], 2); toast('View reset to global'); });
-  $('mapLayersBtn').addEventListener('click', () => { const p = $('layerPanel'); p.style.boxShadow = '0 0 0 2px var(--cyan)'; setTimeout(() => { p.style.boxShadow = ''; }, 1300); });
+  $('mapLayersBtn').addEventListener('click', () => { if (window.UI) UI.mapPanel('layers'); });
   $('fullscreenBtn').addEventListener('click', async () => {
     const st = $('mapStage');
     if (document.fullscreenElement) { await document.exitFullscreen(); return; }
     if (st.classList.contains('fullscreen')) { st.classList.remove('fullscreen'); resizeMaps(); return; }
     try { await st.requestFullscreen(); } catch (e) { st.classList.add('fullscreen'); resizeMaps(); }
   });
-  document.addEventListener('fullscreenchange', () => { $('fullscreenBtn').textContent = document.fullscreenElement ? '✕' : '⛶'; setTimeout(resizeMaps, 200); });
+  document.addEventListener('fullscreenchange', () => { $('fullscreenBtn').classList.toggle('on', !!document.fullscreenElement); setTimeout(resizeMaps, 200); });
   $('themeToggle').addEventListener('click', () => {
     const light = document.body.classList.toggle('light');
-    $('themeToggle').textContent = light ? '☾' : '☼';
+    $('themeToggle').setAttribute('aria-pressed', light);
     ['overview', 'history'].forEach(p => dirty.add(p)); renderCurrent();
   });
   window.addEventListener('resize', () => { clearTimeout(window._rz); window._rz = setTimeout(resizeMaps, 150); });
@@ -1150,10 +1181,20 @@ function syncControls() {
   $('calFrom').value = S.calFrom; $('calTo').value = S.calTo;
   $('tableStatus').value = S.status;
 }
+function isDefaultScope() { return S.region === 'Global' && S.sensor === 'Harmonized' && !S.period && S.from === 0 && S.to === META.days.length - 1 && S.status === 'All match statuses' && !S.search; }
+function resetScope() {
+  Object.assign(S, { region: 'Global', sensor: 'Harmonized', period: null, from: 0, to: META.days.length - 1, status: 'All match statuses', search: '', page: 0 });
+  $('tableSearch').value = ''; layers.harm = true; layers.modis = false; layers.viirs = false; syncLayers();
+  buildRegionMember(); changed({ filter: true });
+  if (exMap) { if (currentPage === 'map') zoomToRegion(); else pendingFit = true; }
+  toast('Scope reset: global, all bundled days, harmonized layer.');
+}
 function renderFilterChips() {
-  const per = S.period ? `<span class="chip period">Month: ${monthLabel(S.period)}<button id="clearPeriod" aria-label="Clear month filter" title="Clear month filter">✕</button></span>` : `<span class="chip">${META.days[S.from]} to ${META.days[S.to]}</span>`;
-  $('activeFilters').innerHTML = `<span>Active filters</span><span class="chip">${esc(S.region)}</span><span class="chip">${S.sensor}</span>${per}<span class="chip">Window ${HIST && histMode() ? HIST.window : S.window} min</span>`;
+  const per = S.period ? `<span class="chip period">Month ${monthLabel(S.period)}<button id="clearPeriod" aria-label="Clear month filter" title="Clear month filter">✕</button></span>` : `<span class="chip">${META.days[S.from]} → ${META.days[S.to]} UTC</span>`;
+  const extra = (S.status !== 'All match statuses' ? `<span class="chip">${esc(S.status)}</span>` : '') + (S.search ? `<span class="chip">“${esc(S.search)}”</span>` : '');
+  $('activeFilters').innerHTML = `<span class="scope-k">Scope</span><span class="chip">${esc(S.region)}</span><span class="chip">${S.sensor}</span>${per}<span class="chip">Window ${HIST && histMode() ? HIST.window : S.window} min</span>${extra}${isDefaultScope() ? '' : '<button class="link-btn" id="resetScope">Reset scope</button>'}`;
   const c = $('clearPeriod'); if (c) c.addEventListener('click', () => { S.period = null; S.from = 0; S.to = META.days.length - 1; S.page = 0; changed({ filter: true }); });
+  const r = $('resetScope'); if (r) r.addEventListener('click', resetScope);
 }
 function renderLegend() {
   const mode = $('markerMode').value;
@@ -1175,6 +1216,7 @@ function goPage(name) {
   $$('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + name));
   $$('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.page === name));
   window.scrollTo(0, 0);
+  document.dispatchEvent(new CustomEvent('fv:page', { detail: name }));
   requestAnimationFrame(() => {
     if (name === 'map' && exMap) { exMap.invalidateSize(); sizeGlobe(); if (pendingFit) zoomToRegion(); }
     if (name === 'overview' && ovMap) ovMap.invalidateSize();

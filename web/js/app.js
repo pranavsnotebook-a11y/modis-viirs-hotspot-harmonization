@@ -450,10 +450,10 @@ function chart(id, type, labels, datasets, opts = {}) {
   const options = {
     responsive: true, maintainAspectRatio: false, animation: false, resizeDelay: 120,
     interaction: { mode: 'index', intersect: false },
-    plugins: { legend: { display: datasets.length > 1, labels: { color: muted, boxWidth: 8, font: { size: 10 } } }, tooltip: { callbacks: opts.tooltip || {} } },
+    plugins: { legend: { display: datasets.length > 1, labels: { color: muted, boxWidth: 8, font: { size: 11 } } }, tooltip: { callbacks: opts.tooltip || {} } },
     scales: {
-      x: { ticks: { color: muted, font: { size: 9 }, maxTicksLimit: 12 }, grid: { color: '#29414b44' } },
-      y: { ticks: { color: muted, font: { size: 9 }, callback: opts.yTick || (v => short(Math.abs(v)).replace(/^/, v < 0 ? '-' : '')) }, grid: { color: '#29414b44' }, beginAtZero: opts.zero !== false, title: { display: !!opts.yTitle, text: opts.yTitle || '', color: muted, font: { size: 9 } } },
+      x: { ticks: { color: muted, font: { size: 10.5 }, maxTicksLimit: 12 }, grid: { color: '#8ca5b31a' } },
+      y: { ticks: { color: muted, font: { size: 10.5 }, callback: opts.yTick || (v => short(Math.abs(v)).replace(/^/, v < 0 ? '-' : '')) }, grid: { color: '#8ca5b31a' }, beginAtZero: opts.zero !== false, title: { display: !!opts.yTitle, text: opts.yTitle || '', color: muted, font: { size: 10.5 } } },
     },
     onClick: opts.onClick || undefined,
   };
@@ -1209,6 +1209,7 @@ async function main() {
   applyFilter();
   initControls(); initMaps(); renderLegend();
   $('dataPill').textContent = `● NASA FIRMS · ${META.days[0]} to ${META.days.at(-1)} · ${SERVER ? (SERVER.map_key_configured ? 'live API: MAP_KEY on server' : 'live: public FIRMS files') : 'static bundle'}`;
+  $('serverState').classList.toggle('off', !SERVER);
   $('serverState').textContent = SERVER ? `Server online · ${SERVER.map_key_configured ? 'FIRMS MAP_KEY configured (kept on the server)' : 'no MAP_KEY: public NRT files only'}` : 'Static mode: no API server, so live FIRMS, weather and population requests are off.';
   $('mapNote').textContent = `Hotspots are NASA FIRMS detections from ${META.days[0]} to ${META.days.at(-1)}, not live alerts. Harmonized is the default layer; turning on raw layers shows the same fire more than once by design. Locations name the nearest entry in Natural Earth's populated places list and can be far from the fire. Basemaps © Esri.`;
   $$('.page').forEach(p => dirty.add(p.id.slice(5)));

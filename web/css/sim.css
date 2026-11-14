@@ -1,54 +1,121 @@
-/* FIRELAB simulation space: a full-viewport workspace built on the Hot Spot Explorer theme (app.css). */
+/* FIRELAB simulation space: a full-viewport workspace on the shared theme (app.css + theme.css). */
 .sim-body{overflow:hidden}
-.sim-shell{display:grid;grid-template-columns:320px minmax(0,1fr) 380px;height:calc(100vh - 68px)}
-.sim-dock{overflow-y:auto;padding:14px 14px 30px;display:flex;flex-direction:column;gap:12px;background:#06141e;border-right:1px solid #123443}
-.sim-right{border-right:0;border-left:1px solid #123443}
-.sim-sec{border:1px solid #154252;background:linear-gradient(145deg,#0a202d,#081823);border-radius:12px;padding:12px 13px}
-.sim-h{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;font-weight:800;margin-bottom:9px}
-.sim-l{display:block;color:#8caab8;font-size:10px;margin:9px 0 5px}
+.sim-shell{display:grid;grid-template-columns:330px minmax(0,1fr) 390px;height:calc(100vh - 64px - 40px)}
+.sim-dock{overflow-y:auto;padding:16px 14px 28px;display:flex;flex-direction:column;gap:12px;background:#060f18b3;border-right:1px solid var(--border-soft)}
+.sim-right{border-right:0;border-left:1px solid var(--border-soft)}
+.sim-sec{border:1px solid var(--border);background:linear-gradient(180deg,#0c1a26,#09141e);border-radius:14px;padding:14px 15px;box-shadow:var(--shadow)}
+.sim-h{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;font-weight:700;margin-bottom:10px;color:#eef7fa}
+.sim-h>span:first-child{display:flex;align-items:center;gap:9px}
+.sim-n{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;color:var(--cyan);background:var(--cyan-soft);border:1px solid #22d3ee44}
+.sim-l{display:block;color:var(--muted);font-size:11.5px;margin:12px 0 6px}
+.sim-l b{color:var(--text);font-variant-numeric:tabular-nums}
 .sim-w{width:100%;min-width:0}
-.sim-row{display:flex;gap:6px;align-items:center;margin-top:6px}.sim-row .sim-w{flex:1}
-.sim-play{padding:7px 11px;font-size:11px;white-space:nowrap}
-.sim-mini{font-size:10.5px}.sim-mini .detail-row{padding:6px 0}
-.sim-wind{border-left:2px solid #8a5420;padding-left:9px;margin:4px 0 6px}
-.sim-compass{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;border:1px solid #1b6b7c;color:var(--cyan);font-weight:800;transition:transform .15s}
-.sim-dock input[type=range]{accent-color:var(--orange)}
-.sim-dock .check-row small{color:var(--muted)}
-.sim-back{text-decoration:none;font-size:11px}
+.sim-row{display:flex;gap:8px;align-items:center;margin-top:8px}.sim-row .sim-w{flex:1}
+.sim-icon{width:var(--ctl);padding:0}
+.sim-play{min-width:84px}
+.sim-facts{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px}
+.sim-facts .fact{background:var(--surface);border:1px solid var(--border-soft);border-radius:10px;padding:8px 10px;min-width:0}
+.sim-facts .fact span{display:block;font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+.sim-facts .fact b{display:block;font-size:12px;margin-top:3px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sim-facts .fact.wide{grid-column:1/-1}.sim-facts .fact.wide b{white-space:normal}
+.sim-facts.details-empty{display:block}
+.sim-stab{font-size:11.5px;line-height:1.55;color:var(--muted);margin-top:6px;padding:9px 11px;border-radius:10px;background:var(--surface);border:1px solid var(--border-soft)}.sim-stab:empty{display:none}
+.sim-stab b{color:var(--text)}
+.sim-adv{margin-top:12px;border-top:1px solid var(--border-soft);padding-top:10px}
+.sim-adv>summary{cursor:pointer;list-style:none;font-size:12px;font-weight:650;color:#9fd8e4;display:flex;align-items:center;gap:8px}
+.sim-adv>summary::-webkit-details-marker{display:none}
+.sim-adv>summary:before{content:"";width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .2s}
+.sim-adv[open]>summary:before{transform:rotate(45deg)}
+.sim-wind{border-left:2px solid #ff7a1f66;padding-left:11px;margin:4px 0 8px}
+.sim-compass{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;border:1px solid #22d3ee55;color:var(--cyan);font-weight:800;transition:transform .2s}
+.check-row small{color:var(--faint)}
+.sim-back{font-size:12px}
+
+/* map stage */
 .sim-stage{position:relative;min-width:0;background:#020a11}
 #simMap{position:absolute;inset:0}
-.sim-stage .fl-overlay{top:52px;bottom:auto;right:10px}
-.sim-hours{position:absolute;z-index:600;left:60px;top:12px;background:#3b2410ee;border:1px solid #8a5420;color:#ffd7a5;border-radius:9px;padding:6px 10px;font-size:11px;font-weight:700}.sim-hours:empty{display:none}
-.sim-loading{position:absolute;inset:0;z-index:900;background:#06111bee;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-size:13px}.sim-loading small{color:var(--muted);font-size:10px}.sim-loading[hidden]{display:none}
+.sim-anim{position:absolute;left:0;top:0;pointer-events:none}
+.sim-tools{position:absolute;z-index:700;top:12px;right:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100% - 70px)}
+.sim-seg{display:flex;gap:2px;padding:3px;border-radius:11px;background:var(--glass);border:1px solid #ffffff14;backdrop-filter:blur(12px)}
+.sim-seg button{border:0;background:transparent;color:#bcd2dc;padding:7px 10px;border-radius:8px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.sim-seg button:hover{background:#ffffff12;color:#fff}
+.sim-seg button[aria-pressed="true"]{background:#22d3ee26;color:#c9f6fc;box-shadow:inset 0 0 0 1px #22d3ee55}
+.sim-stage .fl-overlay{top:auto;bottom:16px;right:12px;left:auto;max-width:270px;font-size:11.5px;line-height:1.6;padding:10px 12px}
+.sim-hud{position:absolute;z-index:650;left:58px;top:12px;display:flex;align-items:center;gap:10px;padding:7px 12px 7px 8px;border-radius:12px;background:var(--glass);border:1px solid #ffffff14;backdrop-filter:blur(12px)}
+.sim-hud b{display:block;font-size:14px;font-variant-numeric:tabular-nums}.sim-hud small{display:block;font-size:10.5px;color:var(--muted)}
+.sim-dial{position:relative;width:36px;height:36px;border-radius:50%;border:1px solid #22d3ee44;background:radial-gradient(circle,#22d3ee14,transparent 70%)}
+.sim-dial:before{content:"N";position:absolute;top:-1px;left:50%;transform:translateX(-50%);font-size:8px;font-weight:800;color:var(--faint)}
+.sim-dial i{position:absolute;left:50%;top:50%;width:3px;height:26px;margin:-13px 0 0 -1.5px;border-radius:2px;background:linear-gradient(var(--cyan),#22d3ee22);transition:transform .4s cubic-bezier(.3,1.4,.5,1)}
+.sim-dial i:before{content:"";position:absolute;left:-4px;top:-5px;border:5.5px solid transparent;border-bottom:7px solid var(--cyan);border-top:0}
+.sim-hours{position:absolute;z-index:650;left:50%;top:14px;transform:translateX(-50%);background:#ff7a1fe6;color:#fff;border-radius:999px;padding:7px 14px;font-size:12px;font-weight:700;box-shadow:0 10px 24px -10px #ff7a1f}.sim-hours:empty{display:none}
+.sim-legend{position:absolute;z-index:600;left:12px;bottom:16px;padding:9px 12px 8px;border-radius:12px;background:var(--glass);border:1px solid #ffffff14;backdrop-filter:blur(12px);font-size:10.5px;color:#c6d9e1}
+.sim-legend .bar{display:flex;width:240px;height:8px;border-radius:5px;overflow:hidden;margin:6px 0 4px}.sim-legend .bar i{flex:1}
+.sim-legend .ticks{display:flex;width:240px;justify-content:space-between;color:var(--muted);font-variant-numeric:tabular-nums}
+.sim-legend .ttl{font-weight:650;color:#e2eef3}
+.sim-loading{position:absolute;inset:0;z-index:900;background:radial-gradient(500px 260px at 50% 45%,#0d3448aa,transparent),#050d15f2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-size:14px;font-weight:600}.sim-loading small{color:var(--muted);font-size:11px;font-weight:500}.sim-loading[hidden]{display:none}
+.sim-spin{width:42px;height:42px;border-radius:50%;border:3px solid #22d3ee22;border-top-color:var(--orange);animation:spin 1s linear infinite}
 .sim-stage.fullscreen{position:fixed;inset:0;z-index:3000}
-.sim-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.sim-card{border:1px solid #154252;background:linear-gradient(145deg,#0a202d,#081823);border-radius:11px;padding:10px 11px;display:flex;flex-direction:column;gap:3px;min-width:0}
-.sim-card span{font-size:10px;color:#9eb8c4}.sim-card b{font-size:21px;letter-spacing:-.6px}.sim-card small{font-size:9.5px;color:#8ba6b3;line-height:1.35}
-.sim-chart{position:relative;height:190px}
-.sim-table{margin-top:8px;font-size:10.5px}.sim-table td,.sim-table th{padding:5px 6px}
-.sim-method{border-top:1px solid #123443;background:#06141e;padding:0 20px;position:fixed;left:0;right:0;bottom:0;z-index:1500;max-height:55vh;overflow:auto}
-.sim-method summary{cursor:pointer;padding:9px 0;font-size:11px;color:var(--cyan);font-weight:700}
-.sim-method[open]{box-shadow:0 -10px 40px #0008;padding-bottom:16px}
-.sim-shell{height:calc(100vh - 68px - 36px)}
-.sim-how{position:fixed;inset:0;z-index:5000;background:#020a11cc;display:grid;place-items:center;padding:20px}.sim-how[hidden]{display:none}
-.sim-how-box{max-width:1000px;width:100%}.sim-steps{grid-template-columns:repeat(5,minmax(0,1fr))}
+.fl-empty{background:var(--glass);border:1px solid #ff7a1f55;color:#ffd7a5;backdrop-filter:blur(12px);border-radius:12px;font-size:12px;padding:12px 14px}
+/* the fire marker: pulsing ring */
+.fl-fire .dot{animation:firePulse 1.8s ease-out infinite}
+@keyframes firePulse{0%{box-shadow:0 0 0 0 #ff493faa,0 0 16px #ff493f}70%{box-shadow:0 0 0 16px #ff493f00,0 0 16px #ff493f}100%{box-shadow:0 0 0 0 #ff493f00,0 0 16px #ff493f}}
+.fl-fire .lab{background:var(--glass);backdrop-filter:blur(10px);border-radius:9px;padding:5px 9px;font:700 11px/1.4 var(--font)}
+.fl-fire .arrow{opacity:.55}
+
+/* results */
+.sim-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sim-card{border:1px solid var(--border);background:linear-gradient(180deg,#0c1a26,#09141e);border-radius:14px;padding:12px 13px;display:flex;flex-direction:column;gap:4px;min-width:0;box-shadow:var(--shadow)}
+.sim-card span{font-size:11px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:4px;flex-wrap:wrap}
+.sim-card span em{font-style:normal;font-size:8px;padding:2px 6px}
+.sim-card b{font-size:22px;font-weight:780;letter-spacing:-.6px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sim-card small{font-size:10.5px;color:var(--faint);line-height:1.4}
+.sim-card.hot b{color:#ffb070}
+.sim-tabs{display:flex;gap:2px;padding:3px;border-radius:12px;background:var(--surface);border:1px solid var(--border)}
+.sim-tabs button{flex:1;border:0;background:transparent;color:var(--muted);padding:8px 6px;border-radius:9px;font-size:12px;font-weight:650}
+.sim-tabs button:hover{color:var(--text)}
+.sim-tabs button[aria-selected="true"]{background:linear-gradient(180deg,#163246,#10273a);color:#effcff;box-shadow:inset 0 0 0 1px #22d3ee44}
+.sim-pane[hidden]{display:none}
+.sim-chart{position:relative;height:230px}
+.sim-table{margin-top:10px;font-size:11.5px}.sim-table td,.sim-table th{padding:6px 6px}
+.sim-method{border-top:1px solid var(--border-soft);background:#050d15f0;backdrop-filter:blur(14px);padding:0 22px;position:fixed;left:0;right:0;bottom:0;z-index:1500;max-height:55vh;overflow:auto}
+.sim-method summary{cursor:pointer;height:40px;display:flex;align-items:center;font-size:12px;color:var(--cyan);font-weight:650}
+.sim-method[open]{box-shadow:0 -14px 40px #0009;padding-bottom:18px}
+.sim-how{position:fixed;inset:0;z-index:5000;background:#020a11b3;backdrop-filter:blur(6px);display:grid;place-items:center;padding:20px}.sim-how[hidden]{display:none}
+.sim-how-box{max-width:1000px;width:100%;padding:22px 24px}.sim-steps{grid-template-columns:repeat(5,minmax(0,1fr));font-size:12px}
 .sim-fire-pt{cursor:pointer}
 /* light theme */
-.light .sim-dock,.light .sim-method{background:#f9fcfd;border-color:#d6e4ea}
-.light .sim-sec,.light .sim-card{background:linear-gradient(145deg,#fff,#f3f9fb);border-color:#d2e2e9}
-.light .sim-card b{color:#18313d}.light .sim-card span,.light .sim-card small,.light .sim-l{color:#58717e}
-.light .sim-stage{background:#e8f0f3}.light .sim-loading{background:#f2f7faee}
-.light .sim-how{background:#e8f0f3cc}
+.light .sim-dock{background:#ffffffa6;border-color:var(--border)}
+.light .sim-sec,.light .sim-card{background:#fff;border-color:var(--border)}
+.light .sim-h{color:#10293a}
+.light .sim-card.hot b{color:#c2500c}
+.light .sim-tabs button[aria-selected="true"]{background:#e6f7fb;color:#05505d}
+.light .sim-seg,.light .sim-hud,.light .sim-legend,.light .fl-empty,.light .fl-fire .lab{background:#ffffffe6;border-color:#d4e2e8}
+.light .sim-seg button{color:#2a4654}.light .sim-seg button[aria-pressed="true"]{background:#d9f4f9;color:#05505d}
+.light .sim-legend{color:#274452}.light .sim-legend .ttl{color:#10293a}
+.light .fl-empty{color:#8b4b0d}
+.light .fl-fire .lab{color:#10293a}.light .fl-fire .lab small{color:#4c6573}
+.light .sim-stage{background:#e8f0f3}.light .sim-loading{background:#f3f7faf2}
+.light .sim-method{background:#fffffff0}
+.light .sim-how{background:#e8f0f3b3}
+.light .sim-adv>summary{color:#0b7285}
 /* smaller screens: stack the docks around the map */
-@media(max-width:1250px){.sim-shell{grid-template-columns:290px minmax(0,1fr) 330px}}
+@media(max-width:1300px){.sim-shell{grid-template-columns:300px minmax(0,1fr) 340px}.sim-steps{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:1000px){
   .sim-body{overflow:auto}
   .sim-shell{display:flex;flex-direction:column;height:auto}
-  .sim-stage{height:70vh;min-height:420px;order:1}
+  .sim-stage{height:68vh;min-height:440px;order:1}
   .sim-left{order:2}.sim-right{order:3}
-  .sim-dock{overflow:visible;border:0}
+  .sim-dock{overflow:visible;border:0;background:transparent}
   .sim-method{position:static;max-height:none}
   .sim-steps{grid-template-columns:1fr 1fr}
 }
-@media(max-width:760px){.sim-back{display:none}.sim-steps{grid-template-columns:1fr}.sim-how-box{max-height:90vh;overflow:auto}.sim-stage .fl-overlay{top:auto;bottom:62px;left:8px;right:8px;max-width:none}.sim-hours{left:56px}}
-.sim-dock button:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:760px){
+  .sim-back{display:none}.sim-steps{grid-template-columns:1fr}.sim-how-box{max-height:90vh;overflow:auto}
+  .sim-tools{top:auto;bottom:12px;left:12px;right:12px;max-width:none;justify-content:center}
+  .sim-stage .fl-overlay{display:none}
+  .sim-legend{top:10px;bottom:auto;left:52px;padding:6px 9px;font-size:9.5px}.sim-legend .bar,.sim-legend .ticks{width:150px}
+  .sim-hud{left:auto;right:10px;top:10px;padding:5px 9px 5px 6px}.sim-dial{width:30px;height:30px}.sim-dial i{height:22px;margin-top:-11px}.sim-hud b{font-size:12.5px}
+  .sim-hours{top:auto;bottom:62px}
+  .fl-fire .lab{display:none}
+  .sim-seg button{padding:7px 8px;font-size:11px}
+}

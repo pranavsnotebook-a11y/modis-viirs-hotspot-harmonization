@@ -1,0 +1,15 @@
+{
+  "name": "fireverse-web",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Front-end checks for the FIREVERSE role selection screen",
+  "type": "module",
+  "scripts": {
+    "test:unit": "node --test \"tests/unit/*.test.mjs\"",
+    "test:e2e": "node tests/e2e/start.spec.mjs && node tests/e2e/role.spec.mjs",
+    "test": "npm run test:unit && npm run test:e2e"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.65.1"
+  }
+}

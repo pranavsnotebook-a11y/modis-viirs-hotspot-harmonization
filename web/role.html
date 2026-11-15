@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en" data-place-logic-only>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Your role · FIREVERSE</title>
+<meta name="description" content="A simplified page for one job: the fires, the modelled smoke path and a bulletin to copy or send. Satellite data, modelled wind and smoke scenarios.">
+<meta name="theme-color" content="#07131B">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23FF8A3D'/%3E%3Cpath d='M16 6c1.3 4.5 6.5 7 6.5 13a6.5 6.5 0 0 1-13 0c0-2.6 1.3-4.6 2.6-5.9.4 2.2 1.6 3.5 3.1 3.9C14.3 13 14.7 9.1 16 6z' fill='white'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/fv.css?v=1">
+<link rel="stylesheet" href="css/role.css?v=1">
+</head>
+<body class="rl">
+<a class="skip" href="#main">Skip to content</a>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6.5-6.1-6.5-11a6.5 6.5 0 0 1 13 0c0 4.9-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></symbol>
+</svg>
+
+<header class="rl-top">
+  <a class="rl-brand" href="start.html" aria-label="FIREVERSE"><span class="brand-mark" aria-hidden="true"></span><span class="rl-brand-name">FIREVERSE</span></a>
+  <div class="rl-ctl">
+    <label class="rl-sel"><span class="vh" id="lblRegion">Region</span><select id="regionSel" aria-labelledby="lblRegion"></select></label>
+    <div class="rl-lang" id="langBox" role="group" aria-label="Language"></div>
+    <a class="ghost-btn rl-switch" id="switchRole" href="start.html"><svg class="ico"><use href="#i-back"/></svg><span id="switchTxt">Switch role</span></a>
+    <button class="icon-btn theme-btn" id="themeToggle" type="button" title="Switch light or dark theme" aria-label="Switch light or dark theme" aria-pressed="false"><svg class="ico sun"><use href="#i-sun"/></svg><svg class="ico moon"><use href="#i-moon"/></svg></button>
+  </div>
+</header>
+
+<main class="rl-main" id="main" tabindex="-1">
+  <section class="rl-hero" aria-labelledby="rTitle">
+    <p class="rl-eyebrow" id="rMode"></p>
+    <h1 id="rTitle">…</h1>
+    <p class="rl-q" id="rQuestion"></p>
+  </section>
+
+  <div class="rl-grid">
+    <aside class="rl-side" aria-label="Clock and briefing">
+      <section class="rl-card" id="clockCard" aria-labelledby="clockH">
+        <h2 id="clockH">Satellite clock</h2>
+        <p class="rl-warn" id="oldWarn" role="alert" hidden></p>
+        <dl class="rl-kv">
+          <div><dt><span id="lastL">Last satellite look</span> <span class="dtag obs" id="tagObs">OBSERVED</span></dt><dd id="lastLook">…</dd></div>
+          <div><dt><span id="nextL">Next look (estimate)</span> <span class="dtag mod" id="tagEst">ESTIMATE</span></dt><dd id="nextLook">…</dd></div>
+        </dl>
+        <p class="rl-muted" id="delayNote"></p>
+        <button class="ghost-btn rl-act" id="clockBtn" type="button"></button>
+      </section>
+
+      <section class="rl-card" id="briefCard" aria-labelledby="briefH">
+        <div class="rl-brief-head">
+          <svg class="rl-ring" viewBox="0 0 64 64" role="img" id="ring" aria-label=""><circle class="rl-ring-bg" cx="32" cy="32" r="27"/><circle class="rl-ring-fg" id="ringFg" cx="32" cy="32" r="27" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/><text id="ringTxt" x="32" y="37" text-anchor="middle">0/3</text></svg>
+          <div><h2 id="briefH">Shift briefing</h2><p class="rl-muted" id="briefSub"></p></div>
+        </div>
+        <ol class="rl-steps" id="steps"></ol>
+        <div class="rl-done" id="doneBox" hidden><b id="doneH"></b><p id="doneP"></p></div>
+        <div class="rl-week"><span class="rl-muted" id="weekL"></span><ul id="week" class="rl-weekrow"></ul></div>
+      </section>
+    </aside>
+
+    <section class="rl-work" aria-labelledby="workH" aria-live="polite" aria-busy="true">
+      <h2 id="workH"></h2>
+      <div id="work"></div>
+      <details class="rl-fast" id="fastBox" hidden>
+        <summary id="fastSum"></summary>
+        <div id="fastBody"></div>
+      </details>
+    </section>
+  </div>
+</main>
+
+<footer class="rl-foot">
+  <p id="limits"></p>
+  <p id="esNote" class="rl-muted"></p>
+  <p><a id="fullLink" href="downwind.html">Full DOWNWIND page</a></p>
+</footer>
+<div class="rl-toast" id="toast" role="status" aria-live="polite"></div>
+
+<noscript><p class="rl-ns">This page needs JavaScript. <a href="start.html">Choose a role</a> or open the <a href="downwind.html">full DOWNWIND page</a>.</p></noscript>
+
+<script src="js/ui.js?v=2"></script>
+<script src="js/regions.js?v=1"></script>
+<script src="js/roles.js?v=1"></script>
+<script src="js/firelab-core.js?v=1"></script>
+<script src="js/downwind-core.js?v=1"></script>
+<script src="js/fast-core.js?v=1"></script>
+<script src="js/watch-core.js?v=1"></script>
+<script src="js/bulletin-core.js?v=1"></script>
+<script src="js/place.js?v=1"></script>
+<script src="js/role-config.js?v=1"></script>
+<script src="js/briefing-core.js?v=1"></script>
+<script src="js/role-core.js?v=1"></script>
+<script src="js/role.js?v=1"></script>
+</body>
+</html>

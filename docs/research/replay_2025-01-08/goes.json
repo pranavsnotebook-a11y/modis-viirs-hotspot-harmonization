@@ -1,0 +1,4858 @@
+{
+ "question": "Did GOES-16 flag a fire pixel covering fire A or fire B before the 20:01 UTC trip on 2025-01-08; first such scan on 8 and 7 January 2025?",
+ "bucket": "noaa-goes16",
+ "product": "ABI-L2-FDCF",
+ "trip_utc": "2025-01-08T20:01",
+ "near_km": 4.0,
+ "latency_assumption_min": 30,
+ "latency_note": "30 min is NASA's stated typical figure for geostationary data in FIRMS; assumption, not measured",
+ "sites": {
+  "A": [
+   -25.265,
+   -56.765
+  ],
+  "B": [
+   -25.215,
+   -57.069
+  ]
+ },
+ "park": [
+  -25.2271,
+  -56.79
+ ],
+ "fire_mask_codes_used": [
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  30,
+  31,
+  32,
+  33,
+  34,
+  35
+ ],
+ "fire_code_names": {
+  "10": "good_fire_pixel",
+  "11": "saturated_fire_pixel",
+  "12": "cloud_contaminated_fire_pixel",
+  "13": "high_probability_fire_pixel",
+  "14": "medium_probability_fire_pixel",
+  "15": "low_probability_fire_pixel",
+  "30": "temporally_filtered_good_fire_pixel",
+  "31": "temporally_filtered_saturated_fire_pixel",
+  "32": "temporally_filtered_cloud_contaminated_fire_pixel",
+  "33": "temporally_filtered_high_probability_fire_pixel",
+  "34": "temporally_filtered_medium_probability_fire_pixel",
+  "35": "temporally_filtered_low_probability_fire_pixel"
+ },
+ "cloud_codes_used": [
+  200,
+  201,
+  205,
+  210,
+  215,
+  220,
+  225,
+  230,
+  240,
+  245
+ ],
+ "cloud_code_names": {
+  "200": "cloud_pixel_detected_by_11.19um_threshold_test",
+  "201": "cloud_pixel_detected_by_3.89um_minus_11.19um_threshold_and_freezing_test",
+  "205": "cloud_pixel_detected_by_negative_difference_3.89um_minus_11.19um_threshold_test",
+  "210": "cloud_pixel_detected_by_positive_difference_3.89um_minus_11.19um_threshold_test",
+  "215": "cloud_pixel_detected_by_albedo_threshold_test",
+  "220": "cloud_pixel_detected_by_12.27um_threshold_test",
+  "225": "cloud_pixel_detected_by_negative_difference_11.19um_minus_12.27um_threshold_test",
+  "230": "cloud_pixel_detected_by_positive_difference_11.19um_minus_12.27um_threshold_test",
+  "240": "cloud_edge_pixel_detected_by_along_scan_reflectivity_and_3.89um_threshold_test",
+  "245": "cloud_edge_pixel_detected_by_along_scan_reflectivity_and_albedo_threshold_test"
+ },
+ "projection_checks": {
+  "projection_origin_lon_in_file": -75.0,
+  "subsatellite_lat_lon": [
+   0.0,
+   -75.0
+  ],
+  "points": {
+   "ASUNCION": {
+    "row": 4028,
+    "col": 3547,
+    "pixel_centre_lat": -25.281808238473012,
+    "pixel_centre_lon": -57.6489085776374,
+    "roundtrip_error_km": 1.4146481319698977e-12,
+    "pixel_centre_to_point_km": 0.9180062648529296
+   },
+   "A": {
+    "row": 4026,
+    "col": 3588,
+    "pixel_centre_lat": -25.260102276978245,
+    "pixel_centre_lon": -56.756768686242125,
+    "roundtrip_error_km": 3.110730884226218e-11,
+    "pixel_centre_to_point_km": 0.9908354469336409
+   },
+   "B": {
+    "row": 4024,
+    "col": 3574,
+    "pixel_centre_lat": -25.209967824669707,
+    "pixel_centre_lon": -57.07252760294437,
+    "roundtrip_error_km": 1.4200528640105737e-11,
+    "pixel_centre_to_point_km": 0.6626026735674495
+   },
+   "PARK": {
+    "row": 4024,
+    "col": 3587,
+    "pixel_centre_lat": -25.216756351252876,
+    "pixel_centre_lon": -56.78667661577946,
+    "roundtrip_error_km": 3.649573685151126e-11,
+    "pixel_centre_to_point_km": 1.1977645276666846
+   }
+  },
+  "pixel_size_km": {
+   "A": {
+    "east_west_km": 2.2167286645513564,
+    "north_south_km": 2.4145447337341728
+   },
+   "B": {
+    "east_west_km": 2.210172668095138,
+    "north_south_km": 2.4108169496373737
+   },
+   "PARK": {
+    "east_west_km": 2.215968153773627,
+    "north_south_km": 2.4129043042061493
+   }
+  }
+ },
+ "summary": {
+  "A": {
+   "2025-01-08": {
+    "scans_in_window": 62,
+    "scans_with_detection": 0,
+    "scans_with_detection_before_trip": 0,
+    "first_detection_start_utc": null,
+    "first_detection_end_utc": null,
+    "last_detection_start_utc": null,
+    "detection_start_times_utc": [],
+    "classes_seen": [],
+    "class_counts": {},
+    "frp_min_mw": null,
+    "frp_max_mw": null,
+    "min_distance_km": null,
+    "site_pixel_class_counts": {
+     "processed_no_fire_pixel": 54,
+     "SZA_or_glint_angle_block_out_zone": 8
+    },
+    "scans_site_pixel_cloud": 0,
+    "scans_cloud_in_3x3": 0
+   },
+   "2025-01-07": {
+    "scans_in_window": 72,
+    "scans_with_detection": 0,
+    "scans_with_detection_before_trip": null,
+    "first_detection_start_utc": null,
+    "first_detection_end_utc": null,
+    "last_detection_start_utc": null,
+    "detection_start_times_utc": [],
+    "classes_seen": [],
+    "class_counts": {},
+    "frp_min_mw": null,
+    "frp_max_mw": null,
+    "min_distance_km": null,
+    "site_pixel_class_counts": {
+     "processed_no_fire_pixel": 64,
+     "SZA_or_glint_angle_block_out_zone": 8
+    },
+    "scans_site_pixel_cloud": 0,
+    "scans_cloud_in_3x3": 1
+   }
+  },
+  "B": {
+   "2025-01-08": {
+    "scans_in_window": 62,
+    "scans_with_detection": 0,
+    "scans_with_detection_before_trip": 0,
+    "first_detection_start_utc": null,
+    "first_detection_end_utc": null,
+    "last_detection_start_utc": null,
+    "detection_start_times_utc": [],
+    "classes_seen": [],
+    "class_counts": {},
+    "frp_min_mw": null,
+    "frp_max_mw": null,
+    "min_distance_km": null,
+    "site_pixel_class_counts": {
+     "processed_no_fire_pixel": 54,
+     "SZA_or_glint_angle_block_out_zone": 8
+    },
+    "scans_site_pixel_cloud": 0,
+    "scans_cloud_in_3x3": 0
+   },
+   "2025-01-07": {
+    "scans_in_window": 72,
+    "scans_with_detection": 6,
+    "scans_with_detection_before_trip": null,
+    "first_detection_start_utc": "21:20:20",
+    "first_detection_end_utc": "21:29:51",
+    "last_detection_start_utc": "22:10:20",
+    "detection_start_times_utc": [
+     "21:20:20",
+     "21:30:20",
+     "21:40:20",
+     "21:50:20",
+     "22:00:20",
+     "22:10:20"
+    ],
+    "classes_seen": [
+     "good_fire_pixel",
+     "temporally_filtered_good_fire_pixel"
+    ],
+    "class_counts": {
+     "good_fire_pixel": 1,
+     "temporally_filtered_good_fire_pixel": 5
+    },
+    "frp_min_mw": 27.0,
+    "frp_max_mw": 68.41,
+    "min_distance_km": 0.66,
+    "site_pixel_class_counts": {
+     "processed_no_fire_pixel": 58,
+     "SZA_or_glint_angle_block_out_zone": 8,
+     "good_fire_pixel": 1,
+     "temporally_filtered_good_fire_pixel": 5
+    },
+    "scans_site_pixel_cloud": 0,
+    "scans_cloud_in_3x3": 0,
+    "lead_min_to_trip_if_30min_after_scan_start": 1331
+   }
+  },
+  "park_30km_pre_trip_8jan": {
+   "scans": 60,
+   "min": 0,
+   "max": 3,
+   "first_scan_with_any": "10:20:20"
+  },
+  "scans_total": 134,
+  "scans_8jan_after_trip_in_window": 2
+ },
+ "scans": [
+  {
+   "day": "2025-01-07",
+   "start": "12:00:20",
+   "end": "12:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071200205_e20250071209513_c20250071210034.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "12:10:20",
+   "end": "12:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071210205_e20250071219513_c20250071220073.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "12:20:20",
+   "end": "12:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071220205_e20250071229513_c20250071230024.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "12:30:20",
+   "end": "12:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071230205_e20250071239513_c20250071240042.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "12:40:20",
+   "end": "12:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071240205_e20250071249513_c20250071250029.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "12:50:20",
+   "end": "12:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071250205_e20250071259513_c20250071300012.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "13:00:20",
+   "end": "13:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071300205_e20250071309513_c20250071310026.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "13:10:20",
+   "end": "13:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071310205_e20250071319513_c20250071320066.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "13:20:20",
+   "end": "13:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071320205_e20250071329513_c20250071330021.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 67.96,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "13:30:20",
+   "end": "13:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071330205_e20250071339513_c20250071340026.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "13:40:20",
+   "end": "13:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071340205_e20250071349513_c20250071350028.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 67.96,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "13:50:20",
+   "end": "13:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071350205_e20250071359513_c20250071400019.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 67.96,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "14:00:20",
+   "end": "14:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071400205_e20250071409513_c20250071410039.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 67.96,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "14:10:20",
+   "end": "14:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071410205_e20250071419513_c20250071420039.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 67.96,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "14:20:20",
+   "end": "14:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071420205_e20250071429513_c20250071430032.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 67.96,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "14:30:20",
+   "end": "14:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071430205_e20250071439513_c20250071440039.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 67.96,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "14:40:20",
+   "end": "14:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071440205_e20250071449513_c20250071450039.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "14:50:20",
+   "end": "14:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071450205_e20250071459513_c20250071500015.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 67.96,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "15:00:20",
+   "end": "15:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071500205_e20250071509513_c20250071510038.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 67.96,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "15:10:20",
+   "end": "15:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071510205_e20250071519513_c20250071520057.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "15:20:20",
+   "end": "15:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071520205_e20250071529513_c20250071530018.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 67.96,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "15:30:20",
+   "end": "15:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071530205_e20250071539513_c20250071540042.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 1,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 67.96,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "15:40:20",
+   "end": "15:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071540205_e20250071549513_c20250071550033.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 67.96,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "15:50:20",
+   "end": "15:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071550205_e20250071559513_c20250071600028.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 47.3,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 63.2,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "16:00:20",
+   "end": "16:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071600205_e20250071609513_c20250071610038.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 47.3,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 63.2,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "16:10:20",
+   "end": "16:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071610205_e20250071619513_c20250071620056.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 50.92,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 67.96,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "16:20:20",
+   "end": "16:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071620205_e20250071629513_c20250071630022.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 67.96,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "16:30:20",
+   "end": "16:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071630205_e20250071639513_c20250071640029.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 40.99,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 11.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "16:40:20",
+   "end": "16:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071640205_e20250071649513_c20250071650045.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 83.16,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 59.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "16:50:20",
+   "end": "16:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071650205_e20250071659513_c20250071700034.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 50.92,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 59.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "17:00:20",
+   "end": "17:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071700205_e20250071709513_c20250071710031.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.13,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 32.07,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "17:10:20",
+   "end": "17:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071710203_e20250071719511_c20250071720051.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.13,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 32.07,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "17:20:20",
+   "end": "17:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071720203_e20250071729511_c20250071730024.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "17:30:20",
+   "end": "17:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071730203_e20250071739511_c20250071740029.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "17:40:20",
+   "end": "17:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071740203_e20250071749511_c20250071750045.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "17:50:20",
+   "end": "17:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071750203_e20250071759511_c20250071800022.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "18:00:20",
+   "end": "18:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071800203_e20250071809511_c20250071810044.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "18:10:20",
+   "end": "18:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071810203_e20250071819511_c20250071820085.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "18:20:20",
+   "end": "18:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071820203_e20250071829511_c20250071830035.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "18:30:20",
+   "end": "18:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071830203_e20250071839511_c20250071840033.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "18:40:20",
+   "end": "18:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071840203_e20250071849511_c20250071850034.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 39.75,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 57.88,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "18:50:20",
+   "end": "18:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071850203_e20250071859511_c20250071900024.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 30.35,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 32.48,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 1,
+   "park_fire_pixel_latlon": [
+    [
+     -25.003,
+     -56.848,
+     "low_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "low_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-07",
+   "start": "19:00:20",
+   "end": "19:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071900203_e20250071909511_c20250071910026.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 30.35,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 32.48,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 1,
+   "park_fire_pixel_latlon": [
+    [
+     -25.003,
+     -56.848,
+     "temporally_filtered_low_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_low_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-07",
+   "start": "19:10:20",
+   "end": "19:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071910203_e20250071919511_c20250071920057.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 30.35,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 11.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 1,
+   "park_fire_pixel_latlon": [
+    [
+     -25.003,
+     -56.848,
+     "temporally_filtered_low_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_low_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-07",
+   "start": "19:20:20",
+   "end": "19:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071920203_e20250071929511_c20250071930031.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 30.35,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 27.48,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 1,
+   "park_fire_pixel_latlon": [
+    [
+     -25.003,
+     -56.848,
+     "temporally_filtered_low_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_low_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-07",
+   "start": "19:30:20",
+   "end": "19:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071930203_e20250071939511_c20250071940027.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 30.35,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 20.0,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 1,
+   "park_fire_pixel_latlon": [
+    [
+     -25.003,
+     -56.848,
+     "temporally_filtered_low_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_low_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-07",
+   "start": "19:40:20",
+   "end": "19:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071940203_e20250071949511_c20250071950034.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 30.35,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 11.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 1,
+   "park_fire_pixel_latlon": [
+    [
+     -25.003,
+     -56.848,
+     "temporally_filtered_low_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_low_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-07",
+   "start": "19:50:20",
+   "end": "19:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250071950203_e20250071959511_c20250072000166.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 30.35,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 11.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 1,
+   "park_fire_pixel_latlon": [
+    [
+     -25.003,
+     -56.848,
+     "temporally_filtered_low_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_low_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-07",
+   "start": "20:00:20",
+   "end": "20:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072000203_e20250072009511_c20250072010048.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 30.35,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 11.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 1,
+   "park_fire_pixel_latlon": [
+    [
+     -25.003,
+     -56.848,
+     "temporally_filtered_low_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_low_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-07",
+   "start": "20:10:20",
+   "end": "20:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072010203_e20250072019511_c20250072021357.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 21.67,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 30.41,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 2,
+   "park_fire_pixel_latlon": [
+    [
+     -25.003,
+     -56.848,
+     "temporally_filtered_low_probability_fire_pixel"
+    ],
+    [
+     -25.45,
+     -56.831,
+     "low_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_low_probability_fire_pixel": 1,
+    "low_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-07",
+   "start": "20:20:20",
+   "end": "20:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072020203_e20250072029511_c20250072030395.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 28.83,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 20.87,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 2,
+   "park_fire_pixel_latlon": [
+    [
+     -25.003,
+     -56.848,
+     "temporally_filtered_low_probability_fire_pixel"
+    ],
+    [
+     -25.064,
+     -56.946,
+     "good_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_low_probability_fire_pixel": 1,
+    "good_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-07",
+   "start": "20:30:20",
+   "end": "20:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072030203_e20250072039511_c20250072043048.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 21.67,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 11.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 2,
+   "park_fire_pixel_latlon": [
+    [
+     -25.106,
+     -56.96,
+     "high_probability_fire_pixel"
+    ],
+    [
+     -25.45,
+     -56.831,
+     "temporally_filtered_low_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "high_probability_fire_pixel": 1,
+    "temporally_filtered_low_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-07",
+   "start": "20:40:20",
+   "end": "20:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072040203_e20250072049511_c20250072053169.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 21.67,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 11.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 2,
+   "park_fire_pixel_latlon": [
+    [
+     -25.106,
+     -56.96,
+     "temporally_filtered_high_probability_fire_pixel"
+    ],
+    [
+     -25.45,
+     -56.831,
+     "temporally_filtered_low_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_high_probability_fire_pixel": 1,
+    "temporally_filtered_low_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-07",
+   "start": "20:50:20",
+   "end": "20:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072050203_e20250072059511_c20250072105273.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 21.67,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 11.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 3,
+   "park_fire_pixel_latlon": [
+    [
+     -25.003,
+     -56.848,
+     "temporally_filtered_good_fire_pixel"
+    ],
+    [
+     -25.106,
+     -56.96,
+     "temporally_filtered_medium_probability_fire_pixel"
+    ],
+    [
+     -25.45,
+     -56.831,
+     "temporally_filtered_low_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_good_fire_pixel": 1,
+    "temporally_filtered_medium_probability_fire_pixel": 1,
+    "temporally_filtered_low_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-07",
+   "start": "21:00:20",
+   "end": "21:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072100203_e20250072109511_c20250072114435.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 21.67,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 11.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 2,
+   "park_fire_pixel_latlon": [
+    [
+     -25.003,
+     -56.848,
+     "temporally_filtered_good_fire_pixel"
+    ],
+    [
+     -25.45,
+     -56.831,
+     "temporally_filtered_good_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_good_fire_pixel": 2
+   }
+  },
+  {
+   "day": "2025-01-07",
+   "start": "21:10:20",
+   "end": "21:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072110203_e20250072119511_c20250072124125.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 21.67,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 11.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 2,
+   "park_fire_pixel_latlon": [
+    [
+     -25.106,
+     -56.96,
+     "temporally_filtered_high_probability_fire_pixel"
+    ],
+    [
+     -25.45,
+     -56.831,
+     "temporally_filtered_low_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_high_probability_fire_pixel": 1,
+    "temporally_filtered_low_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-07",
+   "start": "21:20:20",
+   "end": "21:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072120203_e20250072129511_c20250072133465.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 14.94,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 10,
+    "site_pixel_class": "good_fire_pixel",
+    "site_pixel_dqf": 0,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [
+     {
+      "mask": 10,
+      "class_name": "good_fire_pixel",
+      "frp_mw": 68.41,
+      "dist_km": 0.66
+     }
+    ],
+    "nearest_fire_pixel_km_in_window": 0.66,
+    "detected": true
+   },
+   "park_fire_pixels_within_30km": 4,
+   "park_fire_pixel_latlon": [
+    [
+     -25.21,
+     -57.073,
+     "good_fire_pixel"
+    ],
+    [
+     -25.369,
+     -56.671,
+     "low_probability_fire_pixel"
+    ],
+    [
+     -25.369,
+     -56.649,
+     "low_probability_fire_pixel"
+    ],
+    [
+     -25.45,
+     -56.831,
+     "temporally_filtered_medium_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "good_fire_pixel": 1,
+    "low_probability_fire_pixel": 2,
+    "temporally_filtered_medium_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-07",
+   "start": "21:30:20",
+   "end": "21:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072130203_e20250072139511_c20250072142432.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 16.48,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 30,
+    "site_pixel_class": "temporally_filtered_good_fire_pixel",
+    "site_pixel_dqf": 0,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [
+     {
+      "mask": 30,
+      "class_name": "temporally_filtered_good_fire_pixel",
+      "frp_mw": 52.45,
+      "dist_km": 0.66
+     }
+    ],
+    "nearest_fire_pixel_km_in_window": 0.66,
+    "detected": true
+   },
+   "park_fire_pixels_within_30km": 3,
+   "park_fire_pixel_latlon": [
+    [
+     -25.21,
+     -57.073,
+     "temporally_filtered_good_fire_pixel"
+    ],
+    [
+     -25.369,
+     -56.649,
+     "temporally_filtered_low_probability_fire_pixel"
+    ],
+    [
+     -25.45,
+     -56.831,
+     "temporally_filtered_medium_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_good_fire_pixel": 1,
+    "temporally_filtered_low_probability_fire_pixel": 1,
+    "temporally_filtered_medium_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-07",
+   "start": "21:40:20",
+   "end": "21:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072140203_e20250072149511_c20250072152131.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 16.48,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 30,
+    "site_pixel_class": "temporally_filtered_good_fire_pixel",
+    "site_pixel_dqf": 0,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [
+     {
+      "mask": 30,
+      "class_name": "temporally_filtered_good_fire_pixel",
+      "frp_mw": 33.53,
+      "dist_km": 0.66
+     }
+    ],
+    "nearest_fire_pixel_km_in_window": 0.66,
+    "detected": true
+   },
+   "park_fire_pixels_within_30km": 3,
+   "park_fire_pixel_latlon": [
+    [
+     -25.21,
+     -57.073,
+     "temporally_filtered_good_fire_pixel"
+    ],
+    [
+     -25.369,
+     -56.649,
+     "temporally_filtered_low_probability_fire_pixel"
+    ],
+    [
+     -25.45,
+     -56.831,
+     "temporally_filtered_good_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_good_fire_pixel": 2,
+    "temporally_filtered_low_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-07",
+   "start": "21:50:20",
+   "end": "21:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072150203_e20250072159511_c20250072203544.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 14.94,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 30,
+    "site_pixel_class": "temporally_filtered_good_fire_pixel",
+    "site_pixel_dqf": 0,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [
+     {
+      "mask": 30,
+      "class_name": "temporally_filtered_good_fire_pixel",
+      "frp_mw": 39.84,
+      "dist_km": 0.66
+     }
+    ],
+    "nearest_fire_pixel_km_in_window": 0.66,
+    "detected": true
+   },
+   "park_fire_pixels_within_30km": 4,
+   "park_fire_pixel_latlon": [
+    [
+     -25.21,
+     -57.073,
+     "temporally_filtered_good_fire_pixel"
+    ],
+    [
+     -25.369,
+     -56.671,
+     "temporally_filtered_high_probability_fire_pixel"
+    ],
+    [
+     -25.369,
+     -56.649,
+     "temporally_filtered_high_probability_fire_pixel"
+    ],
+    [
+     -25.429,
+     -56.835,
+     "temporally_filtered_good_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_good_fire_pixel": 2,
+    "temporally_filtered_high_probability_fire_pixel": 2
+   }
+  },
+  {
+   "day": "2025-01-07",
+   "start": "22:00:20",
+   "end": "22:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072200203_e20250072209511_c20250072213373.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 16.48,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 30,
+    "site_pixel_class": "temporally_filtered_good_fire_pixel",
+    "site_pixel_dqf": 0,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [
+     {
+      "mask": 30,
+      "class_name": "temporally_filtered_good_fire_pixel",
+      "frp_mw": 27.0,
+      "dist_km": 0.66
+     }
+    ],
+    "nearest_fire_pixel_km_in_window": 0.66,
+    "detected": true
+   },
+   "park_fire_pixels_within_30km": 3,
+   "park_fire_pixel_latlon": [
+    [
+     -25.21,
+     -57.073,
+     "temporally_filtered_good_fire_pixel"
+    ],
+    [
+     -25.369,
+     -56.649,
+     "temporally_filtered_high_probability_fire_pixel"
+    ],
+    [
+     -25.45,
+     -56.831,
+     "temporally_filtered_good_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_good_fire_pixel": 2,
+    "temporally_filtered_high_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-07",
+   "start": "22:10:20",
+   "end": "22:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072210203_e20250072219511_c20250072223125.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 14.94,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 30,
+    "site_pixel_class": "temporally_filtered_good_fire_pixel",
+    "site_pixel_dqf": 0,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [
+     {
+      "mask": 30,
+      "class_name": "temporally_filtered_good_fire_pixel",
+      "frp_mw": 29.98,
+      "dist_km": 0.66
+     }
+    ],
+    "nearest_fire_pixel_km_in_window": 0.66,
+    "detected": true
+   },
+   "park_fire_pixels_within_30km": 3,
+   "park_fire_pixel_latlon": [
+    [
+     -25.21,
+     -57.073,
+     "temporally_filtered_good_fire_pixel"
+    ],
+    [
+     -25.369,
+     -56.671,
+     "temporally_filtered_low_probability_fire_pixel"
+    ],
+    [
+     -25.369,
+     -56.649,
+     "temporally_filtered_high_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_good_fire_pixel": 1,
+    "temporally_filtered_low_probability_fire_pixel": 1,
+    "temporally_filtered_high_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-07",
+   "start": "22:20:20",
+   "end": "22:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072220203_e20250072229511_c20250072234273.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.15,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 50.11,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "22:30:20",
+   "end": "22:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072230203_e20250072239511_c20250072243166.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.15,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 50.11,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "22:40:20",
+   "end": "22:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072240203_e20250072249511_c20250072252426.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.13,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 48.72,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "22:50:20",
+   "end": "22:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072250203_e20250072259511_c20250072302352.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.13,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 48.72,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "23:00:20",
+   "end": "23:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072300203_e20250072309511_c20250072311106.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.15,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 50.11,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "23:10:20",
+   "end": "23:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072310203_e20250072319511_c20250072320572.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 47.3,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 63.2,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "23:20:20",
+   "end": "23:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072320203_e20250072329511_c20250072330036.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.15,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 50.11,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "23:30:20",
+   "end": "23:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072330203_e20250072339511_c20250072341091.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.13,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 48.72,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "23:40:20",
+   "end": "23:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072340203_e20250072349511_c20250072350218.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.15,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 34.76,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-07",
+   "start": "23:50:20",
+   "end": "23:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250072350203_e20250072359511_c20250080000368.nc",
+   "pre_trip": null,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.13,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 48.72,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "10:00:20",
+   "end": "10:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081000205_e20250081009513_c20250081010063.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.15,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 34.76,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "10:10:20",
+   "end": "10:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081010205_e20250081019513_c20250081020376.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.15,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 50.11,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "10:20:20",
+   "end": "10:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081020205_e20250081029513_c20250081031096.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 25.9,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 23.22,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 1,
+   "park_fire_pixel_latlon": [
+    [
+     -25.404,
+     -56.971,
+     "low_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "low_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "10:30:20",
+   "end": "10:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081030205_e20250081039513_c20250081040587.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 25.9,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 23.22,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 1,
+   "park_fire_pixel_latlon": [
+    [
+     -25.404,
+     -56.971,
+     "temporally_filtered_low_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_low_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "10:40:20",
+   "end": "10:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081040205_e20250081049513_c20250081051353.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.13,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 34.76,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "10:50:20",
+   "end": "10:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081050205_e20250081059513_c20250081101332.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.15,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 50.11,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "11:00:20",
+   "end": "11:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081100205_e20250081109513_c20250081111219.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.13,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 46.79,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "11:10:20",
+   "end": "11:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081110205_e20250081119513_c20250081121295.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.13,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 34.76,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "11:20:20",
+   "end": "11:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081120205_e20250081129513_c20250081131255.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.13,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 48.72,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "11:30:20",
+   "end": "11:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081130205_e20250081139513_c20250081140533.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.13,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 34.76,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "11:40:20",
+   "end": "11:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081140205_e20250081149513_c20250081151340.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "11:50:20",
+   "end": "11:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081150205_e20250081159513_c20250081201092.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "12:00:20",
+   "end": "12:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081200205_e20250081209513_c20250081210299.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "12:10:20",
+   "end": "12:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081210205_e20250081219513_c20250081220277.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "12:20:20",
+   "end": "12:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081220205_e20250081229513_c20250081230026.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "12:30:20",
+   "end": "12:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081230205_e20250081239513_c20250081240025.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "12:40:20",
+   "end": "12:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081240205_e20250081249513_c20250081250050.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "12:50:20",
+   "end": "12:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081250205_e20250081259513_c20250081300021.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 60,
+    "site_pixel_class": "SZA_or_glint_angle_block_out_zone",
+    "site_pixel_dqf": 3,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "13:00:20",
+   "end": "13:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081300205_e20250081309513_c20250081310040.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 25.3,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 6.63,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 2,
+   "park_fire_pixel_latlon": [
+    [
+     -25.086,
+     -56.92,
+     "low_probability_fire_pixel"
+    ],
+    [
+     -25.274,
+     -57.061,
+     "good_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "low_probability_fire_pixel": 1,
+    "good_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "13:10:20",
+   "end": "13:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081310205_e20250081319513_c20250081320052.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 27.44,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 11.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 1,
+   "park_fire_pixel_latlon": [
+    [
+     -25.064,
+     -56.924,
+     "temporally_filtered_low_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_low_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "13:20:20",
+   "end": "13:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081320205_e20250081329513_c20250081330038.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.13,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 14.87,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "13:30:20",
+   "end": "13:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081330205_e20250081339513_c20250081340035.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 40.84,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 14.87,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "13:40:20",
+   "end": "13:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081340205_e20250081349513_c20250081350033.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 29.77,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 6.63,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 1,
+   "park_fire_pixel_latlon": [
+    [
+     -25.274,
+     -57.061,
+     "temporally_filtered_good_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_good_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "13:50:20",
+   "end": "13:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081350205_e20250081359513_c20250081400032.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 40.84,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 11.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "14:00:20",
+   "end": "14:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081400205_e20250081409513_c20250081410035.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 40.84,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 14.87,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "14:10:20",
+   "end": "14:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081410205_e20250081419513_c20250081420054.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 24.88,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 20.0,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 1,
+   "park_fire_pixel_latlon": [
+    [
+     -25.383,
+     -56.975,
+     "temporally_filtered_good_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_good_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "14:20:20",
+   "end": "14:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081420205_e20250081429513_c20250081430030.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 32.28,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 11.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "14:30:20",
+   "end": "14:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081430205_e20250081439513_c20250081440043.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 24.88,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 14.87,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 1,
+   "park_fire_pixel_latlon": [
+    [
+     -25.383,
+     -56.975,
+     "temporally_filtered_high_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_high_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "14:40:20",
+   "end": "14:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081440205_e20250081449513_c20250081450031.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 24.88,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 20.0,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 1,
+   "park_fire_pixel_latlon": [
+    [
+     -25.383,
+     -56.975,
+     "temporally_filtered_high_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_high_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "14:50:20",
+   "end": "14:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081450205_e20250081459513_c20250081500029.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 24.88,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 13.03,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 1,
+   "park_fire_pixel_latlon": [
+    [
+     -25.383,
+     -56.975,
+     "temporally_filtered_good_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_good_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "15:00:20",
+   "end": "15:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081500205_e20250081509513_c20250081510021.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 19.93,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 14.87,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 2,
+   "park_fire_pixel_latlon": [
+    [
+     -25.307,
+     -56.572,
+     "good_fire_pixel"
+    ],
+    [
+     -25.383,
+     -56.975,
+     "temporally_filtered_good_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "good_fire_pixel": 1,
+    "temporally_filtered_good_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "15:10:20",
+   "end": "15:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081510205_e20250081519513_c20250081520056.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 19.93,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 13.33,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 2,
+   "park_fire_pixel_latlon": [
+    [
+     -25.307,
+     -56.572,
+     "temporally_filtered_good_fire_pixel"
+    ],
+    [
+     -25.383,
+     -56.975,
+     "temporally_filtered_good_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_good_fire_pixel": 2
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "15:20:20",
+   "end": "15:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081520205_e20250081529513_c20250081530022.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 19.11,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 14.87,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 2,
+   "park_fire_pixel_latlon": [
+    [
+     -25.286,
+     -56.576,
+     "temporally_filtered_good_fire_pixel"
+    ],
+    [
+     -25.383,
+     -56.975,
+     "temporally_filtered_good_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_good_fire_pixel": 2
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "15:30:20",
+   "end": "15:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081530205_e20250081539513_c20250081540034.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 19.11,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 14.87,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 2,
+   "park_fire_pixel_latlon": [
+    [
+     -25.286,
+     -56.576,
+     "temporally_filtered_good_fire_pixel"
+    ],
+    [
+     -25.383,
+     -56.975,
+     "temporally_filtered_good_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_good_fire_pixel": 2
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "15:40:20",
+   "end": "15:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081540205_e20250081549513_c20250081550033.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 9.16,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 13.03,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 2,
+   "park_fire_pixel_latlon": [
+    [
+     -25.195,
+     -56.813,
+     "good_fire_pixel"
+    ],
+    [
+     -25.307,
+     -56.572,
+     "temporally_filtered_good_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "good_fire_pixel": 1,
+    "temporally_filtered_good_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "15:50:20",
+   "end": "15:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081550205_e20250081559513_c20250081600024.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 19.93,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 6.63,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 2,
+   "park_fire_pixel_latlon": [
+    [
+     -25.274,
+     -57.061,
+     "temporally_filtered_good_fire_pixel"
+    ],
+    [
+     -25.307,
+     -56.572,
+     "temporally_filtered_good_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_good_fire_pixel": 2
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "16:00:20",
+   "end": "16:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081600205_e20250081609513_c20250081610029.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 29.77,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 6.63,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 1,
+   "park_fire_pixel_latlon": [
+    [
+     -25.274,
+     -57.061,
+     "temporally_filtered_good_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_good_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "16:10:20",
+   "end": "16:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081610205_e20250081619513_c20250081620059.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.13,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 31.27,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "16:20:20",
+   "end": "16:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081620205_e20250081629513_c20250081630019.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.13,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 31.27,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "16:30:20",
+   "end": "16:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081630205_e20250081639513_c20250081640034.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 29.77,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 6.63,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 1,
+   "park_fire_pixel_latlon": [
+    [
+     -25.274,
+     -57.061,
+     "temporally_filtered_good_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_good_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "16:40:20",
+   "end": "16:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081640205_e20250081649513_c20250081650036.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 43.13,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 35.83,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "16:50:20",
+   "end": "16:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081650205_e20250081659513_c20250081700024.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 29.77,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 6.63,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 1,
+   "park_fire_pixel_latlon": [
+    [
+     -25.274,
+     -57.061,
+     "temporally_filtered_good_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_good_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "17:00:20",
+   "end": "17:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081700205_e20250081709513_c20250081710035.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 19.5,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 23.53,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 1,
+   "park_fire_pixel_latlon": [
+    [
+     -25.179,
+     -56.596,
+     "low_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "low_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "17:10:20",
+   "end": "17:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081710203_e20250081719511_c20250081720049.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 19.5,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 6.63,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 2,
+   "park_fire_pixel_latlon": [
+    [
+     -25.179,
+     -56.596,
+     "temporally_filtered_high_probability_fire_pixel"
+    ],
+    [
+     -25.274,
+     -57.061,
+     "temporally_filtered_good_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_high_probability_fire_pixel": 1,
+    "temporally_filtered_good_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "17:20:20",
+   "end": "17:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081720203_e20250081729511_c20250081730447.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 19.5,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 6.63,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 3,
+   "park_fire_pixel_latlon": [
+    [
+     -25.179,
+     -56.596,
+     "temporally_filtered_high_probability_fire_pixel"
+    ],
+    [
+     -25.274,
+     -57.061,
+     "temporally_filtered_good_fire_pixel"
+    ],
+    [
+     -25.392,
+     -56.6,
+     "medium_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_high_probability_fire_pixel": 1,
+    "temporally_filtered_good_fire_pixel": 1,
+    "medium_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "17:30:20",
+   "end": "17:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081730203_e20250081739511_c20250081740245.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 19.5,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 6.63,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 2,
+   "park_fire_pixel_latlon": [
+    [
+     -25.179,
+     -56.596,
+     "temporally_filtered_medium_probability_fire_pixel"
+    ],
+    [
+     -25.274,
+     -57.061,
+     "temporally_filtered_good_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_medium_probability_fire_pixel": 1,
+    "temporally_filtered_good_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "17:40:20",
+   "end": "17:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081740203_e20250081749511_c20250081750023.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 19.5,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 35.83,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 1,
+   "park_fire_pixel_latlon": [
+    [
+     -25.179,
+     -56.596,
+     "temporally_filtered_low_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_low_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "17:50:20",
+   "end": "17:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081750203_e20250081759511_c20250081800020.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 40.99,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 11.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "18:00:20",
+   "end": "18:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081800203_e20250081809511_c20250081810023.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 27.57,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 6.63,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 2,
+   "park_fire_pixel_latlon": [
+    [
+     -25.274,
+     -57.061,
+     "temporally_filtered_good_fire_pixel"
+    ],
+    [
+     -25.275,
+     -57.039,
+     "temporally_filtered_low_probability_fire_pixel"
+    ]
+   ],
+   "park_fire_pixels_by_class": {
+    "temporally_filtered_good_fire_pixel": 1,
+    "temporally_filtered_low_probability_fire_pixel": 1
+   }
+  },
+  {
+   "day": "2025-01-08",
+   "start": "18:10:20",
+   "end": "18:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081810203_e20250081819511_c20250081820040.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 39.55,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "18:20:20",
+   "end": "18:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081820203_e20250081829511_c20250081830015.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 67.96,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "18:30:20",
+   "end": "18:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081830203_e20250081839511_c20250081840023.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 40.99,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 11.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "18:40:20",
+   "end": "18:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081840203_e20250081849511_c20250081850015.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 39.55,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "18:50:20",
+   "end": "18:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081850203_e20250081859511_c20250081900425.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 40.99,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 11.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "19:00:20",
+   "end": "19:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081900203_e20250081909511_c20250081910399.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 40.99,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 11.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "19:10:20",
+   "end": "19:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081910203_e20250081919511_c20250081920537.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 40.99,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 11.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "19:20:20",
+   "end": "19:29:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081920203_e20250081929511_c20250081931080.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 40.99,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 11.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "19:30:20",
+   "end": "19:39:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081930203_e20250081939511_c20250081941031.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 67.96,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "19:40:20",
+   "end": "19:49:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081940203_e20250081949511_c20250081951158.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 40.99,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 11.32,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "19:50:20",
+   "end": "19:59:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250081950203_e20250081959511_c20250082001445.nc",
+   "pre_trip": true,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 67.96,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "20:00:20",
+   "end": "20:09:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250082000203_e20250082009511_c20250082012171.nc",
+   "pre_trip": false,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 67.96,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  },
+  {
+   "day": "2025-01-08",
+   "start": "20:10:20",
+   "end": "20:19:51",
+   "file": "OR_ABI-L2-FDCF-M6_G16_s20250082010203_e20250082019511_c20250082022480.nc",
+   "pre_trip": false,
+   "A": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": null,
+    "detected": false
+   },
+   "B": {
+    "site_pixel_mask": 100,
+    "site_pixel_class": "processed_no_fire_pixel",
+    "site_pixel_dqf": 1,
+    "site_pixel_is_cloud": false,
+    "cloud_pixels_in_3x3": 0,
+    "fire_pixels_within_4km": [],
+    "nearest_fire_pixel_km_in_window": 67.96,
+    "detected": false
+   },
+   "park_fire_pixels_within_30km": 0,
+   "park_fire_pixel_latlon": [],
+   "park_fire_pixels_by_class": {}
+  }
+ ]
+}

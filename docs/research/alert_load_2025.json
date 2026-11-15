@@ -1,0 +1,185 @@
+{
+  "settings": {
+    "cluster_km": 1.5,
+    "distance_rule_km": 5,
+    "wind_gate_km": 25,
+    "scenario_hours": 3,
+    "wind_hours_tried": 3,
+    "max_cross_km": 25,
+    "min_peak_ugm3": 1,
+    "piece_vertices": 25,
+    "piece_skip_km": 30,
+    "frp_variants_mw": [
+      5,
+      10
+    ],
+    "wind_field": "wind_speed_100m, wind_direction_100m, wind_speed_10m, boundary_layer_height, cloud_cover"
+  },
+  "rule_definitions": {
+    "day": "UTC date of the satellite pass",
+    "distance": "cluster centroid within 5 km of a mapped 500 kV line segment",
+    "wind": "cluster within 25 km of a line; for the pass hour and the next two hours, scenario hours 3, plume axis crosses line, crossKm <= 25, peak >= 1 ug/m3; any hour qualifies"
+  },
+  "inputs": {
+    "detections_within_25km": 20195,
+    "clusters_total": 10970,
+    "clusters_within_25km_of_line": 10970,
+    "line_ways": 35,
+    "line_pieces": 107
+  },
+  "weather": {
+    "clusters_without_cell_file": 0,
+    "clusters_with_no_usable_hour": 0,
+    "missing_hour_lookups": 0,
+    "era5_cells_on_disk": 76
+  },
+  "results": {
+    "distance_5km": {
+      "flagged_days": 244,
+      "flagged_clusters": 2422,
+      "clusters_per_flagged_day_median": 7,
+      "clusters_per_flagged_day_p90": 22,
+      "clusters_per_flagged_day_max": 54
+    },
+    "wind": {
+      "flagged_days": 257,
+      "flagged_clusters": 3080,
+      "clusters_per_flagged_day_median": 8,
+      "clusters_per_flagged_day_p90": 31,
+      "clusters_per_flagged_day_max": 69
+    },
+    "wind_frp_ge_5": {
+      "flagged_days": 242,
+      "flagged_clusters": 2242,
+      "clusters_per_flagged_day_median": 6,
+      "clusters_per_flagged_day_p90": 24,
+      "clusters_per_flagged_day_max": 49
+    },
+    "wind_frp_ge_10": {
+      "flagged_days": 215,
+      "flagged_clusters": 1498,
+      "clusters_per_flagged_day_median": 4,
+      "clusters_per_flagged_day_p90": 17.6,
+      "clusters_per_flagged_day_max": 33
+    },
+    "wind_within_5km": {
+      "flagged_days": 212,
+      "flagged_clusters": 1215,
+      "clusters_per_flagged_day_median": 4,
+      "clusters_per_flagged_day_p90": 13,
+      "clusters_per_flagged_day_max": 29
+    },
+    "wind_beyond_5km": {
+      "flagged_days": 229,
+      "flagged_clusters": 1865,
+      "clusters_per_flagged_day_median": 5,
+      "clusters_per_flagged_day_p90": 18.2,
+      "clusters_per_flagged_day_max": 44
+    }
+  },
+  "overlap": {
+    "days_flagged_by_wind_and_distance": 231,
+    "days_flagged_by_wind_only": 26,
+    "days_flagged_by_distance_only": 13
+  },
+  "ring_share_upwind": {
+    "distance_clusters": 2422,
+    "of_which_wind_flagged": 1215,
+    "share": 0.5017,
+    "distance_clusters_with_weather": 2422,
+    "share_of_those_with_weather": 0.5017
+  },
+  "wind_flag_share_beyond_5km": 0.6055,
+  "sanity_2025_01_08": [
+    {
+      "target": [
+        -25.265,
+        -56.765
+      ],
+      "clusters_nearby_on_day": 3,
+      "wind_flagged": [
+        {
+          "time": "2025-01-08T17:05Z",
+          "sat": "S-NPP",
+          "lat": -25.2656,
+          "lon": -56.7637,
+          "frp": 6.3,
+          "dist_km": 5,
+          "line": "w585106818",
+          "hour": "2025-01-08T17Z",
+          "cross_km": 5,
+          "peak": 3.4,
+          "wind_from": 187,
+          "ws100": 1.61
+        },
+        {
+          "time": "2025-01-08T17:28Z",
+          "sat": "NOAA-20",
+          "lat": -25.2662,
+          "lon": -56.7629,
+          "frp": 13.2,
+          "dist_km": 5.06,
+          "line": "w585106818",
+          "hour": "2025-01-08T17Z",
+          "cross_km": 5.06,
+          "peak": 6.87,
+          "wind_from": 187,
+          "ws100": 1.61
+        },
+        {
+          "time": "2025-01-08T18:08Z",
+          "sat": "Aqua",
+          "lat": -25.2631,
+          "lon": -56.7674,
+          "frp": 15.8,
+          "dist_km": 4.75,
+          "line": "w585106818",
+          "hour": "2025-01-08T19Z",
+          "cross_km": 4.8,
+          "peak": 7.96,
+          "wind_from": 193,
+          "ws100": 3.38
+        }
+      ],
+      "not_flagged": []
+    },
+    {
+      "target": [
+        -25.215,
+        -57.069
+      ],
+      "clusters_nearby_on_day": 2,
+      "wind_flagged": [
+        {
+          "time": "2025-01-08T17:05Z",
+          "sat": "S-NPP",
+          "lat": -25.2119,
+          "lon": -57.0698,
+          "frp": 16,
+          "dist_km": 2.87,
+          "line": "w807985047",
+          "hour": "2025-01-08T18Z",
+          "cross_km": 6,
+          "peak": 6.83,
+          "wind_from": 149,
+          "ws100": 2.98
+        },
+        {
+          "time": "2025-01-08T17:28Z",
+          "sat": "NOAA-20",
+          "lat": -25.2165,
+          "lon": -57.068,
+          "frp": 28.9,
+          "dist_km": 2.38,
+          "line": "w807985047",
+          "hour": "2025-01-08T18Z",
+          "cross_km": 6.57,
+          "peak": 10.47,
+          "wind_from": 149,
+          "ws100": 2.98
+        }
+      ],
+      "not_flagged": []
+    }
+  ]
+}

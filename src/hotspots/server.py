@@ -212,6 +212,55 @@ def api_weather(q):
     return out
 
 
+WIND_DIR = Path(__file__).resolve().parents[2] / "data" / "cache" / "wind"
+WIND_HOURLY = "wind_speed_10m,wind_speed_100m,wind_direction_100m,boundary_layer_height,cloud_cover"
+
+
+def api_wind(q):
+    """Modelled wind (Open-Meteo) for up to 60 quarter-degree cells, kept on disk so that repeat visits do not spend
+    the free service's quota. Nothing is altered: each cell is the upstream hourly block as received."""
+    import re
+    cells = [c for c in arg(q, "cells").split(";") if c]
+    if not 1 <= len(cells) <= 60 or not all(re.fullmatch(r"-?\d{1,2}\.\d{2},-?\d{1,3}\.\d{2}", c) for c in cells):
+        raise BadRequest("cells must be 1 to 60 of lat,lon with two decimals, separated by ;")
+    d0, d1 = arg(q, "d0"), arg(q, "d1")
+    try:
+        a, b = datetime.strptime(d0, "%Y-%m-%d").date(), datetime.strptime(d1, "%Y-%m-%d").date()
+    except ValueError:
+        raise BadRequest("d0 and d1 must be YYYY-MM-DD") from None
+    if not 0 <= (b - a).days <= 10:
+        raise BadRequest("date range must be 0 to 10 days")
+    old = arg(q, "old", "0") == "1"
+    final = b < datetime.now(timezone.utc).date() - timedelta(days=1)  # hours that are over do not change much; today's still do
+    folder = WIND_DIR / f"{d0}_{d1}_{'era5' if old else 'fc'}"
+    out, need = {}, []
+    for c in cells:
+        f = folder / (c.replace(",", "_") + ".json")
+        try:
+            if f.exists() and (final or time.time() - f.stat().st_mtime < 3600):
+                out[c] = json.loads(f.read_text())
+                continue
+        except (OSError, ValueError):
+            pass
+        need.append(c)
+    if need:
+        base = "https://archive-api.open-meteo.com/v1/archive" if old else "https://api.open-meteo.com/v1/forecast"
+        u = (f"{base}?latitude={','.join(c.split(',')[0] for c in need)}&longitude={','.join(c.split(',')[1] for c in need)}"
+             f"&hourly={WIND_HOURLY}&start_date={d0}&end_date={d1}&wind_speed_unit=ms&timezone=GMT")
+        try:
+            j = _fetch_json(u, 45)
+            j = j if isinstance(j, list) else [j]
+            folder.mkdir(parents=True, exist_ok=True)
+            for c, item in zip(need, j):
+                h = item.get("hourly") if isinstance(item, dict) else None
+                if h and h.get("time"):
+                    out[c] = h
+                    (folder / (c.replace(",", "_") + ".json")).write_text(json.dumps(h, separators=(",", ":")))
+        except Exception:
+            pass  # the cells stay missing; the page then asks the wind service itself and reports what it could not get
+    return {"source": "Open-Meteo " + ("ERA5 reanalysis" if old else "best-match weather models"), "cells": {c: out.get(c) for c in cells}}
+
+
 def api_population(q):
     w, s, e, n = bbox_arg(q, max_deg=70)  # FIRELAB asks for a fixed 200 km half-width square around a fire
     g = population.window(w, s, e, n)
@@ -221,7 +270,7 @@ def api_population(q):
 
 
 ROUTES = {"/api/status": api_status, "/api/firms": api_firms, "/api/harmonize": api_harmonize,
-          "/api/weather": api_weather, "/api/population": api_population}
+          "/api/weather": api_weather, "/api/wind": api_wind, "/api/population": api_population}
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -233,7 +282,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def end_headers(self):
         self.send_header("X-Content-Type-Options", "nosniff")
-        if self.path.startswith(("/app-data/", "/js/", "/css/", "/index.html")) or self.path in ("/", ""):
+        if self.path.startswith(("/app-data/", "/js/", "/css/", "/index.html", "/start.html", "/role.html")) or self.path in ("/", ""):
             self.send_header("Cache-Control", "no-cache")
         super().end_headers()
 
@@ -261,7 +310,7 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception as e:  # keep the server up; the message names the type only
                 return self.send_json(500, {"error": f"server error ({type(e).__name__})"})
         if u.path == "/":
-            self.path = "/index.html"
+            self.path = "/start.html"  # the front door is the role picker; index.html (the analyst workspace) stays at its own address
         return super().do_GET()
 
     def list_directory(self, path):

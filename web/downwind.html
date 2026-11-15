@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DOWNWIND · Smoke crossing watch · FIREVERSE</title>
+<meta name="description" content="Which power lines, roads, clinics and schools does the modelled smoke of a satellite-detected fire reach? Observed fires, mapped assets, modelled wind, scenario plume.">
+<meta name="theme-color" content="#07131B">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23FF8A3D'/%3E%3Cpath d='M16 6c1.3 4.5 6.5 7 6.5 13a6.5 6.5 0 0 1-13 0c0-2.6 1.3-4.6 2.6-5.9.4 2.2 1.6 3.5 3.1 3.9C14.3 13 14.7 9.1 16 6z' fill='white'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://unpkg.com">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="css/fv.css?v=1">
+<link rel="stylesheet" href="css/downwind.css?v=1">
+</head>
+<body class="dw-body">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-smoke" viewBox="0 0 24 24"><path d="M6 19a4 4 0 0 1-.6-7.96A6 6 0 0 1 17.3 9.5 4.5 4.5 0 0 1 17.5 19z"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+  <symbol id="i-road" viewBox="0 0 24 24"><path d="M8 3 4 21M16 3l4 18M12 4v3M12 11v3M12 18v3"/></symbol>
+  <symbol id="i-cross" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></symbol>
+  <symbol id="i-school" viewBox="0 0 24 24"><path d="m3 9 9-5 9 5-9 5z"/><path d="M7 11.5V16c1.5 1.3 3.2 2 5 2s3.500-.7 5-2v-4.500"/></symbol>
+  <symbol id="i-sat" viewBox="0 0 24 24"><path d="m7 3 4 4-4 4-4-4zM17 13l4 4-4 4-4-4zM9 9l6 6M14 6a4 4 0 0 1 4 4M14 2a8 8 0 0 1 8 8"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-speak" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM16.500 8.500a5 5 0 0 1 0 7M19 6a8.500 8.500 0 0 1 0 12"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M12 15V3M8 7l4-4 4 4"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6.5-6.100-6.500-11a6.500 6.500 0 0 1 13 0c0 4.900-6.500 11-6.500 11z"/><circle cx="12" cy="10" r="2.300"/></symbol>
+  <symbol id="i-replay" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.700L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></symbol>
+</svg>
+
+<header class="topbar dw-top">
+  <a class="sim-brand dw-brand" href="index.html" title="Back to the Hot Spot Explorer"><span class="brand-mark" aria-hidden="true"></span><span>DOWNWIND<small>What is the smoke about to cross?</small></span></a>
+  <label class="dw-region" title="Region: fires, assets, map, time zone and bulletin language follow it"><span class="vh">Region</span><select id="dwRegion" aria-label="Region"><option value="PY">Paraguay</option></select></label>
+  <span class="pill" id="dwPill">Loading NASA FIRMS records…</span>
+  <div class="top-actions">
+    <a class="ghost-btn dw-hide-s" href="index.html"><svg class="ico"><use href="#i-back"/></svg><span>Explorer</span></a>
+    <a class="ghost-btn" href="place.html" id="dwPlaceLink" title="My place: a light page for a phone, one place, one answer"><svg class="ico"><use href="#i-pin"/></svg><span>My place</span></a>
+    <a class="ghost-btn dw-hide-s" href="firelab.html"><svg class="ico"><use href="#i-smoke"/></svg><span>FIRELAB</span></a>
+    <a class="ghost-btn dw-hide-s" href="start.html" title="Choose another role"><span>Switch role</span></a>
+    <button class="icon-btn" data-open="dwMethod" aria-controls="dwMethod" title="Method and limits" aria-label="Method and limits"><svg class="ico"><use href="#i-info"/></svg></button>
+    <button class="icon-btn theme-btn" id="themeToggle" title="Switch light or dark theme" aria-label="Switch light or dark theme"><svg class="ico sun"><use href="#i-sun"/></svg><svg class="ico moon"><use href="#i-moon"/></svg></button>
+  </div>
+</header>
+
+<main class="dw-shell">
+  <!-- the sky clock: how old is the picture, when is the next look -->
+  <section class="dw-clock" id="dwClock" aria-label="Satellite coverage clock">
+    <div class="dw-clock-item"><svg class="ico"><use href="#i-sat"/></svg><div><span>Last satellite look <i class="dtag obs">OBSERVED</i></span><b id="ckLast">—</b><small id="ckLastSub"></small></div></div>
+    <div class="dw-clock-item"><div><span>Next look, about <i class="dtag mod">ESTIMATE</i></span><b id="ckNext">—</b><small id="ckNextSub"></small></div></div>
+    <div class="dw-clock-item grow"><div><span>Read this first</span><small id="ckNote">Satellites pass a few times a day and the data arrives up to three hours later. A place with no detection has not been shown to have no fire.</small></div></div>
+    <div class="seg dw-mode" role="tablist" aria-label="Data shown">
+      <button role="tab" aria-selected="true" data-mode="live">Latest data</button>
+      <button role="tab" aria-selected="false" data-mode="replay" tabindex="-1"><svg class="ico"><use href="#i-replay"/></svg>Replay: 8 Jan 2025 line trip</button>
+      <button role="tab" aria-selected="false" data-mode="fast" tabindex="-1"><svg class="ico"><use href="#i-sat"/></svg>Fast look · last 3 hours</button>
+    </div>
+  </section>
+
+  <section class="dw-replay" id="dwReplay" hidden></section>
+  <section class="dw-fast" id="dwFast" hidden aria-label="Fast look source and limits"></section>
+
+  <div class="dw-main">
+    <aside class="dw-list" aria-label="Assets with smoke upwind">
+      <div class="dw-list-head">
+        <div class="seg dw-kinds" role="tablist" aria-label="Asset type" id="dwKinds">
+          <button role="tab" aria-selected="true" data-kind="power"><svg class="ico"><use href="#i-bolt"/></svg>Power<span class="seg-badge" id="nPower"></span></button>
+          <button role="tab" aria-selected="false" data-kind="roads" tabindex="-1"><svg class="ico"><use href="#i-road"/></svg>Roads<span class="seg-badge" id="nRoads"></span></button>
+          <button role="tab" aria-selected="false" data-kind="health" tabindex="-1"><svg class="ico"><use href="#i-cross"/></svg>Health<span class="seg-badge" id="nHealth"></span></button>
+          <button role="tab" aria-selected="false" data-kind="schools" tabindex="-1"><svg class="ico"><use href="#i-school"/></svg>Schools<span class="seg-badge" id="nSchools"></span></button>
+        </div>
+        <div class="dw-filters" id="dwFilters">
+          <label id="dwHoursL">Fires seen in the last <select id="dwHours"><option value="24">24 hours</option><option value="48">48 hours</option><option value="168">7 days</option></select> of data</label>
+          <label id="dwSizeL">Smallest fire to include <select id="dwMinFrp"><option value="0">Any size</option><option value="2">2 MW</option><option value="5" selected>5 MW</option><option value="10">10 MW</option></select></label>
+        </div>
+        <p class="dw-scope" id="dwScope"></p>
+      </div>
+      <div class="dw-rows" id="dwRows" role="list"><div class="empty-state">Loading…</div></div>
+    </aside>
+
+    <section class="dw-stage">
+      <div id="dwMap" aria-label="Map of fires, smoke paths and assets"></div>
+      <div class="dw-legend"><span><i class="lg fire"></i>Fire <b class="dtag obs">OBSERVED</b></span><span><i class="lg asset"></i>Asset <b class="dtag map">MAPPED</b></span><span><i class="lg plume"></i>Smoke path <b class="dtag scn">SCENARIO</b></span></div>
+      <article class="dw-bulletin" id="dwBulletin" hidden aria-live="polite">
+        <div class="dw-b-head">
+          <div><div class="eyebrow">Bulletin</div><h2 id="bTitle"></h2></div>
+          <div class="dw-b-toggles">
+            <div class="seg dw-lang" role="tablist" aria-label="Bulletin language"><button role="tab" aria-selected="true" data-lang="en">English</button><button role="tab" aria-selected="false" data-lang="es" tabindex="-1">Español</button><button role="tab" aria-selected="false" data-lang="pt" tabindex="-1">Português</button></div>
+            <div class="seg dw-fmt" role="tablist" aria-label="Bulletin format"><button role="tab" aria-selected="true" data-fmt="full">Full</button><button role="tab" aria-selected="false" data-fmt="short" tabindex="-1">Short (SMS)</button></div>
+          </div>
+        </div>
+        <p class="dw-b-text" id="bText"></p>
+        <p class="dw-b-count" id="bCount" hidden></p>
+        <div class="dw-b-facts" id="bFacts"></div>
+        <div class="dw-b-actions">
+          <button class="primary-btn" id="bCopy"><svg class="ico"><use href="#i-copy"/></svg>Copy text</button>
+          <button class="ghost-btn" id="bSpeak" aria-pressed="false"><svg class="ico"><use href="#i-speak"/></svg><span>Read aloud</span></button>
+          <a class="ghost-btn" id="bShare" target="_blank" rel="noopener"><svg class="ico"><use href="#i-share"/></svg>Share by WhatsApp</a>
+          <a class="ghost-btn" id="bLab"><svg class="ico"><use href="#i-smoke"/></svg>Open in FIRELAB</a>
+        </div>
+        <p class="dw-b-note" id="bNote"></p>
+      </article>
+    </section>
+  </div>
+</main>
+
+<div class="modal-wrap" id="dwMethod" role="dialog" aria-modal="true" aria-labelledby="dwMethodT" hidden><div class="modal">
+  <div class="dw-m-head"><h2 id="dwMethodT">Method and limits</h2><button class="icon-btn sm" data-close="dwMethod" aria-label="Close"><svg class="ico"><use href="#i-close"/></svg></button></div>
+  <div class="dw-m-body">
+    <p><b>What this page does.</b> It takes each fire the satellites recorded, runs the FIRELAB smoke scenario with the modelled wind for that hour, and checks which mapped assets the smoke path reaches. A distance ring around an asset cannot tell upwind from downwind; this can.</p>
+    <p><span class="dtag obs">OBSERVED</span> <b>Fires.</b> NASA FIRMS detections from MODIS and VIIRS, taken from the harmonized layer so that a fire seen by both sensors in one pass is used once. Pixels of one satellite pass within 1.5 km and 10 minutes are grouped and their fire radiative power is summed, assuming one fire. The same fire seen on a later pass is listed once per asset, with the number of passes.</p>
+    <p id="mAssets"><span class="dtag map">MAPPED</span> <b>Assets.</b> OpenStreetMap: power lines, roads, hospitals, schools. Volunteer data: it can be incomplete or mislabelled and it is not the operator's record.</p>
+    <p id="mTime"><b>Times.</b> Times in bulletins use the time zone of the selected region. Brazil has several time zones and the bulletin uses Brasília time.</p>
+    <p><span class="dtag mod">MODELLED</span> <b>Wind.</b> Open-Meteo weather models at 100 m, on a 0.25° grid, for the hour of the satellite pass and the two hours after it. In light wind (under about 3 m/s) the modelled direction is unreliable; such rows are marked. Wind is requested for at most 240 such cells per computation, the strongest fires first; when smaller fires are left out the page says how many, and none of their assets is called "not downwind" because those fires were not assessed.</p>
+    <p><span class="dtag scn">SCENARIO</span> <b>Smoke path.</b> The FIRELAB Gaussian plume (Briggs dispersion, Sofiev plume rise, Akagi emission factor for savanna and grassland), with the fire held at its observed power for three hours. Fire clusters whose summed power is below the chosen minimum (5 MW unless you change it) are left out and counted on the page, because at night the formula gives even small, distant fires a narrow path that is weak evidence. A line is listed as <i>crossed</i> when the plume axis passes over it and the modelled ground-level PM2.5 added along it reaches 1 µg/m³. A point is listed as <i>downwind</i> at the same level.</p>
+    <p id="mFast"><span class="dtag fast">FAST · COARSE</span> <b>Fast look.</b> A second, coarser source: INPE Programa Queimadas publishes a small file every 10 minutes with GOES-19 detections, South America only (about 2 km pixels). FIRMS reaches the public up to 3 hours after a pass; in one measurement of 543 files, GOES-19 detections were a median of 20 minutes before the file time stamp. These files carry no fire power and no confidence value, so no plume is run and no smoke amount is shown: a row means only that the pixel is upwind of the asset by the modelled wind, within 10 km. One scan is weak evidence and several consecutive scans are stronger; rows are ranked by the number of 10-minute scans, then distance. There are more false alarms than with MODIS or VIIRS, small or short fires can be missed, and cloud hides fires. If an asset lies within 2 km of the pixel centre the wind test cannot be trusted. The project has not validated this source against ground reports. If INPE cannot be reached the page says so and the other tabs keep working.</p>
+    <p><b>Bulletin languages.</b> English, Spanish and Portuguese. The Spanish and Portuguese texts are fixed templates, not yet reviewed by a native speaker; the short form has at most 160 characters and uses only the GSM 7-bit alphabet.</p>
+    <p><b>What it does not do.</b> It does not predict a line fault, visibility on a road, or anyone's health. It does not see fires between satellite passes, under cloud, or too small for the sensor. FIRMS data reaches the public up to three hours after the pass, so this is a watch list for the hours after a pass, not a first alarm. Not an operational alert service.</p>
+    <p><b>Next look.</b> Estimated from the times of the passes in the last days of data that recorded at least one fire in the region. It is not an orbit prediction.</p>
+  </div>
+</div></div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/ui.js?v=2"></script>
+<script src="js/regions.js?v=1"></script>
+<script src="js/firelab-core.js?v=1"></script>
+<script src="js/downwind-core.js?v=1"></script>
+<script src="js/fast-core.js?v=1"></script>
+<script src="js/watch-core.js?v=1"></script>
+<script src="js/bulletin-core.js?v=1"></script>
+
+
+<script src="js/downwind.js?v=3"></script>
+</body>
+</html>

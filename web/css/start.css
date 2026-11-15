@@ -1,0 +1,151 @@
+/* FIREVERSE role selection: presentation only. Tokens come from fv.css.
+   The deck is driven by one attribute, #deck[data-state] = stacked | dealing | shown | leaving, set by js/start.js.
+   Every state is a complete pose (below), so any of them is stable on its own and can be left at any time.
+   Only transform and opacity ever animate. */
+
+@view-transition{navigation:auto}  /* cross-document View Transition: applies when the destination page opts in too; otherwise a plain navigation */
+
+.st{min-height:100vh;display:flex;flex-direction:column}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.st a:not(.card):not(.primary-btn):not(.ghost-btn):not(.st-brand):not(.skip){color:var(--cyan)}
+body.light.st a:not(.card):not(.primary-btn):not(.ghost-btn):not(.st-brand):not(.skip){color:#0A7384}
+body.light.st .primary-btn{background:#0A7384;color:#fff}
+body.light.st .primary-btn:hover{background:#08606E}
+
+/* ===== page frame ===== */
+.st-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px max(16px,env(safe-area-inset-right)) 12px max(16px,env(safe-area-inset-left));max-width:1360px;width:100%;margin:0 auto}
+.st-brand{display:inline-flex;align-items:center;gap:11px;min-height:44px;color:var(--text);text-decoration:none;font-weight:700;font-size:15px;letter-spacing:.04em}
+.st .icon-btn{width:44px;height:44px}
+.st-main{flex:1;display:flex;flex-direction:column;justify-content:center;width:100%;max-width:1360px;margin:0 auto;padding:clamp(8px,2.2vh,28px) 16px 24px;outline:0}
+.st-hero{text-align:center;margin:0 auto clamp(14px,3vh,30px);max-width:640px}
+.st-hero h1{font-size:clamp(28px,4.2vw,40px);line-height:1.1;letter-spacing:-.025em}
+.st-hero p{margin-top:10px;color:var(--muted);font-size:clamp(15px,1.6vw,17px)}
+.st-foot{padding:14px 16px calc(18px + env(safe-area-inset-bottom));text-align:center;font-size:12.5px;color:var(--muted)}
+.st-foot a{display:inline-block;padding:13px 6px;margin:-13px -6px;text-underline-offset:3px;white-space:nowrap}
+
+/* ===== deck ===== */
+.deck{
+  /* timings: start.js reads these, so the css and the script cannot disagree */
+  --stagger:70ms;--throw:700ms;--flip-lag:430ms;--flip:500ms;--leave:420ms;--collect:520ms;--stagger-back:35ms;--fade:200ms;
+  --spring-out:cubic-bezier(.2,.9,.25,1.1);   /* slight overshoot, settles like a thrown card */
+  --spring-in:cubic-bezier(.45,.05,.2,1);
+  --flip-ease:cubic-bezier(.3,.8,.25,1);
+  --cols:6;--gap:16px;
+}
+.deck:not([data-state]){display:none}
+.stage{position:relative;max-width:1240px;margin:0 auto}
+.slots{list-style:none;margin:0;padding:14px 0;display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));gap:var(--gap)}
+@media (max-width:1099px){.deck{--cols:3}}
+@media (max-width:639px){.deck{--cols:2;--gap:12px}}
+/* resting deck on a multi-row layout: collapse the empty grid so the buttons stay close and the page does not scroll through blank space */
+.deck[data-state="stacked"][data-compact] .slots{max-height:var(--stack-h,none);overflow:clip;overflow-clip-margin:18px}
+
+.slot{position:relative;display:flex;z-index:calc(10 - var(--i))}
+.slot:hover,.slot:focus-within{z-index:30}
+.slot[data-picked]{z-index:40}
+.card,.arc,.lob,.tilt,.flip{display:block;width:100%;height:100%}
+.card{position:relative;border-radius:var(--r-lg);color:var(--text);text-decoration:none;-webkit-tap-highlight-color:transparent;--accent:var(--cyan)}
+.card:focus-visible{outline:2px solid var(--cyan);outline-offset:4px}
+.card[data-accent=orange]{--accent:var(--orange)}.card[data-accent=yellow]{--accent:var(--yellow)}.card[data-accent=purple]{--accent:var(--purple)}
+.card[data-accent=red]{--accent:var(--red)}.card[data-accent=green]{--accent:var(--green)}.card[data-accent=cyan]{--accent:var(--cyan)}
+body.light .card[data-accent=red]{--accent:#C23A3A}
+
+/* nested layers so each motion has its own property: .card = sideways, .arc = vertical + the deck's slight spin (after the translate, so the spin cannot skew the offset), .lob = the throw's lift,
+   .tilt = hover, .flip = the turn over */
+.tilt,.flip{transform-style:preserve-3d}
+.tilt{transform:perspective(900px) translateY(0) rotateX(0) rotateY(0);transition:transform 220ms var(--flip-ease)}
+.flip{position:relative;transform:rotateY(0)}
+
+/* poses */
+.deck[data-state="stacked"] .card,.deck[data-state="leaving"] .slot:not([data-picked]) .card{transform:translateX(var(--dx,0))}
+.deck[data-state="stacked"] .arc,.deck[data-state="leaving"] .slot:not([data-picked]) .arc{transform:translateY(var(--dy,0)) rotate(var(--sr,0deg))}
+.deck[data-state="dealing"] .card,.deck[data-state="shown"] .card,.deck[data-state="leaving"] .slot[data-picked] .card,
+.deck[data-state="dealing"] .arc,.deck[data-state="shown"] .arc,.deck[data-state="leaving"] .slot[data-picked] .arc{transform:none}
+.deck:not([data-state="stacked"]) .flip{transform:rotateY(180deg)}
+
+/* transitions, per state (delays make the stagger) */
+.card{transition:transform var(--collect) var(--spring-in) calc(var(--rev,0) * var(--stagger-back)),opacity 300ms ease}
+.arc{transition:transform var(--collect) var(--spring-in) calc(var(--rev,0) * var(--stagger-back))}
+.flip{transition:transform 380ms var(--flip-ease)}
+.deck[data-state="dealing"] .card,.deck[data-state="shown"] .card{transition:transform var(--throw) var(--spring-out) calc(var(--i,0) * var(--stagger)),opacity 300ms ease}
+.deck[data-state="dealing"] .arc,.deck[data-state="shown"] .arc{transition:transform var(--throw) var(--spring-out) calc(var(--i,0) * var(--stagger))}
+.deck[data-state="dealing"] .flip,.deck[data-state="shown"] .flip{transition:transform var(--flip) var(--flip-ease) calc(var(--i,0) * var(--stagger) + var(--flip-lag))}
+.deck[data-state="leaving"] .card,.deck[data-state="leaving"] .arc{transition:transform var(--leave) var(--spring-in),opacity var(--leave) ease}
+.deck[data-state="leaving"] .slot[data-picked] .flip{transition:none}
+.deck[data-state="leaving"] .slot:not([data-picked]) .flip{transform:rotateY(0deg);transition:transform var(--leave) var(--flip-ease)}  /* the others turn face down as they slide back */
+.deck[data-state="dealing"] .lob{animation:fling var(--throw) cubic-bezier(.3,.7,.3,1) calc(var(--i,0) * var(--stagger)) both}
+@keyframes fling{0%{transform:translateY(0) rotate(0)}38%{transform:translateY(-34px) rotate(var(--fr,5deg))}100%{transform:translateY(0) rotate(0)}}
+.lob{transition:transform 200ms ease}
+.deck[data-state="stacked"] .stage:has(.stack-hit:hover) .lob{transform:translateY(-8px)}
+/* a resize at rest re-places the stack instantly (js sets data-measuring for one frame) */
+.deck[data-state="stacked"][data-measuring] :is(.card,.arc){transition:none}
+/* will-change only while something is moving */
+.deck[data-state="dealing"] :is(.card,.arc,.lob,.flip),.deck[data-state="leaving"] :is(.card,.arc,.tilt){will-change:transform}
+
+/* hover / focus lift, only once dealt */
+.deck[data-state="shown"] .card:is(:hover,:focus-visible) .tilt{transform:perspective(900px) translateY(-8px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg))}
+.deck[data-state="leaving"] .slot[data-picked] .tilt{transform:perspective(900px) translateY(-14px) scale(1.04);transition-duration:var(--leave)}
+.deck[data-state="leaving"] .slot:not([data-picked]) .card{opacity:.3}
+
+/* ===== card faces ===== */
+.face{display:flex;flex-direction:column;border-radius:var(--r-lg);border:1px solid var(--line);-webkit-backface-visibility:hidden;backface-visibility:hidden;box-shadow:0 10px 26px -14px rgba(0,0,0,.6)}
+body.light .face{box-shadow:0 1px 2px #12344a14,0 12px 26px -16px #12344a66}
+.face-back{position:absolute;inset:0;background:linear-gradient(160deg,var(--bg-3),var(--bg-1) 70%);overflow:hidden}
+.back-pattern{position:absolute;inset:9px;border-radius:10px;border:1px solid var(--line);
+  background:repeating-linear-gradient(45deg,var(--cyan-a) 0 1px,transparent 1px 11px),repeating-linear-gradient(-45deg,var(--orange-a) 0 1px,transparent 1px 11px)}
+.face-back .brand-mark{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:16px}
+.face-back .brand-mark:before{background-size:28px}
+.face-front{position:relative;height:100%;gap:10px;padding:16px;background:linear-gradient(180deg,var(--bg-2),var(--bg-1));transform:rotateY(180deg);overflow:hidden;
+  border-top:3px solid var(--accent)}
+.face-front:after{content:"";position:absolute;inset:-3px -1px -1px;border-radius:inherit;border:2px solid var(--accent);box-shadow:inset 0 0 26px -8px color-mix(in srgb,var(--accent) 70%,transparent);opacity:0;transition:opacity 200ms ease;pointer-events:none}
+.deck[data-state="shown"] .card:is(:hover,:focus-visible) .face-front:after,.deck[data-state="leaving"] .slot[data-picked] .face-front:after{opacity:1}
+.slot[data-current] .face-front{border-color:color-mix(in srgb,var(--accent) 60%,var(--line));border-top-color:var(--accent)}
+.f-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;min-height:44px}
+.bubble{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 38%,transparent)}
+.bubble .ico{width:24px;height:24px;stroke-width:1.7}
+.last{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:var(--r-pill);font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--text);background:color-mix(in srgb,var(--accent) 16%,transparent);border:1px solid color-mix(in srgb,var(--accent) 55%,transparent);white-space:nowrap}
+.title{display:block;font-size:17px;font-weight:650;letter-spacing:-.015em;line-height:1.25}
+.q{display:block;font-size:13px;line-height:1.45;color:var(--muted)}
+.mods{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:4px}
+.mod{display:inline-block;padding:3px 9px;border-radius:12px;font-size:11.5px;line-height:1.35;color:var(--muted);background:var(--bg-1);border:1px solid var(--line-soft)}
+body.light .mod{background:var(--bg-2)}
+.f-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:10px;border-top:1px solid var(--line-soft)}
+.tag{font:500 11px/1.3 var(--mono);letter-spacing:.01em;color:var(--muted)}
+.go{width:18px;height:18px;color:var(--accent);transition:transform 200ms var(--flip-ease)}
+.deck[data-state="shown"] .card:is(:hover,:focus-visible) .go{transform:translateX(4px)}
+
+/* ===== buttons, list, hit area ===== */
+.stack-hit{display:none;position:absolute;z-index:50;left:calc(var(--ax,50%) - var(--card-w,0px) / 2);top:var(--ay,0);width:var(--card-w,0);height:var(--card-h,0);border-radius:var(--r-lg);cursor:pointer}
+.deck[data-state="stacked"] .stack-hit{display:block}
+.actions{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px;min-height:44px;margin:clamp(10px,2.4vh,22px) auto 0}
+.st .primary-btn,.st .ghost-btn{height:44px;padding:0 20px}
+.deck:not([data-state="stacked"]) #dealBtn{display:none}
+.deck[data-state="stacked"] #gatherBtn,.deck[data-state="leaving"] #gatherBtn{display:none}
+.deck[data-state="leaving"] #dealBtn,.deck[data-state="leaving"] #continueLink{visibility:hidden}
+.alt{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 12px;margin:clamp(12px,2.4vh,22px) auto 0}
+.alt label{font-size:13px;color:var(--muted)}
+.alt-row{display:inline-flex;gap:8px}
+.st .select{height:44px;min-width:220px;padding:0 40px 0 14px;border-radius:var(--r-sm);background-color:var(--bg-1);border:1px solid var(--line);color:var(--text);font-size:14px}
+body.light .select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234F6873' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")}
+
+/* ===== no JavaScript ===== */
+.ns{max-width:420px;margin:24px auto;padding:18px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--bg-1);text-align:center}
+.ns-list{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px}
+.ns-list a{display:flex;align-items:center;justify-content:center;min-height:44px;border:1px solid var(--line);border-radius:var(--r-sm);text-decoration:none;font-weight:600}
+
+/* ===== reduced motion: no throwing, no 3D turn; cards simply appear face up with a short fade ===== */
+@media (prefers-reduced-motion:reduce){
+  .deck :is(.card,.arc,.lob,.tilt,.flip,.face,.go,.face-front:after){transition:none!important;animation:none!important;will-change:auto!important}
+  .deck:not([data-state="stacked"]) :is(.card,.arc,.lob,.tilt,.flip){transform:none!important}
+  .deck:not([data-state="stacked"]) .face-back{display:none}
+  .deck:not([data-state="stacked"]) .face-front{transform:none}
+  .deck[data-state="dealing"] .slot{animation:fade var(--fade) ease both!important;animation-duration:var(--fade)!important}
+  .deck[data-state="leaving"] .slot:not([data-picked]) .card{opacity:.3}
+}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+
+@media (max-width:639px){
+  .face-front{padding:13px;gap:8px}
+  .title{font-size:16px}
+  .st-foot{padding-top:6px}
+}

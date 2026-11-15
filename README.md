@@ -117,6 +117,100 @@ Build the population grid once (about 484 MB download):
 
 **Limits.** Record-level data covers only the bundled recent window (or a live query). Older periods use daily or monthly archive totals. The archive's VIIRS is S-NPP only (the one satellite spanning 2012 onward), while the NRT bundle uses NOAA-20/21, so the two are not comparable. FRP is not corrected between sensors. Regions come from a 0.1° raster of Natural Earth boundaries.
 
+## DOWNWIND: what the smoke is about to cross (`web/downwind.html`)
+
+Turns each fire record into a short bulletin for the people who own an asset, not for an analyst. For every fire it
+runs the FIRELAB plume with the modelled wind and lists the mapped assets the smoke path reaches. Region selector in the
+header (or `?r=BR`): Paraguay (PY), Bolivia (BO), Argentina (AR), Brazil (BR). The choice is remembered in the browser.
+
+- Labels: fires are observed (FIRMS), assets are mapped (OpenStreetMap), wind is modelled (Open-Meteo), the smoke
+  path is a scenario. The ranking number is not a measurement.
+- Each row gives a bulletin in English, Spanish or Portuguese, full or short (at most 160 characters, GSM 7-bit safe),
+  that can be copied, read aloud, or shared by WhatsApp. The Spanish and Portuguese texts are fixed templates not yet
+  reviewed by a native speaker. Times use the region's time zone; Brazil has several and the bulletin uses Brasilia time.
+- A clock shows the last satellite look and an estimate of the next one.
+- "Within 5 km but not downwind" lists what a plain distance ring would also flag.
+- Wind is requested for at most 240 grid cells (0.25 degree) per computation, strongest fires first. When fires are left
+  out the page says how many, and none of their assets is called "not downwind". Fetched cells are cached in sessionStorage.
+- A layer that was not built for a region is a disabled tab, not an empty list.
+- Not a fault, visibility or health prediction, and not an operational alert service. Rules: the Method dialog.
+
+**Regions and layers.** One source of truth, `web/app-data/regions.json` (country name as in `meta.json`, bulletin
+language, IANA time zone, map box, asset build preset), read by `web/js/regions.js`, `hotspots.assets` and `hotspots.feed`.
+To add a country: add one entry there, then run the two build commands below.
+
+| Region | Power lines | Roads | Health | Schools | Named places |
+|---|---|---|---|---|---|
+| Paraguay (PY) | 220 kV and above | trunk, primary | hospitals, clinics | yes | city, town, village |
+| Bolivia (BO) | 220 kV and above | trunk, primary | hospitals, clinics | yes | city, town, village |
+| Argentina (AR) | 220 kV and above | motorway, trunk | hospitals | not loaded | city, town |
+| Brazil (BR) | 220 kV and above | motorway, trunk | hospitals | not loaded | city, town |
+
+Argentina and Brazil are large, so their presets leave out clinics and schools; the page shows those tabs as disabled
+("not loaded for this region") rather than as an empty list.
+
+```
+python -m hotspots.assets BR     # OpenStreetMap via Overpass; uses the region's preset, flags override it, e.g.
+python -m hotspots.assets BR --layers power,roads,health --roads motorway,trunk --tiles 3 --cache /tmp/ov
+python -m hotspots.feed BR       # the small per-region feed for My place
+```
+
+The asset file records which layers were built, with what filter, and the simplification tolerance (it is raised until
+the file is under about 1.5 MB gzipped). Overpass is slow and rate limited: the builder retries with backoff on two
+endpoints and, if a whole-country query keeps failing, splits the country into boxes. A layer that cannot be fetched is
+left out and recorded as not built; nothing is drawn by hand. The logic is `web/js/downwind-core.js`; check it with
+`node tests/test_downwind_core.mjs` and `node tests/test_regions.mjs`.
+
+**My place** (`web/place.html`, `?r=BR`): a light page for a phone that answers "is smoke heading for this place?" from
+the small feed `web/app-data/feed/<ISO>.json`, in Spanish, Portuguese or English, with the same plume rule.
+Feed window per region (`feed.fire_hours` in `regions.json`): the last 72 hours of fires for PY and AR, 48 hours for BO,
+24 hours for BR, which keeps each feed under 300 kB; the page states what its feed covers. The page itself only uses the
+last 24 hours of fires. A secondary block "Last 3 hours, fast satellite view" is fetched after the main answer and does not
+change it. "My place" is also linked from DOWNWIND and from the Explorer navigation.
+
+**Alert load.** The wind rule does not reduce the number of flagged days (257 against 244 for a 5 km ring on 500 kV
+lines in Paraguay in 2025); it changes which fires are flagged (`docs/research/alert_load_2025.md`).
+
+**Fast look.** A third DOWNWIND tab, and a small block on My place, use INPE's 10-minute GOES-19 detection files
+(South America only, about 2 km pixels, no fire power, no confidence value, more false alarms than MODIS or VIIRS, not
+validated against ground reports; detection time was a median of 20 minutes before the file time stamp in one
+measurement). No plume is run: rows are assets downwind of a pixel by the modelled wind, ranked by number of scans.
+Module `web/js/fast-core.js`, notes `docs/research/fast_detections.md`, check `node tests/test_fast_core.mjs`.
+
+Replay of a real event (Paraguay only, from any region): `node scripts/replay_line_trip.mjs` reruns the 8 January 2025
+trip of a 500 kV line that ANDE attributed to smoke. Result and limits: `docs/research/replay_2025-01-08.md`. On the
+page: `downwind.html?replay`.
+
+## Wind cache
+
+With the Python server running, DOWNWIND and the role pages ask `api/wind` for modelled wind. The server fetches each quarter-degree cell from Open-Meteo once and keeps it in `data/cache/wind/` (git-ignored), so repeat visits do not spend the free service's quota. On a static host the pages ask Open-Meteo directly, as before.
+
+## Roles: who the platform is for (`web/start.html`, `web/role.html`)
+
+The front door (`/`) is a role picker: six cards dealt from a deck (fire brigade, grid operator, road patrol, clinic or school lead, resident or farmer, analyst). The analyst opens the full Hot Spot Explorer (`index.html`); the other five open `role.html?role=<id>&r=<ISO>`, one simplified page on a shared engine. The role is `?role=`, the region `?r=` (else the last region used, else PY); an unknown role goes back to `start.html`.
+
+| role | what the page shows |
+|---|---|
+| `grid` | power lines with modelled smoke upwind (last 24 h of data, 5 MW and up), a bulletin for crews, and the 10-minute fast look as a secondary block |
+| `road` | road stretches in the smoke path, the SMS-length bulletin first, read aloud |
+| `firefighter` | pick a base by name or on request by device location, then the fires within 50 km ranked by power, each with wind, where the smoke heads and the mapped assets in its path |
+| `care` | one clinic, school or town and one answer (the My place logic), share by WhatsApp |
+| `resident` | the same single-place answer for a town or device location |
+
+Items are cards that turn over to show their bulletin (full or 160-character SMS form, copy, read aloud, WhatsApp link) in English, Spanish and Portuguese (Spanish and Portuguese are fixed templates not reviewed by a native speaker). A **shift briefing** has three steps (check the satellite clock, review up to three top items, copy or send a bulletin); on a day with nothing in the path, reading the statement and copying the all-clear line replace steps 2 and 3. It is stored in `localStorage` per role and region, marks today on a 7-day strip, and records only what the person did: no points, levels, badges or scores. An all-clear is offered only when everything was assessed; if the wind or the data could not be loaded the page says so and offers a "not assessed" line instead.
+
+Architecture (plain scripts that attach one global and also load in Node via `vm`; no build step):
+
+- `js/roles.js` the six roles as data; `js/role-config.js` what each role page shows and says (three languages);
+- `js/watch-core.js` asset preparation, wind cache with an injectable fetch, the watch-list computation and the fast look, shared by DOWNWIND and the role pages;
+- `js/bulletin-core.js` every bulletin text (full and short, EN/ES/PT), the region passed in;
+- `js/role-core.js` the role pages' data logic; `js/briefing-core.js` the briefing rules; `js/place.js` (logic only on `role.html`) the single-place answer;
+- `js/start.js`, `js/role.js` behaviour; `css/start.css`, `css/role.css` presentation.
+
+Role pages read the light feed (`app-data/feed/<ISO>.json`) and the asset file (`app-data/assets/<ISO>.json.gz`), never the 10 MB record bundle.
+
+Tests: `npm test` runs the unit tests (`node --test`, offline fixtures) and the end-to-end tests (`tests/e2e/start.spec.mjs`, `tests/e2e/role.spec.mjs`) in the Chrome installed on the machine (see `tests/e2e/README.md`). The wind and INPE services are stubbed in the role tests (`tests/e2e/stubs.mjs`).
+
 ## Data
 NRT CSVs are at https://firms.modaps.eosdis.nasa.gov/active_fire/.
 

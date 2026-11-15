@@ -1,0 +1,41 @@
+{
+  "_about": "Single source of truth for the regions of DOWNWIND and My place. Read by src/hotspots/feed.py, src/hotspots/assets.py and web/js/regions.js. To add a country: add one entry here, then run `python -m hotspots.assets <ISO>` and `python -m hotspots.feed <ISO>`. 'country' must equal a string of meta.json 'countries'. 'view' is [[south, west], [north, east]] and doubles as the box that My place treats as inside the region. 'assets' is the build preset for hotspots.assets (command-line flags override it).",
+  "regions": {
+    "PY": {
+      "name": {"en": "Paraguay", "es": "Paraguay", "pt": "Paraguai"},
+      "ptIn": "no Paraguai", "ptOf": "do Paraguai",
+      "country": "Paraguay", "lang": "es", "tz": "America/Asuncion",
+      "tzLabel": {"en": "Paraguay time", "es": "hora de Paraguay", "pt": "horário do Paraguai"},
+      "view": [[-27.6, -62.7], [-19.2, -54.2]],
+      "assets": {"layers": ["power", "roads", "health", "schools", "places"], "roads": ["trunk", "primary"], "health": ["hospital", "clinic"], "places": ["city", "town", "village"], "power_min_kv": 220},
+      "feed": {"fire_hours": 72}
+    },
+    "BO": {
+      "name": {"en": "Bolivia", "es": "Bolivia", "pt": "Bolívia"},
+      "ptIn": "na Bolívia", "ptOf": "da Bolívia",
+      "country": "Bolivia", "lang": "es", "tz": "America/La_Paz",
+      "tzLabel": {"en": "Bolivia time", "es": "hora de Bolivia", "pt": "horário da Bolívia"},
+      "view": [[-22.9, -69.7], [-9.6, -57.4]],
+      "assets": {"layers": ["power", "roads", "health", "schools", "places"], "roads": ["trunk", "primary"], "health": ["hospital", "clinic"], "places": ["city", "town", "village"], "power_min_kv": 220},
+      "feed": {"fire_hours": 48}
+    },
+    "AR": {
+      "name": {"en": "Argentina", "es": "Argentina", "pt": "Argentina"},
+      "ptIn": "na Argentina", "ptOf": "da Argentina",
+      "country": "Argentina", "lang": "es", "tz": "America/Argentina/Buenos_Aires",
+      "tzLabel": {"en": "Argentina time", "es": "hora de Argentina", "pt": "horário da Argentina"},
+      "view": [[-55.1, -73.6], [-21.7, -53.6]],
+      "assets": {"layers": ["power", "roads", "health", "places"], "roads": ["motorway", "trunk"], "health": ["hospital"], "places": ["city", "town"], "power_min_kv": 220},
+      "feed": {"fire_hours": 72}
+    },
+    "BR": {
+      "name": {"en": "Brazil", "es": "Brasil", "pt": "Brasil"},
+      "ptIn": "no Brasil", "ptOf": "do Brasil",
+      "country": "Brazil", "lang": "pt", "tz": "America/Sao_Paulo",
+      "tzLabel": {"en": "Brasília time", "es": "hora de Brasilia", "pt": "horário de Brasília"},
+      "view": [[-33.8, -74.0], [5.3, -34.7]],
+      "assets": {"layers": ["power", "roads", "health", "places"], "roads": ["motorway", "trunk"], "health": ["hospital"], "places": ["city", "town"], "power_min_kv": 220},
+      "feed": {"fire_hours": 24}
+    }
+  }
+}

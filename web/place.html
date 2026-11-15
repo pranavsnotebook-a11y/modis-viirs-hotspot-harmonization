@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My place · Is smoke heading here? · FIREVERSE</title>
+<meta name="description" content="One screen: is smoke from a satellite-detected fire heading for this place? Observed fires, modelled wind, scenario smoke path. Light page for slow connections.">
+<meta name="theme-color" content="#07131B">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23FF8A3D'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/place.css">
+</head>
+<body>
+<main class="col">
+  <header class="top">
+    <div><h1 data-i="title">My place</h1><p class="sub" data-i="sub">Is smoke from a satellite-detected fire heading for this place?</p></div>
+    <div class="lang" id="langBox" role="group" aria-label="Language / Idioma / Idioma">
+      <button type="button" data-lang="en" aria-pressed="true">English</button>
+    </div>
+  </header>
+  <div class="regionbar"><label for="region" class="vh" data-i="regionL">Region</label><select id="region" aria-label="Region"><option value="PY">Paraguay</option></select><a class="morelink" href="downwind.html">DOWNWIND</a> <a class="morelink-sw" href="start.html">Switch role</a></div>
+
+  <section class="card" id="clock" aria-labelledby="clockH">
+    <h2 id="clockH" data-i="clockH">When the satellites look</h2>
+    <p id="oldWarn" class="warn" role="alert" hidden></p>
+    <dl class="kv">
+      <div><dt><span data-i="lastLook">Last look</span> <span class="tag obs" data-i="tagObs">OBSERVED</span></dt><dd id="lastLook">…</dd></div>
+      <div><dt><span data-i="nextLook">Next look</span> <span class="tag mod" data-i="tagEst">ESTIMATE</span></dt><dd id="nextLook">…</dd></div>
+    </dl>
+    <p class="muted" id="nextNote"></p>
+    <p class="muted" data-i="delay">Data arrives up to three hours after a pass.</p>
+    <p class="muted" id="feedNote"></p>
+  </section>
+
+  <section class="card" aria-labelledby="pickH">
+    <h2 id="pickH" data-i="pickH">Choose the place</h2>
+    <div class="row">
+      <label for="q" class="vh" data-i="searchLabel">Search a town</label>
+      <input id="q" type="search" autocomplete="off" inputmode="search" data-ph="searchPh" placeholder="Search a town">
+    </div>
+    <ul id="matches" class="matches" aria-label="Matches"></ul>
+    <button type="button" id="geo" class="btn" data-i="geo">Use my location</button>
+    <p id="geoMsg" class="muted" role="status"></p>
+  </section>
+
+  <section class="card status-card" aria-labelledby="statH">
+    <h2 id="statH" class="vh" data-i="statH">Result</h2>
+    <p id="placeLine" class="placeline"></p>
+    <div id="stale" class="warn" hidden></div>
+    <div id="status" class="status" role="status" aria-live="polite">
+      <p class="state" id="stateHead" data-i="choose">Choose a place to see the answer.</p>
+      <p id="stateBody"></p>
+    </div>
+    <p id="stateFoot" class="muted"></p>
+    <dl class="facts" id="facts" hidden></dl>
+    <div class="actions" id="actions" hidden>
+      <button type="button" class="btn" id="speak" aria-pressed="false" data-i="speak">Read aloud</button>
+      <a class="btn" id="wa" href="https://wa.me/" target="_blank" rel="noopener" data-i="wa">Share by WhatsApp</a>
+      <button type="button" class="btn" id="copy" data-i="copy">Copy</button>
+    </div>
+    <p id="toast" class="muted" role="status"></p>
+  </section>
+
+  <section class="card" id="fastCard" aria-labelledby="fastH" hidden>
+    <h2 id="fastH">Last 3 hours, fast satellite view</h2>
+    <p><span class="tag fast">FAST · COARSE</span> <span id="fastText"></span></p>
+    <p class="muted" id="fastCav"></p>
+  </section>
+
+  <section class="card" id="listCard" aria-labelledby="listH" hidden>
+    <h2 id="listH" data-i="listH">Fires considered</h2>
+    <p class="muted" id="listNote"></p>
+    <ul id="list" class="list"></ul>
+  </section>
+
+  <section class="card" id="cacheCard" hidden aria-labelledby="cacheH">
+    <h2 id="cacheH" data-i="cacheH">Saved result (old)</h2>
+    <p id="cacheText"></p>
+  </section>
+
+  <section class="card">
+    <details>
+      <summary data-i="whatH">What this is</summary>
+      <div lang="en" class="what">
+        <p><span class="tag obs">OBSERVED</span> Fires are detected by satellites (NASA FIRMS, MODIS and VIIRS). Only fires recorded in <span data-rn>this region</span> are in this page's data; fires across the border are not, so near a border the page can miss a fire on the other side.</p>
+        <p><span class="tag mod">MODELLED</span> Wind comes from Open-Meteo weather models, at 100 m, for the hour of the satellite pass and the two hours after it.</p>
+        <p><span class="tag scn">SCENARIO</span> The smoke path is a FIRELAB Gaussian plume scenario. The page uses the wind at this place for fires up to 25 km away. "Downwind" means the scenario adds at least 1 µg/m³ of fine particles at this place. It is not a measurement.</p>
+        <p>It is not a health, visibility or evacuation forecast and not an operational alert service. Check with people on the ground.</p>
+        <p>Your location stays in this browser; the rounded coordinates are sent to Open-Meteo to get the wind.</p>
+        <p>The same fire seen on several passes is shown once, with its latest pass. Next look is estimated from recent pass times, not an orbit prediction. Times use the time zone of the selected region (Brazil has several; the page uses Brasília time).</p>
+        <p><a href="downwind.html">DOWNWIND: power lines, roads, clinics, schools</a> · <a href="index.html">Hot Spot Explorer</a></p>
+      </div>
+      <div lang="es" class="what">
+        <p><span class="tag obs">OBSERVADO</span> Los fuegos los detectan satélites (NASA FIRMS, MODIS y VIIRS). Esta página solo tiene fuegos registrados en <span data-rn>esta región</span>; los del otro lado de la frontera no están, así que cerca de una frontera puede faltar un fuego del otro lado.</p>
+        <p><span class="tag mod">MODELADO</span> El viento viene de modelos meteorológicos de Open-Meteo, a 100 m, para la hora de la pasada del satélite y las dos horas siguientes.</p>
+        <p><span class="tag scn">ESCENARIO</span> La trayectoria del humo es un escenario de pluma gaussiana de FIRELAB. La página usa el viento de este lugar para fuegos a hasta 25 km. "Viento abajo" significa que el escenario agrega al menos 1 µg/m³ de partículas finas en este lugar. No es una medición.</p>
+        <p>No es un pronóstico de salud, visibilidad ni evacuación, ni un servicio operativo de alertas. Consulte con personas en el lugar.</p>
+        <p>Su ubicación se queda en este navegador; las coordenadas redondeadas se envían a Open-Meteo para obtener el viento.</p>
+        <p>Un mismo fuego visto en varias pasadas se muestra una sola vez, con la última pasada. La próxima mirada se estima con horas de pasadas recientes, no es una predicción de órbita. Las horas usan la zona horaria de la región elegida (Brasil tiene varias; la página usa la hora de Brasilia).</p>
+        <p><a href="downwind.html">DOWNWIND: líneas eléctricas, rutas, clínicas, escuelas</a> · <a href="index.html">Explorador de puntos calientes</a></p>
+      </div>
+      <div lang="pt" class="what">
+        <p><span class="tag obs">OBSERVADO</span> Os fogos são detectados por satélites (NASA FIRMS, MODIS e VIIRS). Esta página só tem fogos registrados em <span data-rn>esta região</span>; os do outro lado da fronteira não estão, então perto de uma fronteira pode faltar um fogo do outro lado.</p>
+        <p><span class="tag mod">MODELADO</span> O vento vem de modelos meteorológicos do Open-Meteo, a 100 m, para a hora da passagem do satélite e as duas horas seguintes.</p>
+        <p><span class="tag scn">CENÁRIO</span> A trajetória da fumaça é um cenário de pluma gaussiana do FIRELAB. A página usa o vento deste local para fogos a até 25 km. "A favor do vento" significa que o cenário acrescenta pelo menos 1 µg/m³ de partículas finas neste local. Não é uma medição.</p>
+        <p>Não é uma previsão de saúde, visibilidade ou evacuação, nem um serviço operacional de alertas. Confirme com pessoas no local.</p>
+        <p>Sua localização fica neste navegador; as coordenadas arredondadas são enviadas ao Open-Meteo para obter o vento.</p>
+        <p>O mesmo fogo visto em várias passagens aparece uma só vez, com a passagem mais recente. A próxima passagem é estimada com horários de passagens recentes, não é uma previsão de órbita. Os horários usam o fuso da região escolhida (o Brasil tem vários; a página usa o horário de Brasília).</p>
+        <p><a href="downwind.html">DOWNWIND: linhas de transmissão, rodovias, hospitais, escolas</a> · <a href="index.html">Explorador de pontos quentes</a></p>
+      </div>
+    </details>
+    <p class="muted" data-i="esNote">Spanish text is a fixed template, not a live translation. Check it before sharing.</p>
+  </section>
+</main>
+<script src="js/regions.js"></script>
+<script src="js/firelab-core.js"></script>
+<script src="js/downwind-core.js"></script>
+<script src="js/fast-core.js"></script>
+<script src="js/place.js?v=2"></script>
+</body>
+</html>

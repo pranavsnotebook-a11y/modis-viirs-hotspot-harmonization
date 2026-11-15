@@ -21,7 +21,7 @@ Every value is labelled OBSERVED (satellite fires), MAPPED (OpenStreetMap assets
 | `downwind.html` | operations | The full watch list for every asset kind, plus the 8 January 2025 line-trip replay |
 | `firelab.html` | anyone | The smoke plume itself, hour by hour |
 | `index.html` | analyst | Explorer: map, globe, Harmonization Lab, calendar, history, data |
-| `route.html` | road patrol, drivers | Which of up to three driving routes meets the least modelled smoke, leaving now to +3 h; open it in Google Maps or download GeoJSON |
+| `route.html?role=driver` | driver, road patrol | Will my drive go through smoke? Routes compared by modelled smoke, a detour search, turn-by-turn directions with smoke warnings, a drive mode with spoken alerts, the best time to leave; hand-off to Google Maps or GeoJSON |
 | `place.html` | low-bandwidth phones | One place, one answer (about 130 kB) |
 
 Each simplified role page has a three-step shift briefing (check the satellite clock, review the top items, send a
@@ -30,10 +30,12 @@ bulletin). Bulletins come in full and SMS form, and can be read aloud or shared 
 **Run it:** `python -m hotspots.server`, then open http://127.0.0.1:8000. Setup, the FIRMS key and Codespaces are
 covered below.
 **Tests:** `pytest -q` (Python) and `npm test` (front-end unit tests plus browser checks in Chrome).
-**Smoke-aware routes (built, `web/route.html`):** map apps show the air quality right now, but smoke moves. This page
-compares up to three driving routes by the modelled smoke on each at the time you would be there, and hands the best one
-to Google Maps. **Not built:** true routing that avoids smoke (we compare the alternatives a router offers; we do not
-reroute through smoke-free roads), and any live integration with a map company.
+**Smoke-aware navigation (built, `web/route.html`, the Driver role):** map apps show the air quality right now, but smoke
+moves. This page compares driving routes by the modelled smoke on each at the time you would be there, searches for a
+detour when every route meets smoke, gives turn-by-turn directions with smoke warnings, follows a drive with spoken
+alerts, and says which departure time meets the least smoke. **Not built:** routing inside the road network that avoids
+smoke by itself (the detour search tries up to six via-points beside the smoke, so it can miss a detour that exists), and
+any live integration with a map company.
 
 ## Harmonization of MODIS and VIIRS hot spots
 
@@ -237,6 +239,13 @@ Pick a start and an end (search the feed's named places, use your location when 
 
 Per route: km in modelled smoke (1 µg/m³ or more), peak µg/m³, smoke-minutes, and where the smoke starts (km and clock time). Routes rank by least smoke-minutes, then least peak, then shortest time. A fire with no modelled wind is "not assessed", never "clear"; with no fire data at all every route is "not assessed". No detection does not mean no fire.
 
+Beyond the comparison (all in `web/js/route-core.js`, pure and tested in Node):
+
+- **Detour.** When the best route still meets modelled smoke, via-points are placed 8, 15 and 25 km to each side of the first smoke stretch, upwind side first, and routed through `GET /api/route` with `via=`. At most six are tried. A detour is kept only if it cuts smoke-minutes by half or more and adds no more than 45 minutes or 60% of the trip, whichever is less. It shows as "Route D (detour)"; if none qualifies the page says so.
+- **Directions.** Turn-by-turn steps for the chosen route in English, Spanish and Portuguese, with the smoke warning on the step where smoke starts.
+- **Drive.** Start drive follows the device's GPS along the route when location is granted and within 2 km of it, and re-assesses every 10 minutes. Simulate the drive moves a marker along the route and is labelled a simulation in the panel, on the map and in every spoken line. Alerts are spoken once each at 5 km and 1 km before a smoke stretch, on entering and on leaving it. It is not an emergency navigation system.
+- **Best time to leave.** The same routes assessed for leaving now, +1 h, +2 h and +3 h, with the wind of each hour and no new routing requests.
+
 Hand-off: a Google Maps directions link (origin, destination and up to 8 waypoints along the route; opens only when clicked; Google may adjust the path between points) and a GeoJSON download (one LineString per route with its numbers, plus the in-smoke stretches), which a map provider could ingest to show smoke ahead on a route. `GET /api/route?from=lat,lon&to=lat,lon` validates input, keeps answers in memory and under `data/cache/route/` (git-ignored) and calls the OSRM demo server at most once a second; the demo server is for light use. Tests: `tests/unit/route-core.test.mjs`, `tests/test_route_api.py`, `tests/e2e/route.spec.mjs`.
 
 ## Wind cache
@@ -245,7 +254,7 @@ With the Python server running, DOWNWIND and the role pages ask `api/wind` for m
 
 ## Roles: who the platform is for (`web/start.html`, `web/role.html`)
 
-The front door (`/`) is a role picker: six cards dealt from a deck (fire brigade, grid operator, road patrol, clinic or school lead, resident or farmer, analyst). The analyst opens the full Hot Spot Explorer (`index.html`); the other five open `role.html?role=<id>&r=<ISO>`, one simplified page on a shared engine. The role is `?role=`, the region `?r=` (else the last region used, else PY); an unknown role goes back to `start.html`.
+The front door (`/`) is a role picker: seven cards dealt from a deck (fire brigade, grid operator, road patrol, driver, clinic or school lead, resident or farmer, analyst). The analyst opens the full Hot Spot Explorer (`index.html`) and the driver opens the route planner (`route.html?role=driver`); the other five open `role.html?role=<id>&r=<ISO>`, one simplified page on a shared engine. The role is `?role=`, the region `?r=` (else the last region used, else PY); an unknown role goes back to `start.html`.
 
 | role | what the page shows |
 |---|---|
@@ -259,7 +268,7 @@ Items are cards that turn over to show their bulletin (full or 160-character SMS
 
 Architecture (plain scripts that attach one global and also load in Node via `vm`; no build step):
 
-- `js/roles.js` the six roles as data; `js/role-config.js` what each role page shows and says (three languages);
+- `js/roles.js` the seven roles as data; `js/role-config.js` what each role page shows and says (three languages);
 - `js/watch-core.js` asset preparation, wind cache with an injectable fetch, the watch-list computation and the fast look, shared by DOWNWIND and the role pages;
 - `js/bulletin-core.js` every bulletin text (full and short, EN/ES/PT), the region passed in;
 - `js/role-core.js` the role pages' data logic; `js/briefing-core.js` the briefing rules; `js/place.js` (logic only on `role.html`) the single-place answer;

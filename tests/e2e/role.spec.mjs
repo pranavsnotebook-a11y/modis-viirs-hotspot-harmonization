@@ -34,7 +34,7 @@ async function open(role, { vp = 'desktop', theme = 'dark', region = 'PY', reduc
   const { permissions = [], ...rest } = ctxOpts;
   const ctx = await browser.newContext({ viewport: VP[vp], reducedMotion: reduced ? 'reduce' : 'no-preference', deviceScaleFactor: 1, ...rest });
   await ctx.grantPermissions(['clipboard-read', 'clipboard-write', ...permissions], { origin: BASE }).catch(() => {});
-  if (theme === 'light') await ctx.addInitScript(() => { try { localStorage.setItem('theme', 'light'); } catch (e) {} });
+  await ctx.addInitScript(t => { try { if (!localStorage.getItem('theme')) localStorage.setItem('theme', t === 'light' ? 'light' : 'dark'); } catch (e) {} }, theme); // the Paper (light) theme is the default, so dark is asked for
   await stubOutside(ctx, stub);
   const page = await ctx.newPage(), problems = [], bytes = { n: 0, kb: 0, list: [] };
   page.on('console', m => { if (m.type() === 'error' && !(expectBad && /Failed to load resource/.test(m.text()))) problems.push('console: ' + m.text()); });

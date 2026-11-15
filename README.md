@@ -181,6 +181,12 @@ Replay of a real event (Paraguay only, from any region): `node scripts/replay_li
 trip of a 500 kV line that ANDE attributed to smoke. Result and limits: `docs/research/replay_2025-01-08.md`. On the
 page: `downwind.html?replay`.
 
+## Look and walkthrough video
+
+The default look is the Paper theme (`web/css/play.css`): cream background, ink outlines, large headline numbers and solid data labels, so the data reads at a glance. The dark theme is one tap away and is remembered.
+
+`docs/video/fireverse-roles-walkthrough.mp4` is a 106-second narrated walkthrough. Rebuild it with `node scripts/video/record.mjs` (macOS `say`, ffmpeg, Chrome, and the server on port 8000). Every number on its tiles is read from the app while recording.
+
 ## Wind cache
 
 With the Python server running, DOWNWIND and the role pages ask `api/wind` for modelled wind. The server fetches each quarter-degree cell from Open-Meteo once and keeps it in `data/cache/wind/` (git-ignored), so repeat visits do not spend the free service's quota. On a static host the pages ask Open-Meteo directly, as before.

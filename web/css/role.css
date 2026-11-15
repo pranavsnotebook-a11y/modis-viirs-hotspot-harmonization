@@ -131,3 +131,9 @@ body.light .rl-day[data-complete=true] .rl-dot{background:#0A7384;border-color:#
 }
 @keyframes rlfade{from{opacity:0}to{opacity:1}}
 @media (max-width:640px){.rl-ctl{width:100%}.rl-sel{flex:1}.rl-sel select{width:100%}}
+
+/* headline numbers */
+.rl-stats{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 12px}
+.rl-stat{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--bg-1);border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--shadow);max-width:100%}
+.rl-stat b{font-size:40px;line-height:1;font-weight:800;letter-spacing:-.03em;color:var(--orange)}
+.rl-stat span:not(.dtag){font-weight:600;max-width:22ch;line-height:1.25}

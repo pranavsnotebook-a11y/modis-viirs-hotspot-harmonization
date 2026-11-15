@@ -268,6 +268,8 @@ function statusSpec(kind) { // the copyable line on a day with nothing to list (
 }
 
 /* ---------- the work panel ---------- */
+/* the headline numbers, large: each is a count from the data on this page, with its data label */
+function stats(list) { const d = el('div', 'rl-stats'); for (const [n, label, k] of list) { const c = el('div', 'rl-stat'); c.append(el('b', null, Number(n).toLocaleString(S.lang === 'en' ? 'en-US' : S.lang === 'pt' ? 'pt-BR' : 'es')), el('span', null, label), tag(k)); d.append(c); } return d; }
 function msg(cls, text) { const p = el('p', 'rl-note ' + cls, text); return p; }
 function readBtn() { const b = el('button', 'ghost-btn', t('readNone')); b.type = 'button'; b.dataset.readnone = ''; b.addEventListener('click', () => act({ type: 'read' })); return b; }
 function cardList(specs) { const ul = el('ul', 'rl-cards'); specs.forEach(s => ul.append(buildCard(s))); return ul; }
@@ -331,6 +333,7 @@ function renderWatch(box) {
   const L = S.list; if (!L) return;
   const res = L.res;
   if (res.noAssets) { box.append(msg('rl-warn', t('notBuilt', kw)), statusSpecBlock('notAssessed')); return; }
+  box.append(stats([[res.rows.length, t('statHit', kw), 'scn'], [res.fires, t('statFires', L.rules.minFrp, cfg.hours), 'obs']]));
   box.append(msg('rl-scope', t('scope', res.rows.length, kw, res.fires, L.rules.minFrp, cfg.hours)));
   if (res.wxErr || res.noWind) box.append(msg('rl-warn', t('windOff')));
   if (res.skipped) box.append(msg('rl-warn', t('capped', res.skipped)));
@@ -346,6 +349,7 @@ function renderFires(box) {
   if (!S.pick) return;
   if (S.errAssets) box.append(msg('rl-warn', t('loadAssets', 'power lines, roads, clinics, schools')));
   const FI = S.fi; if (!FI) return;
+  box.append(stats([[FI.total, t('statNear', cfg.radiusKm, cfg.hours), 'obs']]));
   box.append(msg('rl-scope', t('fireScope', FI.total, cfg.radiusKm, cfg.hours)));
   if (FI.anyUnassessed || FI.failed) box.append(msg('rl-warn', t('windOff')));
   FI.notBuilt.forEach(k => { if (!S.errAssets) box.append(msg('rl-warn', t('notBuilt', k === 'power' ? 'power lines' : k === 'roads' ? 'main roads' : k === 'health' ? 'clinics and hospitals' : 'schools'))); });

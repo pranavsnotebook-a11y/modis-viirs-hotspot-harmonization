@@ -47,3 +47,17 @@ summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weig
 .morelink-sw{margin-left:12px}
 .lang button:not(:first-child):not(:last-child){border-radius:0;border-left:0}
 .tag.fast{color:#F0C94A;border-color:#F0C94A}
+
+/* Paper theme (the site default; a stored "dark" choice keeps the colours above). Same look as css/play.css, kept here so this page stays one small stylesheet. */
+html.paper{--bg:#EEEFE9;--card:#FFFDF7;--tx:#151515;--mu:#45453F;--or:#B93B00;--gr:#17703F;--cy:#1D3FD8;--ln:#151515}
+html.paper .card{border:2px solid #151515;box-shadow:4px 4px 0 #151515;border-radius:16px}
+html.paper h1,html.paper h2{font-weight:800;letter-spacing:-.02em}
+html.paper .btn,html.paper .regionbar select,html.paper input[type=search]{background:#FFFDF7;color:#151515;border:2px solid #151515;font-weight:700}
+html.paper .btn{box-shadow:3px 3px 0 #151515}html.paper .btn:active{transform:translate(2px,2px);box-shadow:none}
+html.paper .btn[aria-pressed=true],html.paper .lang button[aria-pressed=true]{background:#F9BD2B;color:#151515;font-weight:800}
+html.paper .lang button{border:2px solid #151515;color:#151515;font-weight:600}
+html.paper .warn{background:#FBE7A8;color:#151515;border-color:#151515}
+html.paper .status{border-width:3px}
+html.paper .tag{border:2px solid #151515;color:#151515;font-weight:700;background:#C8F0D0}
+html.paper .tag.fast{color:#151515;border-color:#151515;background:#FBE7A8}
+html.paper .tag.mod{background:#BFE9F5}html.paper .tag.scn{background:#FFD9C2}

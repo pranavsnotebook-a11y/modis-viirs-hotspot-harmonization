@@ -15,7 +15,7 @@ function resizeIn(el) {
 
 /* ---------- theme (applied before the first paint of the charts) ---------- */
 const themeBtn = $('themeToggle');
-if (store.get('theme') === 'light') document.body.classList.add('light');
+if (store.get('theme') !== 'dark') document.body.classList.add('light'); // the Paper theme is the default; dark is the stored choice
 if (themeBtn) {
   themeBtn.setAttribute('aria-pressed', document.body.classList.contains('light'));
   themeBtn.addEventListener('click', () => setTimeout(() => { const l = document.body.classList.contains('light'); store.set('theme', l ? 'light' : 'dark'); themeBtn.setAttribute('aria-pressed', l); }, 0));

@@ -1,0 +1,50 @@
+/* FIREVERSE "Paper" theme: the default look. Cream paper, ink outlines, hard shadows, bigger type and numbers,
+   so the data reads at a glance. It restyles the light theme (body.light); the dark theme is untouched and one tap away.
+   Loaded after fv.css and the page stylesheet. Colours are checked for 4.5:1 contrast on the paper tones. */
+body.light{
+  --bg-0:#EEEFE9;--bg-1:#FFFDF7;--bg-2:#F7F4E8;--bg-3:#ECE8D6;--line:#151515;--line-soft:#15151530;
+  --text:#151515;--muted:#45453F;--faint:#5E5E56;
+  --cyan:#1D3FD8;--cyan-ink:#FFFFFF;--orange:#B93B00;--purple:#5B3FD0;--green:#17703F;--yellow:#7A5900;--red:#B91C1C;
+  --cyan-a:#1D3FD814;--orange-a:#F54E001F;--purple-a:#5B3FD014;--green-a:#17703F17;
+  --glass:#FFFDF7;--glass-line:#151515;
+  --shadow:3px 3px 0 #151515;--shadow-lg:6px 6px 0 #151515;
+  --r-sm:10px;--r-md:14px;--r-lg:18px;
+  --play:#F54E00;--play-yellow:#F9BD2B;--ink:#151515;
+  font-size:15px;
+  background-color:var(--bg-0);background-image:radial-gradient(#15151512 1.2px,transparent 1.2px);background-size:24px 24px;background-attachment:fixed;
+}
+body.light h1,body.light h2,body.light h3{font-weight:800;letter-spacing:-.025em}
+body.light b,body.light strong{font-weight:700}
+body.light ::selection{background:#F9BD2B88}
+body.light :focus-visible{outline:3px solid #1D3FD8;outline-offset:2px}
+
+/* buttons: chunky, ink outline, a shadow that the press removes */
+body.light .primary-btn,body.light .ghost-btn,body.light .icon-btn,body.light button.card,body.light select,body.light input[type=search],body.light input[type=text],body.light input[type=number]{border:2px solid var(--ink)}
+body.light .primary-btn{background:var(--play);color:var(--ink);font-weight:800;box-shadow:3px 3px 0 var(--ink)}
+body.light .ghost-btn,body.light .icon-btn{background:var(--bg-1);color:var(--ink);font-weight:700;box-shadow:2px 2px 0 var(--ink)}
+body.light .primary-btn:hover,body.light .ghost-btn:hover,body.light .icon-btn:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--ink)}
+body.light .primary-btn:active,body.light .ghost-btn:active,body.light .icon-btn:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink)}
+body.light .ghost-btn:hover,body.light .icon-btn:hover{background:var(--play-yellow)}
+body.light select,body.light input{background-color:var(--bg-1);font-weight:600}
+
+/* tabs and segmented controls: the chosen one is a yellow sticker */
+body.light [role=tab][aria-selected=true],body.light [aria-pressed=true].rc-segbtn,body.light .seg [aria-pressed=true]{background:var(--play-yellow)!important;color:var(--ink)!important;font-weight:800;box-shadow:inset 0 0 0 2px var(--ink)}
+
+/* data tags: solid stickers */
+body.light .dtag{border:2px solid var(--ink);color:var(--ink);font-weight:700;border-radius:7px}
+body.light .dtag.obs{background:#C8F0D0}body.light .dtag.map{background:#DCD3FF}body.light .dtag.mod{background:#BFE9F5}body.light .dtag.scn{background:#FFD9C2}body.light .dtag.demo,body.light .dtag.est{background:#FBE7A8}
+
+/* numbers first */
+body.light .mono{font-weight:500}
+body.light .toast,body.light #toast{background:var(--ink);color:#FFFDF7;border:2px solid var(--ink);font-weight:700}
+
+body.light .primary-btn{background:var(--play)!important;color:var(--ink)!important}
+body.light #langBox [aria-pressed=true],body.light .dw-lang [aria-selected=true]{background:var(--play-yellow);color:var(--ink);font-weight:800}
+body.light .rl-stat{border:2px solid var(--ink);box-shadow:4px 4px 0 var(--ink)}
+body.light .rl-stat b{font-size:48px;color:var(--play)}
+body.light .rl-stat:nth-child(2) b{color:#1D3FD8}
+/* panels: ink outline on the main surfaces */
+body.light .rcard,body.light #clockCard,body.light #briefCard,body.light .dw-clock>*,body.light .dw-side,body.light .dw-map,body.light .dw-bulletin,body.light .card{border-color:var(--ink)}
+body.light .dtag.obs,body.light .dtag.map,body.light .dtag.mod,body.light .dtag.scn,body.light .dtag.demo,body.light .dtag.est,body.light .dtag.fast{color:var(--ink)!important;border-color:var(--ink)!important}
+body.light .dtag.fast{background:#FBE7A8}
+body.light .rl-stat b{color:#B93B00}

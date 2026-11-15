@@ -39,7 +39,7 @@ console.log('Chrome ' + browser.version() + ' (headless, channel chrome)\n');
 const VIEWPORTS = { desktop: { width: 1440, height: 900 }, phone: { width: 390, height: 844 } };
 async function open({ vp = 'desktop', theme = 'dark', reduced = false, role = null, js = true } = {}) {
   const context = await browser.newContext({ viewport: VIEWPORTS[vp], reducedMotion: reduced ? 'reduce' : 'no-preference', javaScriptEnabled: js, deviceScaleFactor: 1 });
-  if (js && (theme === 'light' || role)) await context.addInitScript(([t, r]) => { try { if (t === 'light') localStorage.setItem('theme', 'light'); if (r) localStorage.setItem('fv.role', r); } catch (e) {} }, [theme, role]);
+  if (js) await context.addInitScript(([t, r]) => { try { if (!localStorage.getItem('theme')) localStorage.setItem('theme', t === 'light' ? 'light' : 'dark'); /* the Paper (light) theme is the default, so dark is asked for */ if (r) localStorage.setItem('fv.role', r); } catch (e) {} }, [theme, role]);
   const page = await context.newPage();
   const problems = [];
   page.on('console', m => { if (m.type() === 'error') problems.push('console: ' + m.text()); });

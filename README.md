@@ -1,10 +1,43 @@
-# Harmonization of MODIS and VIIRS Hot Spots
+# FIREVERSE: what is the smoke about to cross?
 
-NASA Space Apps challenge project. MODIS (1 km) and VIIRS (375 m) both report active
-fire detections, but with different resolutions, schemas, confidence scales and
-overpass times. This project merges them into one consistent hot-spot product.
+NASA Space Apps 2026 · **Team Terra flare**: Devika Sanil (Team Owner), Toufeeq SK, Pranav Krishna
 
-## Pipeline
+**Walkthrough video (3.5 min):** [`docs/video/fireverse-roles-walkthrough.mp4`](docs/video/fireverse-roles-walkthrough.mp4)
+
+FIREVERSE merges NASA FIRMS active-fire detections from MODIS and VIIRS into one harmonized record. It then runs a
+smoke plume on modelled wind to show where each fire's smoke is heading, and what lies in its path: power lines,
+main roads, clinics and schools. It covers Paraguay, Bolivia, Argentina and Brazil, in English, Spanish and Portuguese.
+Every value is labelled OBSERVED (satellite fires), MAPPED (OpenStreetMap assets), MODELLED (wind) or SCENARIO
+(smoke). Nothing is invented, and no detection does not mean no fire.
+
+| Page | Who it is for | What it answers |
+|---|---|---|
+| `start.html` (front door) | everyone | Pick a role from a card deck |
+| `role.html?role=firefighter` | fire brigade | Fires near base, where their smoke goes, what is in its path |
+| `role.html?role=grid` | grid operator | Power lines with a fire upwind; 10-minute fast look; crew bulletin |
+| `role.html?role=road` | road patrol | Road stretches in the smoke path; SMS-length bulletin |
+| `role.html?role=care` | clinic or school lead | Is smoke heading for my site? |
+| `role.html?role=resident` | resident or farmer | Is smoke heading for my place? |
+| `downwind.html` | operations | The full watch list for every asset kind, plus the 8 January 2025 line-trip replay |
+| `firelab.html` | anyone | The smoke plume itself, hour by hour |
+| `index.html` | analyst | Explorer: map, globe, Harmonization Lab, calendar, history, data |
+| `place.html` | low-bandwidth phones | One place, one answer (about 130 kB) |
+
+Each simplified role page has a three-step shift briefing (check the satellite clock, review the top items, send a
+bulletin). Bulletins come in full and SMS form, and can be read aloud or shared by WhatsApp.
+
+**Run it:** `python -m hotspots.server`, then open http://127.0.0.1:8000. Setup, the FIRMS key and Codespaces are
+covered below.
+**Tests:** `pytest -q` (Python) and `npm test` (front-end unit tests plus browser checks in Chrome).
+**Idea, not built yet:** smoke-aware navigation. A map app could route around where smoke will be in the next hour,
+not only show today's air quality.
+
+## Harmonization of MODIS and VIIRS hot spots
+
+MODIS (1 km) and VIIRS (375 m) both report active fire detections, but with different resolutions, schemas,
+confidence scales and overpass times. This project merges them into one consistent hot-spot product.
+
+### Pipeline
 1. **Load** FIRMS CSV downloads (MODIS C6.1, VIIRS S-NPP / NOAA-20 375 m) — `hotspots.io`
 2. **Normalize** to a common schema: sensor, lat/lon, UTC time, FRP (MW), confidence class
    (low/nominal/high), footprint size from scan/track — `hotspots.schema`

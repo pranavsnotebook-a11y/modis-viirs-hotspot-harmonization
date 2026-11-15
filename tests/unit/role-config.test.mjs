@@ -6,20 +6,22 @@ import path from 'node:path';
 import { load, ROOT, J } from './load.mjs';
 load('roles', 'role-config');
 const R = globalThis.ROLES, C = globalThis.ROLECFG, LANGS = ['en', 'es', 'pt'];
+// the driver is a simplified role whose page is route.html, which has its own words (ROUTE.UI); it has no role.html config
+const OWN_PAGE = ['driver'], onRolePage = r => r.mode === 'simplified' && !OWN_PAGE.includes(r.id);
 
 test('every simplified role in roles.js resolves to a config; the analyst has none (it is index.html)', () => {
-  for (const r of R.list) assert.equal(!!C.get(r.id), r.mode === 'simplified', r.id);
-  assert.deepEqual(J(Object.keys(C.roles).sort()), J(R.list.filter(r => r.mode === 'simplified').map(r => r.id).sort()));
+  for (const r of R.list) assert.equal(!!C.get(r.id), onRolePage(r), r.id);
+  assert.deepEqual(J(Object.keys(C.roles).sort()), J(R.list.filter(onRolePage).map(r => r.id).sort()));
 });
 test('every role href points at a file that exists in web/ (role.html is no longer allowed to be missing)', () => {
   for (const r of R.list) { const f = path.join(ROOT, 'web', r.href.split('?')[0].split('#')[0]); assert.ok(fs.existsSync(f), `${r.id}: ${r.href} -> ${f}`); }
   assert.ok(fs.existsSync(path.join(ROOT, 'web/role.html')));
 });
 test('role.html href carries role=<id> that its own config knows', () => {
-  for (const r of R.list.filter(x => x.mode === 'simplified')) assert.equal(new URL(r.href, 'http://x/').searchParams.get('role'), r.id);
+  for (const r of R.list.filter(onRolePage)) assert.equal(new URL(r.href, 'http://x/').searchParams.get('role'), r.id);
 });
 test('title and question match roles.js in English and exist in Spanish and Portuguese', () => {
-  for (const r of R.list.filter(x => x.mode === 'simplified')) {
+  for (const r of R.list.filter(onRolePage)) {
     const c = C.get(r.id); assert.equal(c.title.en, r.title); assert.equal(c.q.en, r.question);
     for (const l of LANGS) { assert.ok(c.title[l] && c.q[l]); }
   }

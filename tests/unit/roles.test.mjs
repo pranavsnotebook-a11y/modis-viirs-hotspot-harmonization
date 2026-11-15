@@ -13,11 +13,11 @@ const J = x => JSON.parse(JSON.stringify(x));   // arrays made inside the vm con
 const memory = () => { const m = new Map(); return { getItem: k => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: k => m.delete(k), _m: m }; };
 const throwing = () => ({ getItem() { throw new Error('denied'); }, setItem() { throw new Error('quota'); }, removeItem() { throw new Error('denied'); } });
 
-const ORDER = ['firefighter', 'grid', 'road', 'care', 'resident', 'analyst'];
-const TITLES = ['Fire brigade', 'Grid operator', 'Road patrol', 'Clinic or school lead', 'Resident or farmer', 'Analyst'];
-const THEME = ['cyan', 'purple', 'orange', 'red', 'green', 'yellow'];
+const ORDER = ['firefighter', 'grid', 'road', 'driver', 'care', 'resident', 'analyst'];
+const TITLES = ['Fire brigade', 'Grid operator', 'Road patrol', 'Driver', 'Clinic or school lead', 'Resident or farmer', 'Analyst'];
+const THEME = ['cyan', 'purple', 'orange', 'red', 'green', 'yellow', 'blue'];
 
-test('six roles in the fixed order with the specified titles', () => {
+test('seven roles in the fixed order with the specified titles (the driver comes after the road patrol)', () => {
   assert.deepEqual(J(R.list.map(r => r.id)), ORDER);
   assert.deepEqual(J(R.list.map(r => r.title)), TITLES);
 });
@@ -38,11 +38,28 @@ test('every required field is present and non-empty', () => {
 });
 test('exactly one role is the full workspace; the rest are simplified', () => {
   assert.deepEqual(J(R.list.filter(r => r.mode === 'full').map(r => r.id)), ['analyst']);
-  assert.equal(R.list.filter(r => r.mode === 'simplified').length, 5);
+  assert.equal(R.list.filter(r => r.mode === 'simplified').length, 6);
 });
 test('hrefs are as specified', () => {
-  for (const id of ORDER.slice(0, 5)) assert.equal(R.get(id).href, `role.html?role=${id}`);
+  for (const id of ORDER.filter(x => x !== 'analyst' && x !== 'driver')) assert.equal(R.get(id).href, `role.html?role=${id}`);
   assert.equal(R.get('analyst').href, 'index.html');
+  assert.equal(R.get('driver').href, 'route.html?role=driver', 'the driver opens the route planner directly');
+});
+test('the driver role: question, three modules, simplified, its own accent and icon, and its href names a file that exists', () => {
+  const d = R.get('driver');
+  assert.equal(d.title, 'Driver'); assert.equal(d.question, 'Will my drive go through smoke?'); assert.equal(d.mode, 'simplified');
+  assert.deepEqual(J(d.modules), ['Smoke-aware route', 'Detour around smoke', 'Turn-by-turn smoke alerts']);
+  assert.equal(R.list.filter(r => r.accent === d.accent).length, 1, 'no other role shares the accent');
+  assert.equal(new Set(R.list.map(r => r.icon)).size, R.list.length, 'every role has its own icon');
+  const file = new URL('web/' + d.href.split('?')[0], root); assert.ok(fs.existsSync(file), d.href + ' exists');
+  assert.equal(new URL(d.href, 'http://x/').searchParams.get('role'), 'driver');
+  assert.match(fs.readFileSync(new URL('web/css/start.css', root), 'utf8'), /\.card\[data-accent=blue\]\{--accent:/, 'start.css knows the accent');
+  assert.equal(R.hrefFor('driver', { region: 'PY' }), 'route.html?role=driver&r=PY');
+  assert.ok(fs.readFileSync(new URL('web/route.html', root), 'utf8').includes('js/roles.js'), 'route.html loads roles.js to name and save the role');
+});
+test('the road patrol keeps its link to the planner and the Smoke-aware route chip', () => {
+  assert.ok(R.get('road').modules.includes('Smoke-aware route'));
+  assert.ok(fs.readFileSync(new URL('web/js/role-config.js', root), 'utf8').includes('route.html') || fs.readFileSync(new URL('web/js/role.js', root), 'utf8').includes("route.html?r="));
 });
 test('the list is frozen', () => {
   assert.throws(() => { 'use strict'; R.list.push({}); });

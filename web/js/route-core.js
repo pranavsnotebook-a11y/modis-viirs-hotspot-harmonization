@@ -6,8 +6,10 @@
 (function (root) {
 'use strict';
 const D = () => root.DOWNWIND, W = () => root.WATCH, F = () => root.FIRECORE;
-const NAMES = ['A', 'B', 'C'];
-const RULES = Object.freeze({ stepKm: 1, reachKm: 25, minConc: 1, clusterKm: 1.5, minFrp: 5, hours: 24, scenarioHours: 3, oldHours: 12, maxRoutes: 3, maxWaypoints: 8, exampleKm: 20, exampleEndKm: 30, examplePlaceKm: 25 });
+const NAMES = ['A', 'B', 'C', 'D'];   // D is only ever a detour
+const RULES = Object.freeze({ stepKm: 1, reachKm: 25, minConc: 1, clusterKm: 1.5, minFrp: 5, hours: 24, scenarioHours: 3, oldHours: 12, maxRoutes: 3, maxWaypoints: 8, exampleKm: 20, exampleEndKm: 30, examplePlaceKm: 25,
+  detourKm: [8, 15, 25], maxDetourTries: 6, detourCut: .5, detourMaxAddMin: 45, detourMaxAddShare: .6, maxVia: 3,
+  driveAhead: [5, 1], reassessMin: 10, gpsMaxOffKm: 2, simSpeed: 30, leaveHours: [0, 1, 2, 3] });
 const hourOf = ms => Math.floor(ms / 36e5) * 36e5;
 const day = ms => new Date(ms).toISOString().slice(0, 10);
 const r1 = x => Math.round(x * 10) / 10;
@@ -57,7 +59,7 @@ function pointAlong(route, km) {
    Returns { routes: [...], best, depMs, range, fires: {relevant, assessed, noWind, capped}, windFailed } */
 async function assess(o) {
   const R = { ...RULES, ...(o.rules || {}) }, DW = D(), wind = o.wind, depMs = o.depMs;
-  const routes = (o.routes || []).slice(0, R.maxRoutes).map((rt, i) => ({ name: NAMES[i], route: rt, ...sampleRoute(rt, depMs, R.stepKm) }));
+  const names = o.names || NAMES, routes = (o.routes || []).slice(0, R.maxRoutes).map((rt, i) => ({ name: names[i], detour: !!rt.detour, route: rt, ...sampleRoute(rt, depMs, R.stepKm) }));
   if (o.noFireData) { // no fire data at all: nothing can be said about the smoke, and "no fires near the route" must not be claimed
     routes.forEach((r, i) => { r.fires = 0; r.unassessed = 0; r.fireIdx = []; r.status = 'notAssessed'; r.rank = i + 1; r.best = false; metrics(r, R); });
     return { routes, best: null, depMs, range: null, rules: R, fires: { relevant: 0, assessed: 0, noWind: 0, capped: 0 }, relFires: [], windFailed: false, noFireData: true };
@@ -138,50 +140,86 @@ function rank(routes) {
 
 /* ---------- routing service ---------- */
 const fix = x => (+x).toFixed(5);
+/* turn-by-turn steps in one shape: { type, mod, name, dist (m), dur (s), at: [lon, lat], exit }. Our server sends them in this shape already;
+   OSRM sends legs[].steps[].maneuver. A waypoint (via point) ends one leg and starts the next: its "arrive" and "depart" are dropped. */
+function osrmSteps(legs) {
+  const out = [];
+  (legs || []).forEach((lg, li, all) => (lg.steps || []).forEach(s => {
+    const m = s.maneuver || {};
+    if (m.type === 'arrive' && li < all.length - 1) return;
+    if (m.type === 'depart' && li > 0) return;
+    out.push({ type: String(m.type || 'continue'), mod: m.modifier || null, name: s.name || s.ref || '', dist: +s.distance || 0, dur: +s.duration || 0, at: Array.isArray(m.location) ? [+m.location[0], +m.location[1]] : null, exit: m.exit ?? null });
+  }));
+  return out;
+}
+function normSteps(a) {
+  return (Array.isArray(a) ? a : []).filter(s => s && typeof s.type === 'string').map(s => ({ type: s.type, mod: s.mod || null, name: s.name || '', dist: +s.dist || 0, dur: +s.dur || 0, at: Array.isArray(s.at) && s.at.length >= 2 ? [+s.at[0], +s.at[1]] : null, exit: s.exit ?? null }));
+}
 function normRoutes(j) {
   const out = [];
   for (const r of (j && j.routes) || []) {
     const c = (r.coords || (r.geometry && r.geometry.coordinates));
-    if (Array.isArray(c) && c.length >= 2 && isFinite(r.distance) && isFinite(r.duration)) out.push({ coords: c, distance: +r.distance, duration: +r.duration });
+    if (Array.isArray(c) && c.length >= 2 && isFinite(r.distance) && isFinite(r.duration)) out.push({ coords: c, distance: +r.distance, duration: +r.duration, steps: normSteps(r.steps || osrmSteps(r.legs)) });
   }
   return out.slice(0, RULES.maxRoutes);
 }
 /* our own server first (it caches and keeps to one request a second); a static host has none, so then the public OSRM demo server directly.
-   Returns { routes, source } or throws Error('routing') when neither answered. getJSON(url, ms) is injected. */
+   o.via: up to 3 [{lat, lon}] the route must pass through, in order (a detour); with via points only one route comes back.
+   Returns { routes, source } or throws Error('routing') when neither answered. getJSON(url, ms) is injected.
+   Direct OSRM calls are kept at least o.paceMs (1000) apart, as the demo server's policy asks; o.sleep is injected in tests. */
+let lastDirect = 0;
 async function fetchRoutes(from, to, getJSON, o = {}) {
   const ll = p => `${fix(p.lat)},${fix(p.lon)}`, lonlat = p => `${fix(p.lon)},${fix(p.lat)}`;
+  const via = (o.via || []).slice(0, RULES.maxVia);
   if (o.server !== false) {
-    try { const j = await getJSON(`api/route?from=${ll(from)}&to=${ll(to)}`, 40000); if (j && Array.isArray(j.routes)) return { routes: normRoutes(j), source: 'server' }; } catch (e) { /* no server, or it could not reach OSRM: try OSRM itself */ }
+    try { const j = await getJSON(`api/route?from=${ll(from)}&to=${ll(to)}${via.map(v => '&via=' + ll(v)).join('')}`, 40000); if (j && Array.isArray(j.routes)) return { routes: normRoutes(j), source: 'server' }; } catch (e) { /* no server, or it could not reach OSRM: try OSRM itself */ }
   }
   try {
-    const j = await getJSON(`https://router.project-osrm.org/route/v1/driving/${lonlat(from)};${lonlat(to)}?alternatives=3&overview=full&geometries=geojson&steps=false`, 30000);
-    if (j && (j.code === 'Ok' || j.code === 'NoRoute') && Array.isArray(j.routes || [])) return { routes: normRoutes({ routes: (j.routes || []).map(r => ({ coords: r.geometry && r.geometry.coordinates, distance: r.distance, duration: r.duration })) }), source: 'osrm' };
+    const pace = o.paceMs ?? 1000, wait = lastDirect + pace - Date.now();
+    if (wait > 0) await (o.sleep || (ms => new Promise(r => setTimeout(r, ms))))(wait);
+    lastDirect = Date.now();
+    const pts = [from, ...via, to].map(lonlat).join(';');
+    const j = await getJSON(`https://router.project-osrm.org/route/v1/driving/${pts}?alternatives=${via.length ? 'false' : '3'}&overview=full&geometries=geojson&steps=true`, 30000);
+    if (j && (j.code === 'Ok' || j.code === 'NoRoute') && Array.isArray(j.routes || [])) return { routes: normRoutes({ routes: (j.routes || []).map(r => ({ coords: r.geometry && r.geometry.coordinates, distance: r.distance, duration: r.duration, steps: osrmSteps(r.legs) })) }), source: 'osrm' };
   } catch (e) { /* falls through */ }
   throw new Error('routing');
 }
 
 /* ---------- hand-off ---------- */
 /* a Google Maps directions link: origin, destination and up to maxWaypoints points sampled along the route, so Google follows about the same way.
-   Google may still change the path between two points. The link is only built here; the page opens it on a click. */
+   A detour carries its via point(s) (route.via) as waypoints, in their place along the route, and the sampled points close to them are left out,
+   so Google goes through the via point instead of back to the smoky direct road. Google may still change the path between two points.
+   The link is only built here; the page opens it on a click. */
 function gmapsUrl(route, max = RULES.maxWaypoints) {
   const c = route.coords, ll = p => `${(+p[1]).toFixed(5)},${(+p[0]).toFixed(5)}`;
   const o = ll(c[0]), d = ll(c[c.length - 1]), r = { coords: c };
-  const total = sampleRoute(r, 0, 1e9).km, n = Math.max(0, Math.min(Math.floor(max), RULES.maxWaypoints, Math.floor(total / 5)));
-  const pts = []; for (let k = 1; k <= n; k++) { const p = pointAlong(r, total * k / (n + 1)); pts.push(`${p[0].toFixed(5)},${p[1].toFixed(5)}`); }
+  const cap = Math.max(0, Math.min(Math.floor(max), RULES.maxWaypoints)), via = (route.via || []).slice(0, Math.min(cap, RULES.maxVia));
+  const total = sampleRoute(r, 0, 1e9).km, n = Math.max(0, Math.min(cap - via.length, Math.floor(total / 5)));
+  const items = via.map(v => ({ km: project(r, v.lat, v.lon).km, txt: `${(+v.lat).toFixed(5)},${(+v.lon).toFixed(5)}`, via: true }));
+  for (let k = 1; k <= n; k++) {
+    const km = total * k / (n + 1), p = pointAlong(r, km);
+    if (items.some(x => Math.abs(x.km - km) < 3)) continue;   // too close to a via point: the via point does that job
+    items.push({ km, txt: `${p[0].toFixed(5)},${p[1].toFixed(5)}` });
+  }
+  items.sort((x, y) => x.km - y.km);
   // the numbers hold only digits, '-', '.' and ','; the one character that must be encoded is the pipe between waypoints
-  return 'https://www.google.com/maps/dir/?api=1&origin=' + o + '&destination=' + d + (pts.length ? '&waypoints=' + pts.join('%7C') : '') + '&travelmode=driving';
+  return 'https://www.google.com/maps/dir/?api=1&origin=' + o + '&destination=' + d + (items.length ? '&waypoints=' + items.map(x => x.txt).join('%7C') : '') + '&travelmode=driving';
 }
-/* GeoJSON (RFC 7946, [lon, lat]): one LineString per route with its numbers, plus each in-smoke stretch as its own feature */
+/* GeoJSON (RFC 7946, [lon, lat]): one LineString per route with its numbers, plus each in-smoke stretch as its own feature.
+   A route's turn-by-turn steps (English) go in its properties with the smoke warning at the step where smoke starts. A detour says so and lists its via points. */
 function geojson(res, meta = {}) {
   const labels = ['fires: OBSERVED (NASA FIRMS satellite detections)', 'wind: MODELLED (Open-Meteo)', 'smoke: SCENARIO (plume model, fires held at their observed power)'];
   const depart = new Date(res.depMs).toISOString(), through = meta.dataEnd ? new Date(meta.dataEnd).toISOString() : null;
   const num = x => x == null ? null : Math.round(x * 100) / 100;
-  const base = r => ({ route: r.name, depart, data_through: through, labels });
+  const base = r => ({ route: r.name, detour: !!r.detour, depart, data_through: through, labels });
+  const utc = ms => new Date(ms).toISOString().slice(11, 16) + 'Z';
   const feats = [];
   res.routes.forEach(r => {
+    const steps = directions(r, 'en', { hhmm: utc }).map(s => ({ n: s.n, instruction: s.text, distance_km: num(s.distKm), at_km: num(s.startKm), smoke_warnings: s.warns.map(w => ({ text: w.text, in_km: num(w.inKm), stretch_km: num(w.lenKm), around_utc: new Date(w.ms).toISOString(), peak_ugm3: num(w.peak) })) }));
     feats.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: r.route.coords.map(p => [+p[0], +p[1]]) },
-      properties: { ...base(r), kind: 'route', name: 'Route ' + r.name, best: res.best === r.name, status: r.status, distance_km: num(r.route.distance / 1000), duration_min: num(r.route.duration / 60),
-        km_in_smoke: num(r.kmInSmoke), peak_ugm3: num(r.peak), smoke_minutes: num(r.smokeMin), smoke_starts_km: r.start ? num(r.start.km) : null, smoke_starts_at: r.start ? new Date(r.start.ms).toISOString() : null, fires_not_assessed: r.unassessed } });
+      properties: { ...base(r), kind: 'route', name: r.detour ? 'Route D (detour)' : 'Route ' + r.name, best: res.best === r.name, status: r.status, distance_km: num(r.route.distance / 1000), duration_min: num(r.route.duration / 60),
+        km_in_smoke: num(r.kmInSmoke), peak_ugm3: num(r.peak), smoke_minutes: num(r.smokeMin), smoke_starts_km: r.start ? num(r.start.km) : null, smoke_starts_at: r.start ? new Date(r.start.ms).toISOString() : null, fires_not_assessed: r.unassessed,
+        via_points: r.detour && r.route.via ? r.route.via.map(v => [+(+v.lon).toFixed(5), +(+v.lat).toFixed(5)]) : null, steps } });
     r.segments.forEach((g, k) => feats.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: g.pts.map(p => [p[1], p[0]]) },
       properties: { ...base(r), kind: 'smoke_segment', name: `Route ${r.name}, smoke stretch ${k + 1}`, from_km: num(g.fromKm), to_km: num(g.toKm), peak_ugm3: num(g.peak) } }));
   });
@@ -278,10 +316,106 @@ const UI = {
     credit: 'Rotas: servidor de demonstração do OSRM, dados do OpenStreetMap', creditNote: 'O servidor de demonstração é para uso leve: não peça muitas rotas de uma vez.',
     safety: 'Um cenário modelado com dados de satélite, não um relato de campo. Em uma emergência, siga as instruções oficiais.', mapLabel: 'Mapa das rotas e da fumaça modelada', routesH: 'Rotas', mapH: 'Mapa', fromTo: 'Rota', noMapLib: 'Não foi possível carregar o mapa. Os cartões das rotas continuam funcionando.' },
 };
+/* the words of detours, directions, the drive and the best time to leave (merged into UI above, same three languages) */
+const plus = m => m >= 0 ? `+${m} min` : `-${-m} min`;
+const MORE = {
+  en: { roleDriver: 'Driver', routeD: 'Route D (detour)', chooseRoute: 'Use this route', chosenRoute: 'Chosen route', chosenNote: n => `Directions, hand-off and drive follow ${n}.`,
+    detourSearching: 'The best route still meets modelled smoke. Looking for a detour…', detourVia: (km, side) => `Routed through a point ${km} km to the ${side === 'upwind' ? 'upwind' : side === 'downwind' ? 'downwind' : side} side of the smoke.`,
+    detourOk: (km, was, dt) => `Detour avoids the modelled smoke: ${km} km in smoke vs ${was} km, ${dt}.`, detourCuts: (km, was, dt) => `Detour cuts the modelled smoke: ${km} km in smoke vs ${was} km, ${dt}.`,
+    detourNone: (lim, n) => `No detour within +${lim} min avoids the modelled smoke (${n} tried). The comparison above stands.`, detourFail: 'The detour search could not reach the routing service. The comparison above stands.',
+    detourNote: 'A detour is tried only when the best route meets modelled smoke: up to 6 routes through points beside the smoke, kept only if they cut the smoke-minutes by half or more without adding too much time.', plusMin: plus,
+    stepsH: 'Directions', stepsFor: n => `${n}: ${'turn by turn'}`, stepsNone: 'This route came without turn-by-turn steps.', stepsCount: n => `${n} steps`, stepsNote: 'Steps are from the routing service (OpenStreetMap). The smoke warnings are the modelled scenario for this route and departure time.',
+    warnHere: (len, t) => `Here: modelled smoke for ${len} km, around ${t}`, warnIn: (inKm, len, t) => `In ${inKm} km: modelled smoke for ${len} km, around ${t}`,
+    step: (t, m, n, x, d) => { const on = n ? ` onto ${n}` : '', dir = { left: 'left', right: 'right', 'slight left': 'slightly left', 'slight right': 'slightly right', 'sharp left': 'sharp left', 'sharp right': 'sharp right' }[m];
+      switch (t) {
+        case 'depart': return n ? `Start on ${n}` : 'Start'; case 'arrive': return 'Arrive';
+        case 'turn': case 'end of road': return m === 'uturn' ? 'Make a U-turn' : dir ? `Turn ${dir}${on}` : `Continue straight${on}`;
+        case 'fork': return m && /left/.test(m) ? `Keep left at the fork${on}` : m && /right/.test(m) ? `Keep right at the fork${on}` : `Take the fork${on}`;
+        case 'merge': return `Merge${on}`; case 'on ramp': case 'ramp': return `Take the ramp${on}`; case 'off ramp': return `Take the exit${on}`;
+        case 'roundabout': case 'rotary': return x ? `At the roundabout take exit ${x}${on}` : `Enter the roundabout${on}`;
+        case 'roundabout turn': return dir ? `At the roundabout turn ${dir}${on}` : `At the roundabout go straight${on}`;
+        case 'exit roundabout': case 'exit rotary': return `Leave the roundabout${on}`;
+        default: return `Continue${n ? ' on ' + n : ''}${d ? ' for ' + d : ''}`;
+      } },
+    driveH: 'Drive', driveStart: 'Start drive', driveStop: 'End drive', simulate: 'Simulate the drive', mute: 'Mute spoken alerts', unmute: 'Unmute spoken alerts', driveFor: n => `Drive ${n}`,
+    driveLooking: 'Looking for your position…', driveGps: 'GPS: following your position', driveSimTag: 'SIMULATION', driveSimNote: n => `This is not your position. A marker moves along the route at ${n} times real time.`,
+    driveNoGps: 'Your location was not available, so GPS cannot follow the drive. You can simulate the drive instead.', driveOff: km => `You are ${km} km from this route, more than 2 km, so GPS cannot follow it. You can simulate the drive instead.`,
+    driveNext: (txt, d) => `Next: ${txt} in ${d}`, driveNoTurn: 'No more turns ahead.', driveArrived: 'End of the route.', driveProgress: (a, b) => `${a} of ${b} km`,
+    driveInSmoke: (left, min, t) => `In modelled smoke now: ${left} km to the end of this stretch (about ${min} min, around ${t}).`, driveAhead: (d, min, t, len) => `Modelled smoke ahead in ${d} km (about ${min} min, around ${t}), for ${len} km.`, driveClear: km => `Clear of modelled smoke ahead for the ${km} km left.`, driveNotAssessed: 'The smoke along this route could not be assessed. This is not an all-clear.',
+    alertAhead: (d, len) => `Modelled smoke ahead in ${d} km, for ${len} km.`, alertEnter: len => `Entering modelled smoke, about ${len} km.`, alertLeave: 'Out of modelled smoke.', simSay: 'Simulation.',
+    driveDone: 'You have reached the end of the route.', driveDoneSim: 'The simulated drive is finished. It was a simulation, not a real position.', driveReassessed: t => `Smoke re-assessed at ${t} with the current wind hour.`, driveStopped: 'Drive ended.',
+    driveSafety: 'This is not an emergency navigation system. In an emergency, follow official instructions and road signs.', noSpeech: 'Spoken alerts are not available in this browser: alerts are shown on screen.',
+    leaveH: 'Best time to leave', leaveWorking: 'Checking leaving now and in the next three hours…', leaveUnknown: 'The departure hours could not be compared (no modelled wind for leaving now, or no later hour). This is not an all-clear.',
+    leaveLater: (t, km, now) => `Leaving at ${t} meets the least modelled smoke: ${km} km vs ${now} km now.`, leaveNow: (km, worst) => `Leaving now meets the least modelled smoke: ${km} km, against up to ${worst} km at the later times.`,
+    leaveSame: km => `Leaving now or in the next three hours meets about the same modelled smoke (${km} km).`, leaveNote: 'The same routes, the wind of each hour; no new routing requests. Each fire is held at its observed power.' },
+  es: { roleDriver: 'Conductor', routeD: 'Ruta D (desvío)', chooseRoute: 'Usar esta ruta', chosenRoute: 'Ruta elegida', chosenNote: n => `Las indicaciones, el traspaso y el viaje siguen la ${n}.`,
+    detourSearching: 'La mejor ruta todavía encuentra humo modelado. Buscando un desvío…', detourVia: (km, side) => `Pasa por un punto a ${km} km del lado ${side === 'upwind' ? 'de donde viene el viento (barlovento)' : side === 'downwind' ? 'hacia donde va el humo (sotavento)' : side} del humo.`,
+    detourOk: (km, was, dt) => `El desvío evita el humo modelado: ${km} km en humo frente a ${was} km, ${dt}.`, detourCuts: (km, was, dt) => `El desvío reduce el humo modelado: ${km} km en humo frente a ${was} km, ${dt}.`,
+    detourNone: (lim, n) => `Ningún desvío de hasta +${lim} min evita el humo modelado (se probaron ${n}). Sigue valiendo la comparación de arriba.`, detourFail: 'La búsqueda de desvíos no pudo conectar con el servicio de rutas. Sigue valiendo la comparación de arriba.',
+    detourNote: 'Solo se prueba un desvío cuando la mejor ruta encuentra humo modelado: hasta 6 rutas por puntos al lado del humo, que se conservan solo si reducen a la mitad o más los minutos en humo sin añadir demasiado tiempo.', plusMin: plus,
+    stepsH: 'Indicaciones', stepsFor: n => `${n}: giro a giro`, stepsNone: 'Esta ruta llegó sin indicaciones paso a paso.', stepsCount: n => `${n} pasos`, stepsNote: 'Los pasos vienen del servicio de rutas (OpenStreetMap). Los avisos de humo son el escenario modelado para esta ruta y esta hora de salida.',
+    warnHere: (len, t) => `Aquí: humo modelado por ${len} km, hacia las ${t}`, warnIn: (inKm, len, t) => `En ${inKm} km: humo modelado por ${len} km, hacia las ${t}`,
+    step: (t, m, n, x, d) => { const on = n ? ` hacia ${n}` : '', dir = { left: 'a la izquierda', right: 'a la derecha', 'slight left': 'ligeramente a la izquierda', 'slight right': 'ligeramente a la derecha', 'sharp left': 'cerrado a la izquierda', 'sharp right': 'cerrado a la derecha' }[m];
+      switch (t) {
+        case 'depart': return n ? `Salga por ${n}` : 'Salida'; case 'arrive': return 'Llegada';
+        case 'turn': case 'end of road': return m === 'uturn' ? 'Haga un cambio de sentido' : dir ? `Gire ${dir}${on}` : `Siga recto${n ? ' por ' + n : ''}`;
+        case 'fork': return m && /left/.test(m) ? `Tome la bifurcación de la izquierda${on}` : m && /right/.test(m) ? `Tome la bifurcación de la derecha${on}` : `Tome la bifurcación${on}`;
+        case 'merge': return `Incorpórese${on}`; case 'on ramp': case 'ramp': return `Tome el acceso${on}`; case 'off ramp': return `Tome la salida${on}`;
+        case 'roundabout': case 'rotary': return x ? `En la rotonda tome la salida ${x}${on}` : `Entre en la rotonda${on}`;
+        case 'roundabout turn': return dir ? `En la rotonda gire ${dir}${on}` : `En la rotonda siga recto${on}`;
+        case 'exit roundabout': case 'exit rotary': return `Salga de la rotonda${on}`;
+        default: return `Continúe${n ? ' por ' + n : ''}${d ? ' durante ' + d : ''}`;
+      } },
+    driveH: 'Viaje', driveStart: 'Empezar el viaje', driveStop: 'Terminar el viaje', simulate: 'Simular el viaje', mute: 'Silenciar los avisos hablados', unmute: 'Activar los avisos hablados', driveFor: n => `Viaje por la ${n}`,
+    driveLooking: 'Buscando su posición…', driveGps: 'GPS: siguiendo su posición', driveSimTag: 'SIMULACIÓN', driveSimNote: n => `Esta no es su posición. Un marcador avanza por la ruta a ${n} veces el tiempo real.`,
+    driveNoGps: 'No se pudo obtener su ubicación, así que el GPS no puede seguir el viaje. Puede simular el viaje.', driveOff: km => `Usted está a ${km} km de esta ruta, más de 2 km, así que el GPS no puede seguirla. Puede simular el viaje.`,
+    driveNext: (txt, d) => `Siguiente: ${txt} en ${d}`, driveNoTurn: 'No hay más giros adelante.', driveArrived: 'Fin de la ruta.', driveProgress: (a, b) => `${a} de ${b} km`,
+    driveInSmoke: (left, min, t) => `En humo modelado ahora: faltan ${left} km para salir de este tramo (unos ${min} min, hacia las ${t}).`, driveAhead: (d, min, t, len) => `Humo modelado adelante en ${d} km (unos ${min} min, hacia las ${t}), por ${len} km.`, driveClear: km => `Sin humo modelado adelante en los ${km} km que faltan.`, driveNotAssessed: 'No se pudo evaluar el humo en esta ruta. Esto no es una señal de que todo esté bien.',
+    alertAhead: (d, len) => `Humo modelado adelante en ${d} km, por ${len} km.`, alertEnter: len => `Entrando en humo modelado, unos ${len} km.`, alertLeave: 'Fuera del humo modelado.', simSay: 'Simulación.',
+    driveDone: 'Llegó al final de la ruta.', driveDoneSim: 'El viaje simulado terminó. Fue una simulación, no una posición real.', driveReassessed: t => `Humo reevaluado a las ${t} con la hora de viento actual.`, driveStopped: 'Viaje terminado.',
+    driveSafety: 'Este no es un sistema de navegación de emergencia. En una emergencia, siga las instrucciones oficiales y las señales del camino.', noSpeech: 'Los avisos hablados no están disponibles en este navegador: los avisos se muestran en pantalla.',
+    leaveH: 'Mejor hora para salir', leaveWorking: 'Revisando salir ahora y en las próximas tres horas…', leaveUnknown: 'No se pudieron comparar las horas de salida (sin viento modelado para salir ahora, o para ninguna hora posterior). Esto no es una señal de que todo esté bien.',
+    leaveLater: (t, km, now) => `Salir a las ${t} encuentra el menor humo modelado: ${km} km frente a ${now} km si sale ahora.`, leaveNow: (km, worst) => `Salir ahora encuentra el menor humo modelado: ${km} km, frente a hasta ${worst} km más tarde.`,
+    leaveSame: km => `Salir ahora o en las próximas tres horas encuentra casi el mismo humo modelado (${km} km).`, leaveNote: 'Las mismas rutas, con el viento de cada hora; sin nuevos pedidos de rutas. Cada fuego se mantiene con su potencia observada.' },
+  pt: { roleDriver: 'Motorista', routeD: 'Rota D (desvio)', chooseRoute: 'Usar esta rota', chosenRoute: 'Rota escolhida', chosenNote: n => `As instruções, o envio e a viagem seguem a ${n}.`,
+    detourSearching: 'A melhor rota ainda encontra fumaça modelada. Procurando um desvio…', detourVia: (km, side) => `Passa por um ponto a ${km} km do lado ${side === 'upwind' ? 'de onde vem o vento (barlavento)' : side === 'downwind' ? 'para onde vai a fumaça (sotavento)' : side} da fumaça.`,
+    detourOk: (km, was, dt) => `O desvio evita a fumaça modelada: ${km} km na fumaça contra ${was} km, ${dt}.`, detourCuts: (km, was, dt) => `O desvio reduz a fumaça modelada: ${km} km na fumaça contra ${was} km, ${dt}.`,
+    detourNone: (lim, n) => `Nenhum desvio de até +${lim} min evita a fumaça modelada (${n} testados). A comparação acima continua valendo.`, detourFail: 'A busca de desvios não conseguiu acessar o serviço de rotas. A comparação acima continua valendo.',
+    detourNote: 'Um desvio só é testado quando a melhor rota encontra fumaça modelada: até 6 rotas por pontos ao lado da fumaça, mantidas só se reduzirem à metade ou mais os minutos na fumaça sem somar muito tempo.', plusMin: plus,
+    stepsH: 'Instruções', stepsFor: n => `${n}: passo a passo`, stepsNone: 'Esta rota veio sem instruções passo a passo.', stepsCount: n => `${n} passos`, stepsNote: 'Os passos vêm do serviço de rotas (OpenStreetMap). Os avisos de fumaça são o cenário modelado para esta rota e este horário de saída.',
+    warnHere: (len, t) => `Aqui: fumaça modelada por ${len} km, por volta das ${t}`, warnIn: (inKm, len, t) => `Em ${inKm} km: fumaça modelada por ${len} km, por volta das ${t}`,
+    step: (t, m, n, x, d) => { const on = n ? ` para ${n}` : '', dir = { left: 'à esquerda', right: 'à direita', 'slight left': 'levemente à esquerda', 'slight right': 'levemente à direita', 'sharp left': 'acentuadamente à esquerda', 'sharp right': 'acentuadamente à direita' }[m];
+      switch (t) {
+        case 'depart': return n ? `Comece em ${n}` : 'Início'; case 'arrive': return 'Chegada';
+        case 'turn': case 'end of road': return m === 'uturn' ? 'Faça o retorno' : dir ? `Vire ${dir}${on}` : `Siga em frente${n ? ' por ' + n : ''}`;
+        case 'fork': return m && /left/.test(m) ? `Pegue a bifurcação da esquerda${on}` : m && /right/.test(m) ? `Pegue a bifurcação da direita${on}` : `Pegue a bifurcação${on}`;
+        case 'merge': return `Entre na via${on}`; case 'on ramp': case 'ramp': return `Pegue o acesso${on}`; case 'off ramp': return `Pegue a saída${on}`;
+        case 'roundabout': case 'rotary': return x ? `Na rotatória, pegue a saída ${x}${on}` : `Entre na rotatória${on}`;
+        case 'roundabout turn': return dir ? `Na rotatória, vire ${dir}${on}` : `Na rotatória, siga em frente${on}`;
+        case 'exit roundabout': case 'exit rotary': return `Saia da rotatória${on}`;
+        default: return `Continue${n ? ' por ' + n : ''}${d ? ' por ' + d : ''}`;
+      } },
+    driveH: 'Viagem', driveStart: 'Iniciar a viagem', driveStop: 'Encerrar a viagem', simulate: 'Simular a viagem', mute: 'Silenciar os avisos falados', unmute: 'Ativar os avisos falados', driveFor: n => `Viagem pela ${n}`,
+    driveLooking: 'Procurando sua posição…', driveGps: 'GPS: acompanhando sua posição', driveSimTag: 'SIMULAÇÃO', driveSimNote: n => `Esta não é a sua posição. Um marcador anda pela rota a ${n} vezes o tempo real.`,
+    driveNoGps: 'Sua localização não estava disponível, então o GPS não pode acompanhar a viagem. Você pode simular a viagem.', driveOff: km => `Você está a ${km} km desta rota, mais de 2 km, então o GPS não pode acompanhá-la. Você pode simular a viagem.`,
+    driveNext: (txt, d) => `Próximo: ${txt} em ${d}`, driveNoTurn: 'Sem mais curvas à frente.', driveArrived: 'Fim da rota.', driveProgress: (a, b) => `${a} de ${b} km`,
+    driveInSmoke: (left, min, t) => `Na fumaça modelada agora: faltam ${left} km para sair deste trecho (cerca de ${min} min, por volta das ${t}).`, driveAhead: (d, min, t, len) => `Fumaça modelada à frente em ${d} km (cerca de ${min} min, por volta das ${t}), por ${len} km.`, driveClear: km => `Sem fumaça modelada à frente nos ${km} km que faltam.`, driveNotAssessed: 'A fumaça nesta rota não pôde ser avaliada. Isto não é um sinal de que está tudo bem.',
+    alertAhead: (d, len) => `Fumaça modelada à frente em ${d} km, por ${len} km.`, alertEnter: len => `Entrando na fumaça modelada, cerca de ${len} km.`, alertLeave: 'Fora da fumaça modelada.', simSay: 'Simulação.',
+    driveDone: 'Você chegou ao fim da rota.', driveDoneSim: 'A viagem simulada terminou. Foi uma simulação, não uma posição real.', driveReassessed: t => `Fumaça reavaliada às ${t} com a hora de vento atual.`, driveStopped: 'Viagem encerrada.',
+    driveSafety: 'Este não é um sistema de navegação de emergência. Em uma emergência, siga as instruções oficiais e a sinalização da estrada.', noSpeech: 'Os avisos falados não estão disponíveis neste navegador: os avisos aparecem na tela.',
+    leaveH: 'Melhor hora para sair', leaveWorking: 'Conferindo sair agora e nas próximas três horas…', leaveUnknown: 'Não foi possível comparar os horários de saída (sem vento modelado para sair agora, ou para nenhuma hora depois). Isto não é um sinal de que está tudo bem.',
+    leaveLater: (t, km, now) => `Sair às ${t} encontra a menor fumaça modelada: ${km} km contra ${now} km saindo agora.`, leaveNow: (km, worst) => `Sair agora encontra a menor fumaça modelada: ${km} km, contra até ${worst} km mais tarde.`,
+    leaveSame: km => `Sair agora ou nas próximas três horas encontra quase a mesma fumaça modelada (${km} km).`, leaveNote: 'As mesmas rotas, com o vento de cada hora; sem novos pedidos de rotas. Cada fogo é mantido com a potência observada.' },
+};
+for (const l of Object.keys(MORE)) Object.assign(UI[l], MORE[l]);
 /* the one line above the cards. Real numbers only: every figure comes from the assessment. */
 function summary(res, lang = 'en') {
   const T = UI[lang] || UI.en, rs = res.routes.filter(r => r.status !== 'notAssessed');
   if (!res.routes.length) return '';
+  if (res.detour && res.best === res.detour.name) {   // a kept detour is the answer: its numbers against the route it replaces
+    const d = res.detour, dm = Math.round(d.addMin), args = [nf(d.kmAfter, lang), nf(d.kmBefore, lang), T.plusMin(dm)];
+    return d.kmAfter > 0 ? T.detourCuts(...args) : T.detourOk(...args);
+  }
   if (!rs.length) return T.sumNotAssessed;
   const best = rs.find(r => r.name === res.best) || rs[0], km = r => nf(r.kmInSmoke, lang);
   if (rs.length === 1) return rs[0].kmInSmoke > 0 ? T.sumOne(rs[0].name, km(rs[0]), nf(rs[0].peak, lang)) : T.sumOne(rs[0].name, 0, 0);
@@ -294,5 +428,197 @@ function summary(res, lang = 'en') {
   return best.kmInSmoke > 0 ? T.sumLeast(best.name, km(best), ref.name, km(ref), dt) : T.sumAvoid(best.name, nf(0, lang), ref.name, km(ref), dt);
 }
 
-root.ROUTE = Object.freeze({ NAMES, RULES, UI, fireClusters, sampleRoute, pointAlong, assess, metrics, rank, normRoutes, fetchRoutes, gmapsUrl, geojson, pickExample, summary, nf, r1 });
+/* ---------- where on the route ---------- */
+const cumOf = new WeakMap();
+function cumKm(c) {
+  let k = cumOf.get(c); if (k) return k;
+  const d = D().dist; k = [0]; for (let i = 1; i < c.length; i++) k.push(k[i - 1] + d(c[i - 1][1], c[i - 1][0], c[i][1], c[i][0]));
+  cumOf.set(c, k); return k;
+}
+/* the nearest point of the route to a position: { km along the route from its start, off: km away from the line } */
+function project(route, lat, lon) {
+  const c = route.coords, cum = cumKm(c), K = 111.195; let best = { km: 0, off: Infinity };
+  for (let i = 1; i < c.length; i++) {
+    const la0 = c[i - 1][1], lo0 = c[i - 1][0], cs = Math.cos(la0 * Math.PI / 180);
+    const ex = (c[i][0] - lo0) * K * cs, ey = (c[i][1] - la0) * K, px = (lon - lo0) * K * cs, py = (lat - la0) * K, L2 = ex * ex + ey * ey;
+    const t = L2 > 0 ? Math.min(1, Math.max(0, (px * ex + py * ey) / L2)) : 0, off = Math.hypot(px - ex * t, py - ey * t);
+    if (off < best.off) best = { off, km: cum[i - 1] + (cum[i] - cum[i - 1]) * t };
+  }
+  return best;
+}
+/* the clock time at a km of an assessed route (constant speed, as in the assessment) */
+function msAtKm(r, km) { const S = r.samples; return S[0].ms + (S[S.length - 1].ms - S[0].ms) * (r.km > 0 ? Math.min(1, Math.max(0, km / r.km)) : 0); }
+
+/* ---------- detour ---------- */
+const dest = (lat, lon, brg, km) => [lat + km * Math.cos(brg * Math.PI / 180) / 111.195, lon + km * Math.sin(brg * Math.PI / 180) / (111.195 * Math.cos(lat * Math.PI / 180))];
+const angDiff = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
+/* Candidate via points for a detour: perpendicular to the route at the middle of the smoke stretch `seg` (fromKm, toKm), at each distance of `dists`
+   on each side, the upwind side first (smoke drifts downwind, so the upwind side is where the wind comes from, wd degrees; null when unknown:
+   then the left of travel goes first). At most `max` points. Each: { lat, lon, km, side: 'upwind' | 'downwind' | 'left' | 'right' } */
+function viaCandidates(route, seg, wd, o = {}) {
+  const dists = o.dists || RULES.detourKm, max = o.max ?? RULES.maxDetourTries, dd = D();
+  const mid = (seg.fromKm + seg.toKm) / 2, p = pointAlong(route, mid);
+  let a = pointAlong(route, Math.max(0, mid - 1)), b = pointAlong(route, mid + 1);
+  if (a[0] === b[0] && a[1] === b[1]) { a = pointAlong(route, 0); b = pointAlong(route, 1e9); }
+  const brg = dd.bearing(a[0], a[1], b[0], b[1]), sides = [(brg + 270) % 360, (brg + 90) % 360];   // left of travel, right of travel
+  const known = wd != null && isFinite(wd);
+  let order = [{ brg: sides[0], name: 'left' }, { brg: sides[1], name: 'right' }];
+  if (known) { order.sort((x, y) => angDiff(x.brg, wd) - angDiff(y.brg, wd)); order[0].name = 'upwind'; order[1].name = 'downwind'; }
+  const out = [];
+  for (const s of order) for (const km of dists) { const q = dest(p[0], p[1], s.brg, km); out.push({ lat: +q[0].toFixed(5), lon: +q[1].toFixed(5), km, side: s.name }); }
+  return out.slice(0, max);
+}
+/* Is a detour worth showing? base: the best assessed route; cand: the detour, assessed the same way.
+   It must be assessed in full, cut smoke-minutes by at least detourCut (50 %), and add no more than detourMaxAddMin (45 min) and no more than
+   detourMaxAddShare (60 %) of the trip time (so the limit is the smaller of the two). */
+function detourVerdict(base, cand, rules) {
+  const R = { ...RULES, ...(rules || {}) }, tripMin = base.route.duration / 60, addMin = (cand.route.duration - base.route.duration) / 60;
+  const maxAdd = Math.min(R.detourMaxAddMin, R.detourMaxAddShare * tripMin);
+  const assessed = cand.status === 'ok' || cand.status === 'nofires';
+  const cut = base.smokeMin > 0 && cand.smokeMin != null ? 1 - cand.smokeMin / base.smokeMin : 0;
+  let reason = null;
+  if (!assessed) reason = 'notAssessed'; else if (!(cut >= R.detourCut - 1e-9)) reason = 'smoke'; else if (addMin > maxAdd + 1e-9) reason = 'time';
+  return { ok: !reason, reason, addMin, maxAdd, cut };
+}
+/* The search. o: { res (an assessment), clusters, wind, depMs, noFireData, fetchVia(viaPoints) -> Promise<routes>, rules }.
+   Only when the best route still meets modelled smoke. At most maxDetourTries routing requests; stops early on a detour with no modelled smoke;
+   stops after two routing failures in a row. Returns { res, info }: res is a new assessment with the detour as Route D (res.detour describes it),
+   or the same res with res.detour = null; info = { status: 'notNeeded' | 'found' | 'none' | 'unavailable', tried: [...], limitMin }. */
+async function searchDetour(o) {
+  const res = o.res, R = { ...RULES, ...(o.rules || {}) }, base = res.routes.find(r => r.name === res.best);
+  const info = { status: 'notNeeded', tried: [], limitMin: null };
+  res.detour = null; res.detourSearch = info;
+  if (!base || !base.segments.length || !(base.peak >= R.minConc)) return { res, info };
+  const seg = base.segments[0], mid = (seg.fromKm + seg.toKm) / 2, mp = pointAlong(base.route, mid);
+  let wd = null, nearest = Infinity;
+  for (const i of base.fireIdx || []) {
+    const f = o.clusters[i], k = D().dist(mp[0], mp[1], f.lat, f.lon); if (k >= nearest) continue;
+    const wx = o.wind.at(f.lat, f.lon, msAtKm(base, mid), res.range); if (wx && isFinite(wx.wd)) { nearest = k; wd = wx.wd; }
+  }
+  info.limitMin = Math.floor(Math.min(R.detourMaxAddMin, R.detourMaxAddShare * base.route.duration / 60));
+  let keep = null, failures = 0;
+  for (const c of viaCandidates(base.route, seg, wd, { dists: R.detourKm, max: R.maxDetourTries })) {
+    let routes;
+    try { routes = await o.fetchVia([{ lat: c.lat, lon: c.lon }]); failures = 0; } catch (e) { info.tried.push({ via: c, status: 'failed' }); if (++failures >= 2) break; continue; }
+    if (!routes || !routes.length) { info.tried.push({ via: c, status: 'noRoute' }); continue; }
+    const rt = { ...routes[0], detour: true, via: [{ lat: c.lat, lon: c.lon }] };
+    const a = (await assess({ routes: [rt], names: ['D'], depMs: o.depMs, clusters: o.clusters, wind: o.wind, rules: o.rules, noFireData: o.noFireData })).routes[0];
+    const v = detourVerdict(base, a, o.rules);
+    info.tried.push({ via: c, status: v.ok ? 'kept' : v.reason, kmInSmoke: a.kmInSmoke, smokeMin: a.smokeMin, addMin: v.addMin });
+    if (v.ok) { if (!keep || a.smokeMin < keep.a.smokeMin) keep = { a, rt, c, v }; if (!(a.kmInSmoke > 0)) break; }   // a clean one: stop asking the routing service
+  }
+  if (!keep) { info.status = !info.tried.length || info.tried.every(t => t.status === 'failed') ? 'unavailable' : 'none'; return { res, info }; }
+  info.status = 'found';
+  const full = await assess({ routes: res.routes.map(r => r.route).concat([keep.rt]), names: res.routes.map(r => r.name).concat(['D']), depMs: o.depMs, clusters: o.clusters, wind: o.wind, rules: { ...(o.rules || {}), maxRoutes: 4 }, noFireData: o.noFireData });
+  const d = full.routes.find(r => r.detour);
+  full.detour = { name: 'D', vs: base.name, kmBefore: base.kmInSmoke, kmAfter: d.kmInSmoke, smokeMinBefore: base.smokeMin, smokeMinAfter: d.smokeMin, addMin: keep.v.addMin, cut: keep.v.cut, via: keep.rt.via, side: keep.c.side, viaKm: keep.c.km };
+  full.detourSearch = info;
+  return { res: full, info };
+}
+
+/* ---------- turn by turn ---------- */
+function fmtDist(km, lang = 'en') { return km < .95 ? `${Math.max(10, Math.round(km * 100) * 10)} m` : `${nf(km, lang, km < 10 ? 1 : 0)} km`; }
+/* The steps of an assessed route as short instructions in `lang`, each with where it starts along the route (km) and the smoke warnings of the
+   in-smoke stretches that begin within it: "In 3.2 km: modelled smoke for 2 km, around 09:53". o.hhmm(ms) formats clock times (UTC if omitted). */
+function directions(r, lang = 'en', o = {}) {
+  const steps = r.route.steps || [], T = UI[lang] || UI.en, hhmm = o.hhmm || (ms => new Date(ms).toISOString().slice(11, 16));
+  if (!steps.length) return [];
+  const scale = r.km > 0 && r.route.distance > 0 ? r.km / (r.route.distance / 1000) : 1;   // the steps' metres are the router's, the km here are along the drawn line
+  let cum = 0;
+  const out = steps.map((s, i) => {
+    const startKm = cum * scale / 1000, distKm = s.dist * scale / 1000; cum += s.dist;
+    const lead = ['new name', 'continue', 'notification'].includes(s.type);
+    return { n: i + 1, type: s.type, text: T.step(s.type, s.mod, s.name, s.exit, lead ? fmtDist(distKm, lang) : ''), startKm, distKm, distText: fmtDist(distKm, lang), inText: lead, at: s.at ? [s.at[1], s.at[0]] : null, warns: [] };
+  });
+  if (r.status !== 'notAssessed') (r.segments || []).forEach(g => {
+    let k = 0; for (let i = 0; i < out.length; i++) if (out[i].startKm <= g.fromKm + 1e-9) k = i;
+    const s = out[k], inKm = Math.max(0, g.fromKm - s.startKm), lenKm = g.toKm - g.fromKm, ms = msAtKm(r, g.fromKm);
+    s.warns.push({ inKm, lenKm, ms, peak: g.peak, text: inKm < .05 ? T.warnHere(nf(lenKm, lang), hhmm(ms)) : T.warnIn(nf(inKm, lang), nf(lenKm, lang), hhmm(ms)) });
+  });
+  return out;
+}
+
+/* ---------- drive ---------- */
+/* Where the drive stands at `km` along an assessed route, at clock time nowMs: whether it is in a modelled-smoke stretch, how far to its end,
+   and the next stretch ahead (distance, minutes and clock time at the route's own average speed). */
+function driveState(r, km, nowMs) {
+  const total = r.km, kmh = r.route.duration > 0 ? total / (r.route.duration / 3600) : 60, segs = r.status === 'notAssessed' ? [] : (r.segments || []);
+  const cur = segs.findIndex(g => km >= g.fromKm && km <= g.toKm), nxt = segs.findIndex(g => g.fromKm > km);
+  const mk = i => { const g = segs[i], d = g.fromKm - km; return { idx: i, fromKm: g.fromKm, toKm: g.toKm, lenKm: g.toKm - g.fromKm, distKm: d, etaMin: d / kmh * 60, etaMs: nowMs + d / kmh * 36e5, peak: g.peak }; };
+  const left = cur >= 0 ? segs[cur].toKm - km : null;
+  return { km, total, remainingKm: Math.max(0, total - km), done: km >= total - .05, kmh, assessed: r.status !== 'notAssessed',
+    inSmoke: cur >= 0 ? { idx: cur, leftKm: left, leftMin: left / kmh * 60, leftMs: nowMs + left / kmh * 36e5, peak: segs[cur].peak } : null, next: nxt >= 0 ? mk(nxt) : null };
+}
+/* The next maneuver still ahead: { step, inKm } or null */
+function nextStep(dirs, km) { const s = dirs.find(x => x.startKm > km + .02); return s ? { step: s, inKm: s.startKm - km } : null; }
+/* Alerts to give at this position. `fired` (a Set) records what was already said, so each is given once per stretch: 5 km ahead, 1 km ahead
+   (if the position jumps from beyond 5 km to within 1 km, only the 1 km alert is given), on entering, on leaving. At the first call (o.first),
+   a stretch already behind the vehicle says nothing. Returns [{ type: 'ahead' | 'enter' | 'leave', level, idx, distKm, lenKm, leftKm }]. */
+function driveAlerts(r, km, fired, o = {}) {
+  const [a5, a1] = o.ahead || RULES.driveAhead, ev = [], segs = r.status === 'notAssessed' ? [] : (r.segments || []), mark = (i, ...t) => t.forEach(x => fired.add(i + ':' + x));
+  segs.forEach((g, i) => {
+    const inside = km >= g.fromKm && km <= g.toKm, past = km > g.toKm, dist = g.fromKm - km, len = g.toKm - g.fromKm, has = t => fired.has(i + ':' + t);
+    if (!inside && !past) {
+      if (dist <= a1 && !has('1')) { mark(i, '5', '1'); ev.push({ type: 'ahead', level: a1, idx: i, distKm: dist, lenKm: len }); }
+      else if (dist <= a5 && dist > a1 && !has('5')) { mark(i, '5'); ev.push({ type: 'ahead', level: a5, idx: i, distKm: dist, lenKm: len }); }
+    }
+    if (inside && !has('enter')) { mark(i, '5', '1', 'enter'); ev.push({ type: 'enter', idx: i, lenKm: len, leftKm: g.toKm - km }); }
+    if (past && !has('leave')) {
+      if (!has('enter')) { if (o.first) { mark(i, '5', '1', 'enter', 'leave'); return; } mark(i, '5', '1', 'enter'); ev.push({ type: 'enter', idx: i, lenKm: len, leftKm: 0 }); }
+      mark(i, 'leave'); ev.push({ type: 'leave', idx: i, lenKm: len });
+    }
+  });
+  return ev;
+}
+/* After a re-assessment the stretches may have moved a little: carry over what was already said to the stretch that overlaps the old one most. */
+function remapFired(oldSegs, newSegs, fired) {
+  const out = new Set();
+  oldSegs.forEach((g, i) => {
+    let bj = -1, bo = 0; newSegs.forEach((h, j) => { const ov = Math.min(g.toKm, h.toKm) - Math.max(g.fromKm, h.fromKm); if (ov > bo) { bo = ov; bj = j; } });
+    if (bj >= 0) ['5', '1', 'enter', 'leave'].forEach(t => { if (fired.has(i + ':' + t)) out.add(bj + ':' + t); });
+  });
+  return out;
+}
+/* the words of an alert (the same text is shown and spoken); sim puts "Simulation." in front of every one */
+function alertText(ev, lang = 'en', sim = false) {
+  const T = UI[lang] || UI.en, n = x => nf(x, lang), d = x => x < 10 ? n(x) : n(x, 0);
+  const t = ev.type === 'ahead' ? T.alertAhead(d(Math.max(.1, ev.distKm)), d(ev.lenKm)) : ev.type === 'enter' ? T.alertEnter(d(ev.lenKm)) : T.alertLeave;
+  return (sim ? T.simSay + ' ' : '') + t;
+}
+/* the three lines of the drive panel */
+function driveLines(r, st, dirs, lang, o = {}) {
+  const T = UI[lang] || UI.en, n = x => nf(x, lang), hhmm = o.hhmm || (ms => new Date(ms).toISOString().slice(11, 16)), ns = nextStep(dirs, st.km);
+  const lines = { next: st.done ? T.driveArrived : ns ? T.driveNext(ns.step.text, fmtDist(ns.inKm, lang)) : T.driveNoTurn, smoke: '', progress: T.driveProgress(n(Math.min(st.km, st.total)), n(st.total)) };
+  if (st.done) lines.smoke = '';
+  else if (!st.assessed) lines.smoke = T.driveNotAssessed;
+  else if (st.inSmoke) lines.smoke = T.driveInSmoke(n(st.inSmoke.leftKm), n(Math.max(1, Math.round(st.inSmoke.leftMin))), hhmm(st.inSmoke.leftMs));
+  else if (st.next) lines.smoke = T.driveAhead(n(st.next.distKm), n(Math.max(1, Math.round(st.next.etaMin))), hhmm(st.next.etaMs), n(st.next.lenKm));
+  else lines.smoke = T.driveClear(n(st.remainingKm));
+  return lines;
+}
+
+/* ---------- best time to leave ---------- */
+/* options: [{ h (hours from now), depMs, best: { kmInSmoke, smokeMin, peak, status } | null }] where best is the least-smoke route of that departure.
+   Ranks by least smoke-minutes, then peak, then the earlier. kind: 'unknown' (leaving now could not be assessed), 'same' (no real difference),
+   'now' (now is the least) or 'later' (an hour h is). */
+function leaveRanking(options) {
+  const ok = options.filter(x => x.best && x.best.status !== 'notAssessed' && x.best.smokeMin != null).sort((a, b) => a.h - b.h);
+  const now = ok.find(x => x.h === options[0].h && options[0].best && options[0].best.status !== 'notAssessed');
+  if (!now || ok.length < 2) return { kind: 'unknown', ranked: ok, now: now || null, best: null };
+  const key = x => [Math.round(x.best.smokeMin * 10), Math.round(x.best.peak * 10), x.h];
+  const ranked = ok.slice().sort((a, b) => { const p = key(a), q = key(b); for (let i = 0; i < 3; i++) if (p[i] !== q[i]) return p[i] - q[i]; return 0; });
+  const best = ranked[0], near = x => Math.abs(x.best.smokeMin - now.best.smokeMin) < .1 && Math.abs(x.best.kmInSmoke - now.best.kmInSmoke) < .05, same = ok.every(near) || (best.h !== now.h && near(best));
+  const worst = Math.max(...ok.map(x => x.best.kmInSmoke));
+  return { kind: same ? 'same' : best.h === now.h ? 'now' : 'later', ranked, now, best, worstKm: worst, assessed: ok.length, asked: options.length };
+}
+function leaveSummary(rk, lang = 'en', hhmm) {
+  const T = UI[lang] || UI.en, n = x => nf(x, lang), f = hhmm || (ms => new Date(ms).toISOString().slice(11, 16));
+  if (!rk || rk.kind === 'unknown') return T.leaveUnknown;
+  if (rk.kind === 'same') return T.leaveSame(n(rk.now.best.kmInSmoke));
+  if (rk.kind === 'now') return T.leaveNow(n(rk.now.best.kmInSmoke), n(rk.worstKm));
+  return T.leaveLater(f(rk.best.depMs), n(rk.best.best.kmInSmoke), n(rk.now.best.kmInSmoke));
+}
+
+root.ROUTE = Object.freeze({ NAMES, RULES, UI, fireClusters, sampleRoute, pointAlong, assess, metrics, rank, normRoutes, osrmSteps, fetchRoutes, gmapsUrl, geojson, pickExample, summary, nf, r1,
+  project, msAtKm, viaCandidates, detourVerdict, searchDetour, fmtDist, directions, driveState, nextStep, driveAlerts, remapFired, alertText, driveLines, leaveRanking, leaveSummary });
 })(typeof globalThis !== 'undefined' ? globalThis : window);

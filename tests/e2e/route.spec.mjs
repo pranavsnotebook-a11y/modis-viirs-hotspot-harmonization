@@ -313,6 +313,234 @@ await check('wiring: the road patrol page has the "Plan a smoke-aware route" car
   await page.goto(`${BASE}/index.html`); assert(await page.locator('a.nav-item[href="route.html"]').count() >= 1); await ctx.close();
 });
 
+/* =============== the driver: detour, directions, drive, best time to leave =============== */
+console.log('\n== driver: detour, directions, drive, best time to leave ==');
+const hav = (a, b) => Math.hypot((b[0] - a[0]) * KM * Math.cos((a[1] + b[1]) / 2 * Math.PI / 180), (b[1] - a[1]) * KM);   // [lon, lat] points
+const along = (pts, f) => { const L = []; let t = 0; for (let i = 1; i < pts.length; i++) { const d = hav(pts[i - 1], pts[i]); L.push(d); t += d; } let acc = 0; for (let i = 1; i < pts.length; i++) { if (acc + L[i - 1] >= t * f || i === pts.length - 1) { const u = L[i - 1] ? Math.min(1, Math.max(0, (t * f - acc) / L[i - 1])) : 0; return [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * u, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * u]; } acc += L[i - 1]; } return pts[0]; };
+/* a route through the given [lon, lat] points at 12 m/s, with steps: depart, a left turn partway, a straight stretch, arrive (or, with a via point, a turn at the via point) */
+function viaRoute(pts, { dense = 24, names = ['Ruta 9', 'Ruta 3'] } = {}) {
+  const c = []; for (let i = 1; i < pts.length; i++) for (let k = (i === 1 ? 0 : 1); k <= dense; k++) { const t = k / dense; c.push([+(pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * t).toFixed(5), +(pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * t).toFixed(5)]); }
+  let km = 0; for (let i = 1; i < c.length; i++) km += hav(c[i - 1], c[i]); const m = km * 1000, dur = m / 12, f = [.3, .65];
+  const st = (type, mod, name, a, b, at) => ({ type, mod, name, dist: Math.round((b - a) * m), dur: Math.round((b - a) * dur), at: at || along(c, a), exit: null });
+  const steps = pts.length > 2 ? [st('depart', null, 'Ruta 9', 0, .5), st('turn', 'right', 'Desvío sur', .5, 1, pts[1]), st('arrive', null, '', 1, 1, c[c.length - 1])]
+    : [st('depart', null, names[0], 0, f[0]), st('turn', 'left', names[1], f[0], f[1]), st('new name', 'straight', '', f[1], 1), st('arrive', null, '', 1, 1, c[c.length - 1])];
+  return { coords: c, distance: m, duration: dur, steps };
+}
+/* routing that honours via points: three alternatives hugging the direct line (all of them cross the plume), or the detour through the via point; via 'ignore' keeps answering with the direct road */
+async function stubDetourRouting(ctx, { via = 'honor', offsets = [0, .008, -.008], log = [] } = {}) {
+  await ctx.route(/\/api\/route\?/, r => {
+    const q = new URL(r.request().url()).searchParams, a = parseLL(q.get('from')), b = parseLL(q.get('to')), vs = q.getAll('via').map(parseLL); log.push(vs.length ? 'via ' + q.getAll('via').join(' ') : 'direct');
+    let routes;
+    if (vs.length && via === 'honor') routes = [viaRoute([[a.lon, a.lat], ...vs.map(v => [v.lon, v.lat]), [b.lon, b.lat]])];
+    else if (vs.length) routes = [viaRoute([[a.lon, a.lat], [b.lon, b.lat]])];
+    else routes = offsets.map(o => viaRoute([[a.lon, a.lat], [(a.lon + b.lon) / 2, (a.lat + b.lat) / 2 + o], [b.lon, b.lat]]));
+    if (!vs.length) routes.forEach(x => { x.steps = viaRoute([[a.lon, a.lat], [b.lon, b.lat]]).steps; });   // directions as for the plain road
+    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ source: 'stub', code: 'Ok', routes }) });
+  });
+}
+/* wind from the south until two hours from now, then from the north (so leaving two hours later meets no smoke on a road north of the fire) */
+const shifting = ctx => ctx.route(/\/api\/wind/, r => { const q = new URL(r.request().url()).searchParams, cells = {}, cut = Math.floor(Date.now() / 36e5) * 36e5 + 2 * 36e5; for (const c of q.get('cells').split(';')) { const time = [], wd = []; for (let t = Date.parse(q.get('d0') + 'T00:00:00Z'), k = 0; k < 264; t += 36e5, k++) { time.push(new Date(t).toISOString().slice(0, 16)); wd.push(t >= cut ? 0 : 180); } const m = time.length; cells[c] = { time, wind_speed_100m: Array(m).fill(3), wind_direction_100m: wd, wind_speed_10m: Array(m).fill(1.8), boundary_layer_height: Array(m).fill(1500), cloud_cover: Array(m).fill(0) }; } r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ cells }) }); });
+const speechStub = ctx => ctx.addInitScript(() => { window.__spoken = []; const ss = { speak: u => window.__spoken.push(u.text), cancel() {}, getVoices: () => [], speaking: false }; Object.defineProperty(window, 'speechSynthesis', { value: ss, configurable: true }); window.SpeechSynthesisUtterance = function (t) { this.text = t; this.lang = ''; }; });
+const driver = ({ via = 'honor', wind = south, log, geo, ...o } = {}) => open({ feed: feedWith({ fires: [FIRE] }), search: '&role=driver', routing: { empty: false }, extra: async ctx => { await wind(ctx); await speechStub(ctx); await stubDetourRouting(ctx, { via, log }); if (geo) { await ctx.grantPermissions(['geolocation']); await ctx.setGeolocation(geo); } }, ...o });
+const compare = async page => { await pick(page, 'from', 'alf', 'Alfa'); await pick(page, 'to', 'omeg', 'Omega'); await page.click('#rtGo'); await results(page); };
+
+await check('role=driver: "Driver" in the header, the Switch role link goes to the picker with the region, the role is saved, the page says it is for the driver', async () => {
+  const { page, ctx, problems } = await driver({ vp: 'phone' });
+  eq((await page.innerText('#rtRoleTxt')).trim(), 'Driver'); assert(await page.locator('#rtRole').isVisible(), 'chip visible'); assert(/^Driver · /i.test(await page.textContent('#rtMode')), await page.textContent('#rtMode'));
+  eq(await page.getAttribute('#switchRole', 'href'), 'start.html?r=PY'); eq(await page.evaluate(() => localStorage.getItem('fv.role')), 'driver');
+  await page.click('#langBox [data-lang=es]'); eq((await page.innerText('#rtRoleTxt')).trim(), 'Conductor');
+  const o = await overflow(page); assert(o.sw <= o.iw + 1 && !o.bad.length, `overflow ${o.sw} > ${o.iw} ${o.bad}`); await shot(page, 'route-driver-header-phone');
+  const plain = await open({}); assert(await plain.page.locator('#rtRole').isHidden(), 'no chip without ?role'); eq(await plain.page.getAttribute('#switchRole', 'href'), 'start.html'); await plain.ctx.close();
+  eq(problems, []); await ctx.close();
+});
+await check('start.html: the Driver card opens route.html?role=driver and carries r=PY; the page shows Driver', async () => {
+  const ctx = await browser.newContext({ viewport: VP.desktop }); await ctx.addInitScript(() => { try { localStorage.setItem('theme', 'dark'); } catch (e) {} });
+  await stubOutside(ctx, { inpe: false }); await stubRouting(ctx); await ctx.route(/arcgisonline\.com\//, r => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
+  const page = await ctx.newPage(), problems = []; page.on('pageerror', e => { if (!/ViewTransition/.test(e.message)) problems.push(e.message); });   // the picker's cross-document view transition can be aborted by a fast navigation: not this page's concern
+  await page.goto(`${BASE}/start.html?r=PY`); await page.click('#dealBtn'); await page.waitForFunction(() => document.getElementById('deck').dataset.state === 'shown');
+  eq(await page.getAttribute('.card[data-role=driver]', 'href'), 'route.html?role=driver&r=PY');
+  assert(await page.locator('.card[data-role=driver]').isVisible(), 'visible'); eq(await page.$$eval('.card', l => l.map(c => c.dataset.role)), ['firefighter', 'grid', 'road', 'driver', 'care', 'resident', 'analyst']);
+  await Promise.all([page.waitForURL(/\/route\.html\?role=driver&r=PY$/, { waitUntil: 'commit', timeout: 8000 }), page.click('.card[data-role=driver]')]);
+  await page.waitForSelector('body[data-ready]', { timeout: 30000 });
+  eq((await page.innerText('#rtRoleTxt')).trim(), 'Driver'); eq(await page.evaluate(() => localStorage.getItem('fv.role')), 'driver'); eq(await page.inputValue('#regionSel'), 'PY');
+  await page.click('#switchRole'); await page.waitForURL(/\/start\.html\?r=PY/); await page.waitForSelector('.st-main');
+  eq(await page.getAttribute('.card[data-role=driver]', 'href'), 'route.html?role=driver&r=PY'); eq(problems, []);
+  // the road patrol still links to the planner
+  await page.goto(`${BASE}/role.html?role=road&r=PY`); await page.waitForSelector('body[data-ready]'); eq(await page.getAttribute('a.rl-routelink', 'href'), 'route.html?r=PY'); await ctx.close();
+});
+
+await check('every alternative crosses the plume: a detour is searched, Route D appears (data-detour=true), it avoids the smoke, the summary has the numbers, Google Maps carries the via point', async () => {
+  const log = []; const { page, ctx, problems, opened } = await driver({ log });
+  await compare(page);
+  assert(log.filter(x => x === 'direct').length === 1 && log.filter(x => x.startsWith('via')).length >= 1 && log.filter(x => x.startsWith('via')).length <= 6, 'requests: ' + log);
+  eq(log.filter(x => x.startsWith('via')).length, 1, 'the first (upwind) candidate was clean, so the search stopped');
+  const kmA = parseFloat(await page.locator('.rt-route[data-route=A] .rt-nums div', { hasText: 'In smoke' }).locator('dd').innerText()), kmB = parseFloat(await page.locator('.rt-route[data-route=B] .rt-nums div', { hasText: 'In smoke' }).locator('dd').innerText()), kmC = parseFloat(await page.locator('.rt-route[data-route=C] .rt-nums div', { hasText: 'In smoke' }).locator('dd').innerText());
+  assert(kmA > 0 && kmB > 0 && kmC > 0, `all three alternatives meet the plume: ${kmA} ${kmB} ${kmC}`);
+  eq(await page.$$eval('#rtRoutes .rt-route', l => l.map(x => [x.dataset.route, x.dataset.detour, x.dataset.best])), [['A', 'false', 'false'], ['B', 'false', 'false'], ['C', 'false', 'false'], ['D', 'true', 'true']]);
+  const d = page.locator('.rt-route[data-route=D]'); assert((await d.innerText()).includes('Route D (detour)') && (await d.innerText()).includes('LEAST MODELLED SMOKE'), await d.innerText());
+  assert(/^0 km/.test(await d.locator('.rt-nums div', { hasText: 'In smoke' }).locator('dd').innerText()), 'D: no modelled smoke');
+  const sum = (await page.innerText('#rtBest')).trim(); const m = /^Detour avoids the modelled smoke: 0 km in smoke vs ([\d.]+) km, \+(\d+) min\.$/.exec(sum); assert(m, sum);
+  assert(Math.abs(+m[1] - Math.min(kmA, kmB, kmC)) < .06, `the km it is compared with is the best alternative's: ${m[1]} vs ${kmA} ${kmB} ${kmC}`);
+  assert(await page.locator('#rtDetour').isHidden(), 'no "no detour" line');
+  assert(await page.locator('.leaflet-container path.rt-line.detour').count() >= 1 && await page.locator('.leaflet-container .rt-via').count() === 1, 'the detour and its via marker are on the map');
+  // Google Maps: the via point is a waypoint
+  const viaReq = log.find(x => x.startsWith('via')).slice(4), [vla, vlo] = viaReq.split(',').map(Number);
+  const q = new URL(await page.getAttribute('#rtGmaps', 'href')).searchParams, wps = q.get('waypoints').split('|'); assert(wps.length <= 8, 'waypoints ' + wps.length);
+  assert(wps.some(w => { const [a, b] = w.split(',').map(Number); return Math.abs(a - vla) < 2e-5 && Math.abs(b - vlo) < 2e-5; }), `the via point ${viaReq} is a waypoint: ${wps}`);
+  assert(vla < -25.3, 'the via point is on the upwind (south) side of the fire: ' + vla); eq(opened, []);
+  // GeoJSON: the detour and the steps
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#rtGeojson')]); const gj = JSON.parse(fs.readFileSync(await dl.path(), 'utf8')), rf = gj.features.filter(f => f.properties.kind === 'route');
+  eq(rf.map(f => f.properties.name), ['Route A', 'Route B', 'Route C', 'Route D (detour)']); const dp = rf[3].properties; assert(dp.detour === true && dp.best === true && dp.km_in_smoke === 0 && dp.via_points.length === 1 && dp.steps.length >= 2, JSON.stringify(dp).slice(0, 200));
+  assert(rf[0].properties.steps.some(s => s.smoke_warnings.length && /modelled smoke for/.test(s.smoke_warnings[0].text)), 'the smoke warning is in the GeoJSON steps of Route A');
+  assert(await page.locator('#rtSteps summary').innerText().then(t => /Route D \(detour\)/.test(t)), 'the directions are for the detour (the chosen route)');
+  await shot(page, 'route-detour-desktop', true); eq(problems, [], 'problems'); await ctx.close();
+  return `"${sum}"`;
+});
+await check('no acceptable detour: at most 6 routes are asked for, the page says so plainly, the comparison stays, #rtDetour shows it', async () => {
+  const log = []; const { page, ctx, problems } = await driver({ via: 'ignore', log });
+  await compare(page);
+  eq(log.filter(x => x.startsWith('via')).length, 6, 'six candidates, never more'); eq(log.filter(x => x === 'direct').length, 1);
+  eq(await page.$$eval('#rtRoutes .rt-route', l => l.map(x => x.dataset.route)), ['A', 'B', 'C']); eq(await page.locator('.rt-route[data-detour=true]').count(), 0);
+  const msg = (await page.innerText('#rtDetour')).trim(); assert(/^No detour within \+45 min avoids the modelled smoke \(6 tried\)\. The comparison above stands\.$/.test(msg), msg); assert(await page.locator('#rtDetour').isVisible());
+  assert(/^Route [ABC] has the least modelled smoke|All 3 routes meet about the same/.test((await page.innerText('#rtBest')).trim()), await page.innerText('#rtBest'));
+  const vias = log.filter(x => x.startsWith('via')).map(x => +x.slice(4).split(',')[0]); assert(vias.slice(0, 3).every(la => la < -25.25) && vias.slice(3).every(la => la > -25.25), 'upwind (south) candidates first, then north: ' + vias);
+  await page.click('#langBox [data-lang=es]'); assert(/^Ningún desvío de hasta \+45 min evita el humo modelado \(se probaron 6\)/.test(await page.innerText('#rtDetour')), await page.innerText('#rtDetour'));
+  await shot(page, 'route-detour-none'); eq(problems, [], 'problems'); await ctx.close();
+});
+await check('directions: #rtSteps lists the steps for the chosen route, the smoke warning sits at the step where smoke starts; choosing another route changes the list; Spanish words', async () => {
+  const { page, ctx, problems } = await driver({ via: 'ignore' });
+  await compare(page);
+  assert(await page.locator('#rtSteps').isVisible() && !(await page.$eval('#rtSteps', d => d.open)), 'collapsible and closed at first');
+  await page.click('#rtSteps summary'); assert(await page.$eval('#rtSteps', d => d.open));
+  const items = await page.$$eval('#rtStepList .rt-step', l => l.map(li => ({ t: li.querySelector('.rt-step-t').textContent, w: [...li.querySelectorAll('.rt-swarn')].map(x => x.textContent), smoke: li.hasAttribute('data-smoke') })));
+  eq(items.map(i => i.t), ['Start on Ruta 9', 'Turn left onto Ruta 3', 'Continue for 28 km'].slice(0, 2).concat([items[2].t, 'Arrive']).slice(0, 4), 'maneuver words');
+  assert(/^Continue for [\d.]+ km$/.test(items[2].t), items[2].t);
+  const warned = items.filter(i => i.w.length); assert(warned.length >= 1 && warned.every(i => i.smoke), 'warnings only on steps with smoke');
+  assert(warned.some(i => i.w.some(w => /^(In \d+(\.\d)? km|Here): modelled smoke for \d+(\.\d)? km, around \d\d:\d\d$/.test(w))), 'warning text: ' + JSON.stringify(warned));
+  const pickB = page.locator('.rt-route[data-route=B] .rt-pick'); await pickB.click(); eq(await page.getAttribute('.rt-route[data-route=B]', 'data-chosen'), 'true'); eq(await page.getAttribute('.rt-route[data-route=A]', 'data-chosen'), 'false');
+  assert(/Route B/.test(await page.innerText('#rtSteps summary')), await page.innerText('#rtSteps summary')); assert(/Route B/.test(await page.innerText('#rtChosen')));
+  assert(await page.$eval('#rtSteps', d => d.open), 'still open after the change');
+  await page.click('#langBox [data-lang=es]'); assert((await page.locator('#rtStepList .rt-step-t').first().innerText()).startsWith('Salga por Ruta 9')); assert(/Gire a la izquierda hacia Ruta 3/.test(await page.innerText('#rtStepList')));
+  assert(/humo modelado por [\d,]+ km, hacia las \d\d:\d\d/.test(await page.innerText('#rtStepList')), 'warning in Spanish');
+  await page.click('#langBox [data-lang=pt]'); assert(/Vire à esquerda para Ruta 3/.test(await page.innerText('#rtStepList')) && /fumaça modelada por/.test(await page.innerText('#rtStepList')));
+  await page.click('#langBox [data-lang=en]'); await shot(page, 'route-steps-desktop'); eq(problems, [], 'problems'); await ctx.close();
+});
+await check('best time to leave: #rtLeave names the hour with the least modelled smoke (the wind turns two hours from now), four departures listed, no extra routing requests', async () => {
+  const log = []; const { page, ctx, problems } = await driver({ via: 'ignore', wind: shifting, log });
+  await compare(page); const before = log.length;
+  assert(await page.locator('#rtLeave').isVisible(), 'visible'); const t = (await page.innerText('#rtLeave')).trim();
+  const m = /^Leaving at (\d\d:\d\d) meets the least modelled smoke: 0 km vs ([\d.]+) km now\.$/.exec(t); assert(m && +m[2] > 0, t);   // a clean hour exists in the next three
+  eq(await page.$$eval('#rtLeaveList li', l => l.map(x => x.dataset.h)), ['0', '1', '2', '3']); const bh = await page.$$eval('#rtLeaveList li[data-best]', l => l.map(x => x.dataset.h)); assert(bh.length === 1 && +bh[0] >= 1, 'a later hour is marked best: ' + bh);   // the wind turns on an hour boundary, so the best hour is +1 h or +2 h depending on the minute
+  const bli = await page.locator(`#rtLeaveList li[data-h="${bh[0]}"]`).innerText(); assert(bli.includes(m[1]) && /\b0 km/.test(bli), bli);
+  eq(log.length, before, 'assessing the other hours asked the router for nothing'); eq(log.filter(x => x === 'direct').length, 1);
+  await page.click('#langBox [data-lang=pt]'); assert(/^Sair às \d\d:\d\d encontra a menor fumaça modelada: 0 km contra/.test(await page.innerText('#rtLeave')), await page.innerText('#rtLeave'));
+  await shot(page, 'route-leave-desktop'); eq(problems, [], 'problems'); await ctx.close(); return t;
+});
+await check('best time to leave: with the same wind every hour it says everything is the same; leaving +2 h keeps "Now" as the baseline', async () => {
+  const { page, ctx, problems } = await driver({ via: 'ignore' });
+  await pick(page, 'from', 'alf', 'Alfa'); await pick(page, 'to', 'omeg', 'Omega'); await page.selectOption('#rtDepart', '2'); await page.click('#rtGo'); await results(page);
+  assert(/^Leaving now or in the next three hours meets about the same modelled smoke \([\d.]+ km\)\.$/.test((await page.innerText('#rtLeave')).trim()), await page.innerText('#rtLeave'));
+  eq(await page.$$eval('#rtLeaveList li', l => l.length), 4); eq(problems, []); await ctx.close();
+});
+
+await check('simulated drive: labelled a simulation everywhere, reaches the smoke alert in #rtDrivePanel, speaks each alert once (5 km, 1 km, entering, leaving) with "Simulation." in front, and finishes', async () => {
+  const { page, ctx, problems } = await driver({ via: 'ignore', vp: 'phone' });
+  await compare(page); eq(await page.evaluate(() => window.__ROUTE.S.simSpeed), 30, 'the default is 30 times real time');
+  assert(await page.locator('#rtDrive').isVisible() && await page.locator('#rtSimulate').isHidden() && await page.locator('#rtDrivePanel').isHidden());
+  await page.click('#rtDrive'); await page.waitForSelector('#rtSimulate', { state: 'visible', timeout: 15000 });
+  assert(/simulate the drive/.test(await page.innerText('#rtDriveMsg')), 'offered when GPS is not available: ' + await page.innerText('#rtDriveMsg'));
+  eq((await page.innerText('#rtSimulate')).trim(), 'Simulate the drive');
+  await page.evaluate(() => { window.__ROUTE.S.simSpeed = 300; });   // the test only: 300 times real time, so the trip takes seconds
+  await page.click('#rtSimulate'); await page.waitForSelector('#rtDrivePanel', { state: 'visible' });
+  const mode = await page.innerText('#rtDriveMode'); assert(/^SIMULATION/.test(mode) && /not your position/.test(mode) && /300 times real time/.test(mode), mode);
+  assert(/^SIMULATION: /.test(await page.innerText('#rtDriveProg')), 'progress line says simulation too: ' + await page.innerText('#rtDriveProg'));
+  assert(/^Next: /.test(await page.innerText('#rtDriveNext')) || /End of the route|No more/.test(await page.innerText('#rtDriveNext')), await page.innerText('#rtDriveNext'));
+  assert(/Modelled smoke ahead in [\d.]+ km \(about \d+ min, around \d\d:\d\d\), for [\d.]+ km\.|In modelled smoke now/.test(await page.innerText('#rtDriveSmoke')), 'real numbers: ' + await page.innerText('#rtDriveSmoke'));
+  await page.waitForFunction(() => /Entering modelled smoke/.test(document.getElementById('rtDrivePanel').textContent), null, { timeout: 40000 });
+  assert(/^Simulation\. Entering modelled smoke, about [\d.]+ km\.$/.test((await page.innerText('#rtDriveAlert')).trim()), await page.innerText('#rtDriveAlert'));
+  assert(/In modelled smoke now: [\d.]+ km to the end of this stretch/.test(await page.innerText('#rtDriveSmoke')), await page.innerText('#rtDriveSmoke'));
+  await shot(page, 'route-drive-sim-phone', true);
+  await page.waitForSelector('body[data-drive=done]', { timeout: 60000 });
+  const spoken = await page.evaluate(() => window.__spoken); const kinds = spoken.map(x => /ahead in ([\d.]+) km/.test(x) ? 'ahead' + (+/ahead in ([\d.]+) km/.exec(x)[1] > 1 ? '5' : '1') : /Entering/.test(x) ? 'enter' : /Out of/.test(x) ? 'leave' : /finished/.test(x) ? 'finished' : x);
+  eq(kinds, ['ahead5', 'ahead1', 'enter', 'leave', 'finished'], JSON.stringify(spoken)); assert(spoken.every(x => x.startsWith('Simulation.')), 'every spoken line says Simulation: ' + JSON.stringify(spoken));
+  assert(/^Simulation\. Modelled smoke ahead in [\d.]+ km, for [\d.]+ km\.$/.test(spoken[0]) && Math.abs(+/in ([\d.]+) km/.exec(spoken[0])[1] - 5) < 1, spoken[0]);
+  assert(Math.abs(+/in ([\d.]+) km/.exec(spoken[1])[1] - 0.5) <= .5 + 1e-9, spoken[1]);
+  assert(/^Simulation\. Out of modelled smoke\.$/.test((await page.innerText('#rtDriveAlert')).trim()), await page.innerText('#rtDriveAlert'));
+  assert(/The simulated drive is finished\. It was a simulation, not a real position\./.test(await page.innerText('#rtDriveMsg')), await page.innerText('#rtDriveMsg'));
+  assert(/End of the route/.test(await page.innerText('#rtDriveNext')), await page.innerText('#rtDriveNext'));
+  assert(await page.locator('.leaflet-container .rt-car.sim').count() === 1, 'the marker is on the map and marked as a simulation');
+  assert(/not an emergency navigation system/.test(await page.innerText('#driveSafety')) && /official instructions/.test(await page.innerText('#rtSafety')), 'the safety lines stay');
+  await page.click('#rtStop'); assert(await page.locator('#rtDrivePanel').isHidden(), '#rtStop closes the panel'); assert(await page.locator('.leaflet-container .rt-car').count() === 0);
+  eq(problems, [], 'problems'); await ctx.close();
+});
+await check('mute: #rtMute silences speech but the alerts are still written; #rtStop ends a running drive at once', async () => {
+  const { page, ctx, problems } = await driver({ via: 'ignore' });
+  await compare(page); await page.click('#rtDrive'); await page.waitForSelector('#rtSimulate', { state: 'visible', timeout: 15000 });
+  await page.evaluate(() => { window.__ROUTE.S.simSpeed = 300; }); await page.click('#rtSimulate'); await page.waitForSelector('#rtDrivePanel', { state: 'visible' });
+  eq(await page.getAttribute('#rtMute', 'aria-pressed'), 'false'); await page.click('#rtMute'); eq(await page.getAttribute('#rtMute', 'aria-pressed'), 'true'); eq((await page.innerText('#rtMute')).trim(), 'Unmute spoken alerts');
+  await page.evaluate(() => { window.__spoken.length = 0; });
+  await page.waitForFunction(() => /Entering modelled smoke/.test(document.getElementById('rtDriveAlert').textContent), null, { timeout: 40000 });
+  eq(await page.evaluate(() => window.__spoken), [], 'nothing spoken while muted');
+  await page.click('#rtMute'); eq((await page.innerText('#rtMute')).trim(), 'Mute spoken alerts');
+  await page.click('#rtStop'); assert(await page.locator('#rtDrivePanel').isHidden()); eq(await page.evaluate(() => document.body.dataset.drive || ''), '');
+  const km = await page.evaluate(() => window.__ROUTE.S.drive); eq(km, null); await page.waitForTimeout(900); assert(await page.locator('#rtDrivePanel').isHidden(), 'it does not restart');
+  assert(/Drive ended/.test(await page.innerText('#rtDriveMsg'))); eq(problems, []); await ctx.close();
+});
+await check('GPS: a location within 2 km of the route is followed (watchPosition); one far away is refused and the simulation is offered', async () => {
+  const start = { latitude: -25.2501, longitude: -57.595 };
+  const { page, ctx, problems } = await driver({ via: 'ignore', geo: start });
+  await compare(page); await page.click('#rtDrive'); await page.waitForSelector('#rtDrivePanel', { state: 'visible', timeout: 15000 });
+  eq(await page.evaluate(() => window.__ROUTE.S.drive.mode), 'gps'); assert(/^GPS: following your position/.test(await page.innerText('#rtDriveMode')) && !/SIMULATION/.test(await page.innerText('#rtDrivePanel')), await page.innerText('#rtDriveMode'));
+  assert(await page.locator('#rtSimulate').isHidden(), 'no simulation offered while GPS follows'); assert(/^0(\.\d)? of [\d.]+ km$/.test(await page.innerText('#rtDriveProg')), await page.innerText('#rtDriveProg'));
+  assert(/Modelled smoke ahead in [\d.]+ km|In modelled smoke now/.test(await page.innerText('#rtDriveSmoke')), await page.innerText('#rtDriveSmoke'));
+  await ctx.setGeolocation({ latitude: -25.2501, longitude: -57.25 });   // about 39 km along the road, in the plume
+  await page.waitForFunction(() => /In modelled smoke now/.test(document.getElementById('rtDriveSmoke').textContent) && +document.getElementById('rtDriveProg').textContent.split(' ')[0] > 30, null, { timeout: 15000 });
+  assert(/^Entering modelled smoke/.test((await page.innerText('#rtDriveAlert')).trim()) || /^Out of|^Modelled/.test((await page.innerText('#rtDriveAlert')).trim()), await page.innerText('#rtDriveAlert'));
+  assert(!/^Simulation/.test(await page.innerText('#rtDriveAlert')), 'real GPS alerts are not labelled simulation');
+  await ctx.setGeolocation({ latitude: -24.5, longitude: -57.25 }); await page.waitForFunction(() => /more than 2 km/.test(document.getElementById('rtDriveMsg').textContent), null, { timeout: 15000 });
+  await page.click('#rtStop'); await ctx.setGeolocation({ latitude: -24.5, longitude: -57.25 });
+  await page.click('#rtDrive'); await page.waitForSelector('#rtSimulate', { state: 'visible', timeout: 15000 }); assert(/more than 2 km, so GPS cannot follow it\. You can simulate the drive instead\./.test(await page.innerText('#rtDriveMsg')), await page.innerText('#rtDriveMsg'));
+  eq(await page.locator('#rtDrivePanel').isHidden(), true, 'no panel for a refused GPS drive'); eq(problems, []); await ctx.close();
+});
+await check('drive and directions contrast >= 4.5:1 and tap targets >= 44 px with the panel open, dark and light, phone', async () => {
+  for (const theme of ['dark', 'light']) {
+    const { page, ctx } = await driver({ via: 'ignore', vp: 'phone', theme }); await compare(page);
+    await page.click('#rtSteps summary'); await page.click('#rtDrive'); await page.waitForSelector('#rtSimulate', { state: 'visible', timeout: 15000 }); await page.click('#rtSimulate'); await page.waitForSelector('#rtDrivePanel', { state: 'visible' });
+    const rows = await page.evaluate(() => {
+      const px = s => { const c = document.createElement('canvas').getContext('2d'); c.fillStyle = s; c.fillRect(0, 0, 1, 1); const d = c.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2], d[3]]; };
+      const lum = ([r, g, b]) => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }; return .2126 * f(r) + .7152 * f(g) + .0722 * f(b); };
+      const cr = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+      const tok = n => getComputedStyle(document.body).getPropertyValue(n).trim(), light = document.body.classList.contains('light'), surf = [tok('--bg-0'), tok('--bg-1'), tok('--bg-2'), ...(light ? [] : ['#0E3445'])];
+      const blend = (fg, bg) => fg[3] === 255 ? fg : fg.slice(0, 3).map((v, i) => Math.round(v * fg[3] / 255 + bg[i] * (1 - fg[3] / 255)));
+      const out = [];
+      for (const e of document.querySelectorAll('#rtLeaveBox *, #rtStepsBox *, #rtDriveBox *, .rt-role *, .rt-role')) {
+        const isBtn = e.tagName === 'BUTTON' || e.tagName === 'SUMMARY';
+        if (!e.offsetParent || e.disabled || (e.closest('button') && !isBtn) || !(isBtn ? e.textContent.trim() : e.firstChild && e.firstChild.nodeType === 3 && e.firstChild.textContent.trim())) continue;
+        const cs = getComputedStyle(e), fg = px(cs.color), own = px(cs.backgroundColor), bgs = own[3] > 200 ? [own.slice(0, 3)] : surf.map(s => px(s).slice(0, 3));
+        const worst = Math.min(...bgs.map(b => { const bb = e.classList.contains('dtag') ? blend(own, b) : b; return cr(blend(fg, bb), bb); })); out.push({ t: e.textContent.trim().slice(0, 28), c: e.className, r: +worst.toFixed(2) });
+      }
+      return out;
+    });
+    const low = rows.filter(r => r.r < 4.5); assert(rows.length > 12 && !low.length, `${theme}: ${rows.length} texts, low contrast: ` + JSON.stringify(low.slice(0, 6)));
+    const small = await page.evaluate(() => [...document.querySelectorAll('#rtLeaveBox button,#rtStepsBox summary,#rtDriveBox button,.rt-pick')].filter(e => e.offsetParent).map(e => { const r = e.getBoundingClientRect(); return { t: (e.id || e.textContent).slice(0, 20), w: Math.round(r.width), h: Math.round(r.height) }; }).filter(x => x.h < 44));
+    assert(!small.length, `${theme}: small targets ` + JSON.stringify(small));
+    const o = await overflow(page); assert(o.sw <= o.iw + 1 && !o.bad.length, `${theme}: overflow ${o.sw} > ${o.iw} ${o.bad}`);
+    await shot(page, `route-driver-phone-${theme}`, true); await page.click('#rtStop'); await ctx.close();
+  }
+});
+await check('static hosting (no api/route): the detour search asks OSRM directly with via points in order, one route, at most 6, with steps=true', async () => {
+  const calls = []; const { page, ctx, problems } = await driver({ via: 'ignore', expectBad: true, extra: async c => {
+    await south(c); await c.route(/\/api\/route\?/, r => r.fulfill({ status: 404, contentType: 'text/html', body: '<h1>404</h1>' }));
+    await c.route(/router\.project-osrm\.org\//, r => { const u = r.request().url(); calls.push(u); const m = [...u.split('/driving/')[1].split('?')[0].split(';')].map(x => x.split(',').map(Number));
+      const routes = (m.length > 2 ? [viaRoute(m)] : [0, .008, -.008].map(o => viaRoute([m[0], [(m[0][0] + m[1][0]) / 2, (m[0][1] + m[1][1]) / 2 + o], m[1]]))).map(x => ({ geometry: { coordinates: x.coords }, distance: x.distance, duration: x.duration, legs: [{ steps: x.steps.map(t => ({ name: t.name, distance: t.dist, duration: t.dur, maneuver: { type: t.type, modifier: t.mod, location: t.at } })) }] }));
+      r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ code: 'Ok', routes }) }); }); } });
+  await compare(page);
+  assert(calls.length >= 2 && calls.length <= 7, 'OSRM calls: ' + calls.length); assert(/alternatives=3&overview=full&geometries=geojson&steps=true$/.test(calls[0]) && /alternatives=false.*steps=true$/.test(calls[1]), calls.slice(0, 2).join('\n'));
+  assert(calls[1].split('/driving/')[1].split('?')[0].split(';').length === 3, 'from;via;to');
+  assert(await page.locator('.rt-route[data-detour=true]').count() === 1, 'Route D from direct OSRM'); await page.click('#rtSteps summary'); assert(await page.locator('#rtStepList .rt-step').count() >= 2, 'steps from OSRM legs');
+  eq(problems.filter(p => !/404/.test(p)), []); await ctx.close();
+});
+
 await browser.close();
 console.log(`\n${total - failed} of ${total} checks passed${failed ? `, ${failed} FAILED` : ''}. Screenshots: tests/e2e/shots/`);
 process.exit(failed ? 1 : 0);

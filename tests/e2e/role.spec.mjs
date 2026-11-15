@@ -12,7 +12,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url)), SHOTS = path.join(HER
 fs.mkdirSync(SHOTS, { recursive: true });
 load('regions', 'firelab-core', 'downwind-core', 'fast-core', 'watch-core', 'bulletin-core', 'place', 'role-core', 'roles');
 globalThis.REGIONS.load(regions());
-const ROLES = JSON.parse(JSON.stringify(globalThis.ROLES.list)).filter(r => r.mode === 'simplified');
+const ROLES = JSON.parse(JSON.stringify(globalThis.ROLES.list)).filter(r => r.mode === 'simplified' && /^role\.html/.test(r.href));   // the driver opens route.html (checked in route.spec.mjs)
 const SIMPLE = ROLES.map(r => r.id);
 
 let failed = 0, total = 0;

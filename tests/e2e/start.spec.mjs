@@ -56,9 +56,9 @@ const rects = (page, sel = '.card') => page.$$eval(sel, els => els.map(e => { co
 const overlap = (a, b) => Math.max(0, Math.min(a.r, b.r) - Math.max(a.l, b.l)) * Math.max(0, Math.min(a.b, b.b) - Math.max(a.t, b.t));
 async function assertLaidOut(page, label) {
   const rs = await rects(page), vw = page.viewportSize().width;
-  eq(rs.length, 6, label + ': six cards');
+  eq(rs.length, 7, label + ': seven cards');
   rs.forEach((r, i) => { assert(r.w > 100 && r.h > 100, `${label}: card ${i} has a real size`); assert(r.l >= -0.5 && r.r <= vw + 0.5, `${label}: card ${i} inside the viewport horizontally (${r.l.toFixed(1)}..${r.r.toFixed(1)} of ${vw})`); });
-  for (let i = 0; i < 6; i++) for (let j = i + 1; j < 6; j++) assert(overlap(rs[i], rs[j]) <= 1, `${label}: cards ${i} and ${j} overlap by ${overlap(rs[i], rs[j]).toFixed(0)} px2`);
+  for (let i = 0; i < 7; i++) for (let j = i + 1; j < 7; j++) assert(overlap(rs[i], rs[j]) <= 1, `${label}: cards ${i} and ${j} overlap by ${overlap(rs[i], rs[j]).toFixed(0)} px2`);
   const bad = await page.$$eval('.card', els => els.filter(e => getComputedStyle(e).opacity !== '1' || getComputedStyle(e.closest('.slot')).display === 'none').length);
   eq(bad, 0, label + ': every card fully opaque');
 }
@@ -96,15 +96,15 @@ for (const vp of ['desktop', 'phone']) for (const theme of ['dark', 'light']) {
   const { page, context, problems } = await open({ vp, theme });
   await page.waitForTimeout(500);
 
-  await check(`[${tag}] stacked state: six face-down cards, deal button, theme applied`, async () => {
+  await check(`[${tag}] stacked state: seven face-down cards, deal button, theme applied`, async () => {
     eq(await state(page), 'stacked');
-    eq(await page.$$eval('.slot', l => l.length), 6);
+    eq(await page.$$eval('.slot', l => l.length), 7);
     eq(await page.$$eval('.slot', l => l.every(s => s.inert && s.getAttribute('aria-hidden') === 'true')), true, 'face-down cards are inert and hidden from AT');
     eq(await page.$$eval('.card', l => l.every(c => c.tabIndex === -1)), true, 'face-down cards are not focusable');
     eq(await page.locator('#dealBtn').isVisible(), true); eq((await page.innerText('#dealBtn')).trim(), 'Deal the roles');
     eq(await page.locator('#gatherBtn').isVisible(), false);
     eq(await page.evaluate(() => document.body.classList.contains('light')), theme === 'light', 'theme class');
-    // all six backs sit on one spot (within the stack offsets)
+    // all seven backs sit on one spot (within the stack offsets)
     const rs = await rects(page, '.flip'); const cx = rs.map(r => (r.l + r.r) / 2), cy = rs.map(r => (r.t + r.b) / 2);
     assert(Math.max(...cx) - Math.min(...cx) < 16 && Math.max(...cy) - Math.min(...cy) < 20, 'cards are stacked together');
     const vw = VIEWPORTS[vp].width; rs.forEach(r => assert(r.l >= 0 && r.r <= vw, 'stack inside viewport'));
@@ -140,11 +140,11 @@ for (const vp of ['desktop', 'phone']) for (const theme of ['dark', 'light']) {
     detail.forEach((d, i) => { eq(d.q, ROLES[i].question, 'question ' + i); eq(d.mods, ROLES[i].modules, 'modules ' + i); eq(d.tag, ROLES[i].mode === 'full' ? 'Full workspace' : 'Simplified view', 'tag ' + i); assert(d.svg, 'icon ' + i); });
     await assertLaidOut(page, tag);
     eq(await page.$$eval('.slot', l => l.every(s => !s.inert && s.getAttribute('aria-hidden') === 'false')), true, 'cards exposed once shown');
-    eq((await page.innerText('#live')).trim(), 'Six roles shown');
+    eq((await page.innerText('#live')).trim(), 'Seven roles shown');
     eq(await page.evaluate(() => document.activeElement && document.activeElement.dataset.role), 'firefighter', 'focus on the first card');
     eq(await page.locator('#gatherBtn').isVisible(), true); eq(await page.locator('#dealBtn').isVisible(), false);
     // links are real anchors inside a list
-    eq(await page.$$eval('ol#slots > li > a.card', l => l.length), 6);
+    eq(await page.$$eval('ol#slots > li > a.card', l => l.length), 7);
     await page.mouse.move(2, 2); await page.waitForTimeout(250);
     await shot(page, `${tag}-3-shown`, vp === 'phone');
   });
@@ -202,14 +202,14 @@ await check('keyboard only: Tab to Deal, Enter deals, Tab through cards, Escape 
   eq(await page.evaluate(() => document.activeElement.dataset.role), 'firefighter', 'focus moved to the first card');
   eq(await page.evaluate(() => getComputedStyle(document.activeElement).outlineStyle), 'solid', 'focus ring visible');
   await shot(page, 'desktop-dark-5-keyboard-focus');
-  for (let i = 1; i < 6; i++) { await page.keyboard.press('Tab'); eq(await page.evaluate(() => document.activeElement.dataset.role), ROLES[i].id, 'Tab order follows the card order'); }
+  for (let i = 1; i < 7; i++) { await page.keyboard.press('Tab'); eq(await page.evaluate(() => document.activeElement.dataset.role), ROLES[i].id, 'Tab order follows the card order'); }
   eq(await page.$eval('#roleSelect', s => s.value), 'analyst', 'the list follows keyboard focus');
   await page.keyboard.press('Escape'); await waitState(page, 'stacked');
   eq(await page.evaluate(() => document.activeElement.id), 'dealBtn', 'focus returns to the Deal button');
   await page.waitForTimeout(700);
   eq(await page.$$eval('.card', l => l.every(c => c.tabIndex === -1)), true, 'gathered cards are not focusable');
   await page.keyboard.press('Enter'); await waitState(page, 'shown');
-  for (let i = 0; i < 5; i++) await page.keyboard.press('Tab');
+  for (let i = 0; i < 6; i++) await page.keyboard.press('Tab');
   eq(await page.evaluate(() => document.activeElement.dataset.role), 'analyst');
   eq(problems, [], 'no problems before leaving');
   await Promise.all([page.waitForURL(/\/index\.html/, { waitUntil: 'commit', timeout: 8000 }), page.keyboard.press('Enter')]);
@@ -237,7 +237,7 @@ await check('clicking Analyst: it lifts, the others dim and slide back, then ind
   await shot(page, 'desktop-dark-6-leaving');
   await page.waitForURL(/\/index\.html$/, { waitUntil: 'commit', timeout: 8000 });
   eq(await page.evaluate(() => localStorage.getItem('fv.role')), 'analyst');
-  assert(before.length === 6);
+  assert(before.length === 7);
   await context.close();
 });
 
@@ -337,7 +337,7 @@ await check('reduced motion: cards are face up and without transforms at every m
   assert(s.every(x => x.tf === 0 && x.front && x.back && !x.anim), 'a frame had transforms: ' + JSON.stringify(s.find(x => x.tf || !x.front || !x.back || x.anim)));
   await assertLaidOut(page, 'reduced motion');
   eq(await page.$$eval('.card .title', l => l.map(e => e.textContent)), TITLES);
-  eq((await page.innerText('#live')).trim(), 'Six roles shown');
+  eq((await page.innerText('#live')).trim(), 'Seven roles shown');
   await shot(page, 'desktop-dark-8-reduced-motion');
   await page.mouse.move((await page.locator('.card[data-role="grid"]').boundingBox()).x + 40, 300); await page.waitForTimeout(300);
   eq(await page.$eval('.card[data-role="grid"] .tilt', e => getComputedStyle(e).transform), 'none', 'no hover tilt');
@@ -345,7 +345,7 @@ await check('reduced motion: cards are face up and without transforms at every m
   await context.close();
 });
 
-await check('resize after the deal, desktop to phone and back: six visible, non-overlapping cards, no replay', async () => {
+await check('resize after the deal, desktop to phone and back: seven visible, non-overlapping cards, no replay', async () => {
   const { page, context } = await open();
   await dealAndWait(page); await page.waitForTimeout(250);
   await page.evaluate(() => { window.__anim = 0; new MutationObserver(m => m.forEach(r => { if (r.attributeName === 'data-state') window.__anim++; })).observe(document.getElementById('deck'), { attributes: true }); });
@@ -353,8 +353,8 @@ await check('resize after the deal, desktop to phone and back: six visible, non-
     await page.setViewportSize({ width: w, height: h }); await page.waitForTimeout(350);
     eq(await state(page), 'shown'); await assertLaidOut(page, 'resized to ' + label);
     eq(await page.evaluate(() => document.getAnimations().length), 0, 'nothing animating after resize (no replay)');
-    const cols = await page.$$eval('.slot', l => new Set(l.map(s => Math.round(s.getBoundingClientRect().left))).size);
-    eq(cols, { phone: 2, 'tablet 3x2': 3, desktop: 6 }[label], 'columns at ' + label);
+    const cols = await page.$$eval('.slot', l => { const rows = {}; l.forEach(s => { const t = Math.round(s.getBoundingClientRect().top); rows[t] = (rows[t] || 0) + 1; }); return Math.max(...Object.values(rows)); });   // the most cards in one row (the last row of seven is centred)
+    eq(cols, { phone: 2, 'tablet 3x2': 3, desktop: 4 }[label], 'columns at ' + label);
     if (label === 'phone') await shot(page, 'resize-after-deal-phone', true);
   }
   eq(await page.evaluate(() => window.__anim), 0, 'state never changed during resizes');
@@ -378,7 +378,7 @@ await check('resize in the middle of the deal and of the resting stack never str
   await context.close();
 });
 
-await check('no JavaScript: the noscript list shows six links, the deck stays hidden', async () => {
+await check('no JavaScript: the noscript list shows seven links, the deck stays hidden', async () => {
   const { page, context } = await open({ js: false });
   eq(await page.$$eval('.ns-list a', l => l.map(a => [a.textContent, a.getAttribute('href')])), ROLES.map(r => [r.title, r.href]));
   eq(await page.locator('.ns-list').isVisible(), true); eq(await page.locator('#deck').isVisible(), false);

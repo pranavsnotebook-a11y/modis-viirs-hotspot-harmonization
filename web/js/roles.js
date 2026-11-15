@@ -38,6 +38,15 @@ const list = Object.freeze([
     icon: '<path d="M9 3 5 21M15 3l4 18M12 4.5v2.5M12 11v2.5M12 17.5V20"/>'
   },
   {
+    id: 'driver', title: 'Driver',
+    tagline: 'Whether your drive goes through smoke, and a way around it.',
+    question: 'Will my drive go through smoke?',
+    modules: ['Smoke-aware route', 'Detour around smoke', 'Turn-by-turn smoke alerts'],
+    mode: 'simplified', accent: 'blue', href: 'route.html?role=driver',
+    // steering wheel: rim, hub, three spokes
+    icon: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.2"/><path d="M3.2 10.5 9.8 11.4M20.8 10.5 14.2 11.4M12 14.2V21"/>'
+  },
+  {
     id: 'care', title: 'Clinic or school lead',
     tagline: 'Whether smoke is heading for your site.',
     question: 'Is smoke heading for my site?',

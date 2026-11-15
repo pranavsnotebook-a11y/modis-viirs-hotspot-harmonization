@@ -6,7 +6,8 @@ The FIRMS MAP_KEY stays here: it is read from FIRMS_MAP_KEY (environment or .env
   GET /api/harmonize?bbox=&days=&date=&window=   MODIS + all VIIRS for a box, matched (hotspots.harmonize)
   GET /api/weather?lat=&lon=&time=      modelled wind, boundary layer and CAMS PM2.5 at a point (Open-Meteo)
   GET /api/population?bbox=             GHS-POP 2025 population grid for a small box
-  GET /api/route?from=lat,lon&to=lat,lon   up to 3 driving routes (OSRM demo server, OpenStreetMap data), cached, 1 request a second
+  GET /api/route?from=lat,lon&to=lat,lon[&via=lat,lon ...]   up to 3 driving routes with turn-by-turn steps (OSRM demo server, OpenStreetMap data),
+                                  up to 3 via points (then one route); cached, 1 request a second
 usage: python -m hotspots.server [--port 8000] [--host 127.0.0.1]"""
 import argparse
 import json
@@ -281,15 +282,47 @@ _route_last = [0.0]            # time of the last request to the routing service
 _route_mem = {}
 
 
-def _route_point(q, name):
+ROUTE_MAX_VIA = 3
+ROUTE_KEY_VERSION = "s1"       # bumped when the answer's shape changes (s1: with steps), so older cache files are not served
+
+
+def _route_check(v, name):
     import re
-    v = arg(q, name)
     if not re.fullmatch(r"-?\d{1,2}(\.\d{1,8})?,-?\d{1,3}(\.\d{1,8})?", v):
         raise BadRequest(f"{name} must be lat,lon in degrees")
     lat, lon = (float(x) for x in v.split(","))
     if not (-90 <= lat <= 90 and -180 <= lon <= 180):
         raise BadRequest(f"{name} is out of range")
     return round(lat, 4), round(lon, 4)  # 4 decimals is about 11 m: also what the cache is keyed on
+
+
+def _route_point(q, name):
+    return _route_check(arg(q, name), name)
+
+
+def _route_vias(q):
+    """The optional via=lat,lon points (repeat the parameter), at most ROUTE_MAX_VIA, each checked like from and to."""
+    vs = q.get("via", [])
+    if len(vs) > ROUTE_MAX_VIA:
+        raise BadRequest(f"at most {ROUTE_MAX_VIA} via points")
+    return [_route_check(v, "via") for v in vs]
+
+
+def _route_steps(legs):
+    """OSRM legs -> flat steps {type, mod, name, dist, dur, at, exit}. A via point ends one leg and starts the next: its arrive and depart are dropped."""
+    out = []
+    legs = legs if isinstance(legs, list) else []
+    for li, lg in enumerate(legs):
+        for s in (lg.get("steps") or []) if isinstance(lg, dict) else []:
+            m = s.get("maneuver") or {}
+            t = str(m.get("type") or "continue")
+            if (t == "arrive" and li < len(legs) - 1) or (t == "depart" and li > 0):
+                continue
+            loc = m.get("location")
+            out.append({"type": t, "mod": m.get("modifier"), "name": s.get("name") or s.get("ref") or "", "dist": round(float(s.get("distance") or 0), 1),
+                        "dur": round(float(s.get("duration") or 0), 1), "at": [round(loc[0], 5), round(loc[1], 5)] if isinstance(loc, list) and len(loc) >= 2 else None,
+                        "exit": m.get("exit")})
+    return out
 
 
 def _route_fetch(url):
@@ -306,17 +339,19 @@ def _route_fetch(url):
 
 def api_route(q):
     """Up to 3 driving routes between two points from the OSRM demo server (OpenStreetMap data), with geometry as GeoJSON
-    order [lon, lat], distance in metres and duration in seconds. Answers are kept in memory and on disk."""
+    order [lon, lat], distance in metres, duration in seconds and turn-by-turn steps. With via points (at most 3) the route goes
+    from -> via... -> to and only one route comes back (a detour). Answers are kept in memory and on disk, keyed on all the points."""
     (la1, lo1), (la2, lo2) = _route_point(q, "from"), _route_point(q, "to")
+    vias = _route_vias(q)
     if (la1, lo1) == (la2, lo2):
         raise BadRequest("from and to are the same point")
     if math.hypot((la2 - la1) * 111.195, (lo2 - lo1) * 111.195 * math.cos(math.radians((la1 + la2) / 2))) > ROUTE_MAX_KM:
         raise BadRequest(f"from and to are more than {ROUTE_MAX_KM} km apart")
-    key = f"{la1:.4f},{lo1:.4f}>{la2:.4f},{lo2:.4f}"
+    key = f"{ROUTE_KEY_VERSION}:{la1:.4f},{lo1:.4f}>{la2:.4f},{lo2:.4f}" + "".join(f"|{a:.4f},{b:.4f}" for a, b in vias)
     hit = _route_mem.get(key)
     if hit and time.time() - hit[0] < ROUTE_TTL:
         return {**hit[1], "cached": True}
-    f = ROUTE_DIR / (key.replace(",", "_").replace(">", "__") + ".json")
+    f = ROUTE_DIR / (key.replace(",", "_").replace(">", "__").replace("|", "~").replace(":", "-") + ".json")
     try:
         if f.exists() and time.time() - f.stat().st_mtime < ROUTE_TTL:
             out = json.loads(f.read_text())
@@ -324,7 +359,8 @@ def api_route(q):
             return {**out, "cached": True}
     except (OSError, ValueError):
         pass
-    url = f"{ROUTE_BASE}{lo1:.4f},{la1:.4f};{lo2:.4f},{la2:.4f}?alternatives=3&overview=full&geometries=geojson&steps=false"
+    pts = ";".join([f"{lo1:.4f},{la1:.4f}"] + [f"{b:.4f},{a:.4f}" for a, b in vias] + [f"{lo2:.4f},{la2:.4f}"])
+    url = f"{ROUTE_BASE}{pts}?alternatives={'false' if vias else '3'}&overview=full&geometries=geojson&steps=true"
     try:
         j = _route_fetch(url)
     except Exception as e:
@@ -338,7 +374,8 @@ def api_route(q):
     for r in (j.get("routes") or [])[:3]:
         coords = (r.get("geometry") or {}).get("coordinates")
         if coords and len(coords) >= 2:
-            routes.append({"coords": [[round(c[0], 5), round(c[1], 5)] for c in coords], "distance": float(r["distance"]), "duration": float(r["duration"])})
+            routes.append({"coords": [[round(c[0], 5), round(c[1], 5)] for c in coords], "distance": float(r["distance"]), "duration": float(r["duration"]),
+                           "steps": _route_steps(r.get("legs"))})
     out = {"source": "OSRM demo server (router.project-osrm.org), OpenStreetMap data", "code": "Ok" if routes else "NoRoute", "routes": routes}
     _route_mem[key] = (time.time(), out)
     if len(_route_mem) > 300:

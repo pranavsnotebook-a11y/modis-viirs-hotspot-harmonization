@@ -30,13 +30,16 @@ body.light.st .primary-btn:hover{background:#08606E}
   --spring-out:cubic-bezier(.2,.9,.25,1.1);   /* slight overshoot, settles like a thrown card */
   --spring-in:cubic-bezier(.45,.05,.2,1);
   --flip-ease:cubic-bezier(.3,.8,.25,1);
-  --cols:6;--gap:16px;
+  --cols:4;--gap:16px;
 }
 .deck:not([data-state]){display:none}
 .stage{position:relative;max-width:1240px;margin:0 auto}
-.slots{list-style:none;margin:0;padding:14px 0;display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));gap:var(--gap)}
-@media (max-width:1099px){.deck{--cols:3}}
-@media (max-width:639px){.deck{--cols:2;--gap:12px}}
+.slots{list-style:none;margin:0;padding:14px 0;display:grid;grid-template-columns:repeat(calc(var(--cols) * 2),minmax(0,1fr));gap:var(--gap)}
+/* seven cards: each takes two of twice as many tracks, so the cards in a short last row can sit in the middle (4 + 3 on a desktop, 3 + 3 + 1 on a tablet, 2 + 2 + 2 + 1 on a phone) */
+.slot{grid-column:span 2}
+.slot:nth-child(5){grid-column:2 / span 2}
+@media (max-width:1099px){.deck{--cols:3}.slot:nth-child(5){grid-column:auto / span 2}.slot:nth-child(7){grid-column:3 / span 2}}
+@media (max-width:639px){.deck{--cols:2;--gap:12px}.slot:nth-child(7){grid-column:2 / span 2}}
 /* resting deck on a multi-row layout: collapse the empty grid so the buttons stay close and the page does not scroll through blank space */
 .deck[data-state="stacked"][data-compact] .slots{max-height:var(--stack-h,none);overflow:clip;overflow-clip-margin:18px}
 
@@ -47,8 +50,9 @@ body.light.st .primary-btn:hover{background:#08606E}
 .card{position:relative;border-radius:var(--r-lg);color:var(--text);text-decoration:none;-webkit-tap-highlight-color:transparent;--accent:var(--cyan)}
 .card:focus-visible{outline:2px solid var(--cyan);outline-offset:4px}
 .card[data-accent=orange]{--accent:var(--orange)}.card[data-accent=yellow]{--accent:var(--yellow)}.card[data-accent=purple]{--accent:var(--purple)}
-.card[data-accent=red]{--accent:var(--red)}.card[data-accent=green]{--accent:var(--green)}.card[data-accent=cyan]{--accent:var(--cyan)}
+.card[data-accent=blue]{--accent:#6EA8FF}.card[data-accent=red]{--accent:var(--red)}.card[data-accent=green]{--accent:var(--green)}.card[data-accent=cyan]{--accent:var(--cyan)}
 body.light .card[data-accent=red]{--accent:#C23A3A}
+body.light .card[data-accent=blue]{--accent:#2F5FD0}
 
 /* nested layers so each motion has its own property: .card = sideways, .arc = vertical + the deck's slight spin (after the translate, so the spin cannot skew the offset), .lob = the throw's lift,
    .tilt = hover, .flip = the turn over */

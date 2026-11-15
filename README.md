@@ -230,6 +230,8 @@ The default look is the Paper theme (`web/css/play.css`): cream background, ink 
 
 Pick a start and an end (search the feed's named places, use your location when you press the button, or click the map), a departure (now, +1 h, +2 h, +3 h), and press Compare routes. Or press Try an example: it finds the main road with the strongest modelled smoke crossing in the current data and takes the named places near its two ends (at least 20 km apart); if nothing qualifies it says so.
 
+The page is laid out like a navigation app, map first: on a desktop the map fills the window and a floating panel holds the search (with a swap button), the route rows, the best time to leave, the directions and the hand-off; on a phone the search is a card on top of the map and the results are a bottom sheet you drag between peek, half and full. Click a route row, or the route itself on the map, to choose it. Start drive (or the clearly labelled simulation) switches to a navigation view with a maneuver banner, the smoke line, and a bar with arrival time and distance left; the map follows the marker until you drag it, and the recenter button resumes.
+
 | Step | Source | Label |
 |---|---|---|
 | Fires: last 24 h of the light feed, clustered at 1.5 km, 5 MW or more | NASA FIRMS | OBSERVED |

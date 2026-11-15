@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="css/fv.css?v=1">
-<link rel="stylesheet" href="css/route.css?v=2">
+<link rel="stylesheet" href="css/route.css?v=3">
 <link rel="stylesheet" href="css/play.css?v=1">
 </head>
 <body class="rt">
@@ -23,6 +23,8 @@
   <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6.5-6.1-6.5-11a6.5 6.5 0 0 1 13 0c0 4.9-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></symbol>
   <symbol id="i-nav" viewBox="0 0 24 24"><path d="M3 11l18-8-8 18-2-8-8-2z"/></symbol>
   <symbol id="i-wheel" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.2"/><path d="M3.2 10.5 9.8 11.4M20.8 10.5 14.2 11.4M12 14.2V21"/></symbol>
+  <symbol id="i-swap" viewBox="0 0 24 24"><path d="M8 4v16M4 8l4-4 4 4M16 20V4M12 16l4 4 4-4"/></symbol>
+  <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></symbol>
   <symbol id="i-dl" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></symbol>
 </svg>
 
@@ -37,106 +39,125 @@
   </div>
 </header>
 
-<main class="rt-main" id="main" tabindex="-1">
-  <section class="rt-hero" aria-labelledby="rtTitle">
-    <p class="rt-eyebrow" id="rtMode"></p>
-    <h1 id="rtTitle">Smoke-aware route</h1>
-    <p class="rt-q" id="rtQuestion"></p>
+<main class="rt-main" id="main" tabindex="-1" data-sheet="peek" data-driving="false" data-panel="open" data-result="no" data-search="open">
+  <aside class="rt-panel" id="rtPanel" aria-label="Plan a route">
+    <div class="rt-pbody" id="rtPanelBody">
+      <section class="rt-hero" aria-labelledby="rtTitle">
+        <p class="rt-eyebrow" id="rtMode"></p>
+        <h1 id="rtTitle">Smoke-aware route</h1>
+        <p class="rt-q" id="rtQuestion"></p>
+      </section>
+
+      <section class="rt-search" id="rtSearch" aria-labelledby="planH">
+        <h2 class="vh" id="planH">Plan</h2>
+        <button class="rt-sline" id="rtSearchLine" type="button" aria-expanded="false" aria-controls="rtSearchForm" hidden><svg class="ico" aria-hidden="true"><use href="#i-pin"/></svg><span id="rtSearchLineTxt"></span></button>
+        <div class="rt-sform" id="rtSearchForm">
+          <div class="rt-ft">
+            <div class="rt-conn" aria-hidden="true"><i class="d1"></i><i class="ln"></i><i class="d2"></i></div>
+            <div class="rt-fields">
+              <div class="rt-field">
+                <label class="vh" for="rtFrom" id="lblFrom">From</label>
+                <input id="rtFrom" type="search" autocomplete="off" spellcheck="false" placeholder="Search a town by name" aria-controls="rtFromList">
+                <ul class="rt-matches" id="rtFromList" aria-label="From matches"></ul>
+              </div>
+              <div class="rt-field">
+                <label class="vh" for="rtTo" id="lblTo">To</label>
+                <input id="rtTo" type="search" autocomplete="off" spellcheck="false" placeholder="Search a town by name" aria-controls="rtToList">
+                <ul class="rt-matches" id="rtToList" aria-label="To matches"></ul>
+              </div>
+            </div>
+            <button class="icon-btn rt-swap" id="rtSwap" type="button" title="Swap From and To" aria-label="Swap From and To"><svg class="ico" aria-hidden="true"><use href="#i-swap"/></svg></button>
+          </div>
+          <p class="rt-muted" id="rtClick"></p>
+          <div class="rt-sopts">
+            <button class="ghost-btn rt-loc" id="rtFromLoc" type="button"><svg class="ico"><use href="#i-pin"/></svg><span id="locTxt">Use my location</span></button>
+            <div class="rt-field rt-leavef"><label for="rtDepart" id="lblDepart">Leave</label><select id="rtDepart"></select></div>
+          </div>
+          <div class="rt-acts">
+            <button class="primary-btn" id="rtGo" type="button"><svg class="ico"><use href="#i-nav"/></svg><span id="goTxt">Compare routes</span></button>
+            <button class="ghost-btn" id="rtExample" type="button"><span id="exTxt">Try an example</span></button>
+          </div>
+          <p class="rt-status" id="rtStatus" role="status" aria-live="polite"></p>
+        </div>
+        <div class="rt-age" id="rtAge">
+          <p class="rt-warn" id="oldWarn" role="alert" hidden></p>
+          <p class="rt-agel"><span id="lastL">Last satellite look</span> <span class="dtag obs" id="tagObs">OBSERVED</span> <b id="lastLook">…</b></p>
+        </div>
+      </section>
+
+      <div class="rt-sheet" id="rtSheet" data-sheet="peek">
+        <button class="rt-handle" id="rtHandle" type="button" aria-label="Change the size of the results"><span class="rt-grip" aria-hidden="true"></span></button>
+        <div class="rt-sbody" id="rtSheetBody" aria-busy="false">
+          <p class="rt-warn" id="rtWarn" role="alert" hidden></p>
+          <p class="rt-warn" id="rtWarn2" role="status" hidden></p>
+          <div class="rt-best" id="rtBestBox" hidden><p id="rtBest"></p><p class="rt-detour" id="rtDetour" hidden></p></div>
+          <h2 class="vh" id="mapH">Map</h2>
+          <h2 class="rt-h" id="routesH">Routes</h2>
+          <div class="rt-routes" id="rtRoutes"></div>
+          <section class="rt-leave" id="rtLeaveBox" aria-labelledby="leaveH" hidden>
+            <h2 class="rt-h" id="leaveH">Best time to leave</h2>
+            <p class="rt-leave-main" id="rtLeave" role="status"></p>
+            <ul class="rt-leave-list" id="rtLeaveList" aria-label="Departures"></ul>
+            <p class="rt-muted" id="leaveNote"></p>
+          </section>
+          <section class="rt-steps" id="rtStepsBox" aria-labelledby="stepsH" hidden>
+            <h2 class="rt-h" id="stepsH">Directions</h2>
+            <p class="rt-muted" id="rtChosen"></p>
+            <details class="rt-det" id="rtSteps"><summary id="rtStepsSum">Directions</summary><ol class="rt-stepl" id="rtStepList"></ol><p class="rt-muted" id="stepsNote"></p></details>
+          </section>
+          <section class="rt-drive" id="rtDriveBox" aria-labelledby="driveH" hidden>
+            <h2 class="rt-h" id="driveH">Drive</h2>
+            <div class="rt-hand-row">
+              <button class="primary-btn" id="rtDrive" type="button"><svg class="ico"><use href="#i-wheel"/></svg><span id="driveTxt">Start drive</span></button>
+              <button class="ghost-btn" id="rtSimulate" type="button" hidden><span id="simTxt">Simulate the drive</span></button>
+            </div>
+            <p class="rt-muted" id="rtDriveMsg" role="status" aria-live="polite"></p>
+          </section>
+          <section class="rt-hand" id="rtHand" aria-labelledby="handH" hidden>
+            <h2 class="rt-h" id="handH">Hand-off</h2>
+            <div class="rt-hand-row">
+              <a class="ghost-btn" id="rtGmaps" href="https://www.google.com/maps/" target="_blank" rel="noopener noreferrer"><svg class="ico"><use href="#i-nav"/></svg><span>Open this route in Google Maps</span></a>
+              <a class="ghost-btn" id="rtGeojson" href="#" download="fireverse-smoke-route.geojson"><svg class="ico"><use href="#i-dl"/></svg><span>Download smoke along route (GeoJSON)</span></a>
+            </div>
+            <p class="rt-muted" id="gmapsNote"></p>
+            <p class="rt-muted" id="geoNote"></p>
+          </section>
+          <details class="rt-clock" id="rtClock">
+            <summary id="clockH">Satellite clock</summary>
+            <dl class="rt-kv"><div><dt id="firesL">Fires used</dt><dd id="fireCount">…</dd></div></dl>
+            <p class="rt-muted" id="heldNote"></p>
+          </details>
+          <footer class="rt-foot">
+            <p id="rtSafety" class="rt-safety"></p>
+            <p id="rtCredit"></p>
+            <p id="esNote" class="rt-muted"></p>
+            <p><a id="fullLink" href="downwind.html">Full DOWNWIND page</a> · <a id="placeLink" href="place.html">My place</a></p>
+          </footer>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <button class="icon-btn rt-ptoggle" id="rtPanelToggle" type="button" aria-expanded="true" aria-controls="rtPanelBody" title="Hide the panel" aria-label="Hide the panel"><svg class="ico" aria-hidden="true"><use href="#i-panel"/></svg></button>
+
+  <div class="rt-mapwrap"><div id="rtMap" role="region" aria-label="Map of the routes and modelled smoke"></div></div>
+  <ul class="rt-legend" id="rtLegend" aria-label="Legend"></ul>
+
+  <section class="rt-dpanel" id="rtDrivePanel" aria-label="Navigation" hidden>
+    <div class="rt-dtop"><span class="rt-dicon" id="rtDriveIcon" aria-hidden="true"></span><div class="rt-dtext"><p class="rt-ddist" id="rtDriveDist"></p><p class="rt-dnext" id="rtDriveNext"></p></div></div>
+    <p class="rt-dmode" id="rtDriveMode"></p>
+    <p class="rt-dsmoke" id="rtDriveSmoke"></p>
+    <p class="rt-dalert" id="rtDriveAlert" role="status" aria-live="assertive"></p>
+    <p class="rt-dprog" id="rtDriveProg"></p>
+    <p class="rt-safety-line" id="driveSafety"></p>
   </section>
-
-  <div class="rt-grid">
-    <aside class="rt-side" aria-label="Plan a route">
-      <section class="rt-card" aria-labelledby="planH">
-        <h2 id="planH">Plan</h2>
-        <div class="rt-field">
-          <label for="rtFrom" id="lblFrom">From</label>
-          <div class="rt-search"><input id="rtFrom" type="search" autocomplete="off" spellcheck="false" placeholder="Search a town by name" aria-controls="rtFromList"><button class="ghost-btn rt-loc" id="rtFromLoc" type="button"><svg class="ico"><use href="#i-pin"/></svg><span id="locTxt">Use my location</span></button></div>
-          <ul class="rt-matches" id="rtFromList" aria-label="From matches"></ul>
-        </div>
-        <div class="rt-field">
-          <label for="rtTo" id="lblTo">To</label>
-          <div class="rt-search"><input id="rtTo" type="search" autocomplete="off" spellcheck="false" placeholder="Search a town by name" aria-controls="rtToList"></div>
-          <ul class="rt-matches" id="rtToList" aria-label="To matches"></ul>
-        </div>
-        <p class="rt-muted" id="rtClick"></p>
-        <div class="rt-field">
-          <label for="rtDepart" id="lblDepart">Leave</label>
-          <select id="rtDepart"></select>
-        </div>
-        <div class="rt-acts">
-          <button class="primary-btn" id="rtGo" type="button"><svg class="ico"><use href="#i-nav"/></svg><span id="goTxt">Compare routes</span></button>
-          <button class="ghost-btn" id="rtExample" type="button"><span id="exTxt">Try an example</span></button>
-        </div>
-        <p class="rt-status" id="rtStatus" role="status" aria-live="polite"></p>
-      </section>
-
-      <section class="rt-card" aria-labelledby="clockH">
-        <h2 id="clockH">Satellite clock</h2>
-        <p class="rt-warn" id="oldWarn" role="alert" hidden></p>
-        <dl class="rt-kv">
-          <div><dt><span id="lastL">Last satellite look</span> <span class="dtag obs" id="tagObs">OBSERVED</span></dt><dd id="lastLook">…</dd></div>
-          <div><dt id="firesL">Fires used</dt><dd id="fireCount">…</dd></div>
-        </dl>
-        <p class="rt-muted" id="heldNote"></p>
-      </section>
-    </aside>
-
-    <section class="rt-work" aria-labelledby="mapH" aria-busy="false">
-      <p class="rt-warn" id="rtWarn" role="alert" hidden></p>
-      <p class="rt-warn" id="rtWarn2" role="status" hidden></p>
-      <div class="rt-best" id="rtBestBox" hidden><p id="rtBest"></p><p class="rt-detour" id="rtDetour" hidden></p></div>
-      <h2 id="mapH">Map</h2>
-      <div class="rt-mapwrap"><div id="rtMap" role="region" aria-label="Map of the routes and modelled smoke"></div></div>
-      <ul class="rt-legend" id="rtLegend" aria-label="Legend"></ul>
-      <h2 id="routesH">Routes</h2>
-      <div class="rt-routes" id="rtRoutes"></div>
-      <section class="rt-leave" id="rtLeaveBox" aria-labelledby="leaveH" hidden>
-        <h2 id="leaveH">Best time to leave</h2>
-        <p class="rt-leave-main" id="rtLeave" role="status"></p>
-        <ul class="rt-leave-list" id="rtLeaveList" aria-label="Departures"></ul>
-        <p class="rt-muted" id="leaveNote"></p>
-      </section>
-      <section class="rt-steps" id="rtStepsBox" aria-labelledby="stepsH" hidden>
-        <h2 id="stepsH">Directions</h2>
-        <p class="rt-muted" id="rtChosen"></p>
-        <details class="rt-det" id="rtSteps"><summary id="rtStepsSum">Directions</summary><ol class="rt-stepl" id="rtStepList"></ol><p class="rt-muted" id="stepsNote"></p></details>
-      </section>
-      <section class="rt-drive" id="rtDriveBox" aria-labelledby="driveH" hidden>
-        <h2 id="driveH">Drive</h2>
-        <div class="rt-hand-row">
-          <button class="primary-btn" id="rtDrive" type="button"><svg class="ico"><use href="#i-wheel"/></svg><span id="driveTxt">Start drive</span></button>
-          <button class="ghost-btn" id="rtSimulate" type="button" hidden><span id="simTxt">Simulate the drive</span></button>
-        </div>
-        <p class="rt-muted" id="rtDriveMsg" role="status" aria-live="polite"></p>
-        <div class="rt-dpanel" id="rtDrivePanel" hidden>
-          <p class="rt-dmode" id="rtDriveMode"></p>
-          <p class="rt-dnext" id="rtDriveNext"></p>
-          <p class="rt-dsmoke" id="rtDriveSmoke"></p>
-          <p class="rt-dprog" id="rtDriveProg"></p>
-          <p class="rt-dalert" id="rtDriveAlert" role="status" aria-live="assertive"></p>
-          <div class="rt-hand-row"><button class="ghost-btn" id="rtMute" type="button" aria-pressed="false"><span id="muteTxt">Mute spoken alerts</span></button><button class="ghost-btn" id="rtStop" type="button"><span id="stopTxt">End drive</span></button></div>
-        </div>
-        <p class="rt-safety-line" id="driveSafety"></p>
-      </section>
-      <section class="rt-hand" id="rtHand" aria-labelledby="handH" hidden>
-        <h2 id="handH">Hand-off</h2>
-        <div class="rt-hand-row">
-          <a class="ghost-btn" id="rtGmaps" href="https://www.google.com/maps/" target="_blank" rel="noopener noreferrer"><svg class="ico"><use href="#i-nav"/></svg><span>Open this route in Google Maps</span></a>
-          <a class="ghost-btn" id="rtGeojson" href="#" download="fireverse-smoke-route.geojson"><svg class="ico"><use href="#i-dl"/></svg><span>Download smoke along route (GeoJSON)</span></a>
-        </div>
-        <p class="rt-muted" id="gmapsNote"></p>
-        <p class="rt-muted" id="geoNote"></p>
-      </section>
-    </section>
+  <div class="rt-dbar" id="rtDriveBar" hidden>
+    <div class="rt-dstat"><span id="lblEta">Arrival</span><b id="rtDriveEta"></b></div>
+    <div class="rt-dstat"><span id="lblLeft">Time left</span><b id="rtDriveLeft"></b></div>
+    <div class="rt-dstat"><span id="lblKm">Distance left</span><b id="rtDriveKm"></b></div>
+    <button class="ghost-btn" id="rtMute" type="button" aria-pressed="false"><span id="muteTxt">Mute spoken alerts</span></button>
+    <button class="primary-btn rt-stop" id="rtStop" type="button"><span id="stopTxt">End drive</span></button>
   </div>
 </main>
-
-<footer class="rt-foot">
-  <p id="rtSafety" class="rt-safety"></p>
-  <p id="rtCredit"></p>
-  <p id="esNote" class="rt-muted"></p>
-  <p><a id="fullLink" href="downwind.html">Full DOWNWIND page</a> · <a id="placeLink" href="place.html">My place</a></p>
-</footer>
 <div class="rt-toast" id="toast" role="status" aria-live="polite"></div>
 
 <noscript><p class="rt-ns">This page needs JavaScript. <a href="start.html">Choose a role</a> or open the <a href="downwind.html">full DOWNWIND page</a>.</p></noscript>
@@ -153,7 +174,7 @@
 <script src="js/roles.js?v=1"></script>
 <script src="js/role-config.js?v=1"></script>
 <script src="js/role-core.js?v=1"></script>
-<script src="js/route-core.js?v=2"></script>
-<script src="js/route.js?v=2"></script>
+<script src="js/route-core.js?v=3"></script>
+<script src="js/route.js?v=3"></script>
 </body>
 </html>

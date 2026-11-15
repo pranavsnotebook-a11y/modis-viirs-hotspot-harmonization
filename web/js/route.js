@@ -12,7 +12,7 @@ const store = {
 const nav = (navigator.language || '').slice(0, 2).toLowerCase(), LANGS = ['en', 'es', 'pt'];
 const S = { lang: LANGS.includes(store.get('fv.role.lang')) ? store.get('fv.role.lang') : LANGS.includes(nav) ? nav : 'en', region: 'PY', reg: null, feed: null, fires: [], end: 0, clusters: [], small: 0,
   errFeed: false, wind: null, from: null, to: null, depart: 0, res: null, msg: null, warn: null, warn2: null, assets: null, busy: false, gj: null, example: null, picks: 0,
-  baseMs: 0, chosen: null, leave: null, drive: null, muted: !!store.get('fv.route.mute'), simSpeed: RT.RULES.simSpeed, driveMsg: null };
+  baseMs: 0, follow: true, fitted: null, chosen: null, leave: null, drive: null, muted: !!store.get('fv.route.mute'), simSpeed: RT.RULES.simSpeed, driveMsg: null };
 // the role this page was opened for (?role=driver from the role picker): shown in the header, saved like the other role pages do
 const role = RL ? RL.get(new URLSearchParams(location.search).get('role')) : null;
 if (role) RL.save(role.id);
@@ -57,7 +57,10 @@ function renderFrame() {
   $('switchRole').href = role ? 'start.html?r=' + S.region : 'start.html';
   $('leaveH').textContent = T('leaveH'); $('leaveNote').textContent = T('leaveNote'); $('stepsH').textContent = T('stepsH'); $('stepsNote').textContent = T('stepsNote');
   $('driveH').textContent = T('driveH'); $('driveTxt').textContent = T('driveStart'); $('simTxt').textContent = T('simulate'); $('stopTxt').textContent = T('driveStop'); $('driveSafety').textContent = T('driveSafety');
-  renderMute();
+  renderMute(); renderRecenter(); renderSearchLine();
+  $('rtSwap').title = T('swap'); $('rtSwap').setAttribute('aria-label', T('swap')); $('rtHandle').setAttribute('aria-label', T('handle'));
+  $('lblEta').textContent = T('driveEta'); $('lblLeft').textContent = T('driveTimeLeft'); $('lblKm').textContent = T('driveKmLeft');
+  { const b = $('rtPanelToggle'), open = MAIN().dataset.panel !== 'closed'; b.title = open ? T('panelHide') : T('panelShow'); b.setAttribute('aria-label', b.title); }
   $('switchTxt').textContent = SH('switchRole'); $('lblRegion').textContent = SH('region'); $('langBox').setAttribute('aria-label', SH('lang'));
   $('themeToggle').title = SH('theme'); $('themeToggle').setAttribute('aria-label', SH('theme'));
   $('planH').textContent = T('planH'); $('lblFrom').textContent = T('from'); $('lblTo').textContent = T('to'); $('lblDepart').textContent = T('depart');
@@ -84,19 +87,100 @@ function renderClock() {
   const end = PL.dataEnd(f), h = (now - end) / 36e5, tz = PL.tzWord(S.lang);
   $('lastLook').textContent = `${PL.hhmm(end)} (${tz}), ${PL.dayOf(end, S.lang)} · ${PL.ago(end, now, S.lang)}`;
   old.hidden = !(h > RT.RULES.oldHours); old.textContent = SH('old', PL.ago(end, now, S.lang));
+  setTimeout(relayout, 0);
   $('fireCount').textContent = `${T('fires', S.clusters.length, RT.RULES.minFrp, RT.RULES.hours)} · ${T('through', PL.hhmm(end) + ' ' + PL.dayOf(end, S.lang))}`;
+}
+
+/* ---------- layout: panel, sheet, map padding ---------- */
+const MAIN = () => $('main');
+const phoneMq = window.matchMedia ? matchMedia('(max-width: 759px)') : { matches: false };
+const reduceMq = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+const isPhone = () => phoneMq.matches;
+const PEEK = 190;   // px of the sheet that shows in its peek state (the css has the same number)
+function stopPx() { const m = $('main').getBoundingClientRect(); return Math.round($('rtSearch').getBoundingClientRect().bottom - m.top + 8); }
+function sheetVisible(state) { const h = $('main').getBoundingClientRect().height; return state === 'full' ? h - stopPx() : state === 'half' ? Math.min(h * .46, h - stopPx()) : PEEK; }
+/* the map under the floating panel (desktop) or search card and sheet (phone) is padded away, so fitted routes are not hidden */
+function fitPad() {
+  const m = $('rtMap').getBoundingClientRect(), tl = [24, 24], br = [24, 24];
+  if (isPhone()) {
+    tl[1] = Math.max(24, $('rtSearch').getBoundingClientRect().bottom - m.top + 12);
+    if (S.res && !S.drive) br[1] = Math.max(24, sheetVisible(MAIN().dataset.sheet) + 12);
+  } else if (MAIN().dataset.panel === 'open' && !S.drive) tl[0] = Math.max(24, $('rtPanel').getBoundingClientRect().right - m.left + 16);
+  return { paddingTopLeft: tl, paddingBottomRight: br };
+}
+function fitTo(bounds, o = {}) { if (map && bounds && (bounds.isValid ? bounds.isValid() : bounds.length)) map.fitBounds(bounds, { ...fitPad(), animate: false, ...o }); }
+function relayout() { if (isPhone()) MAIN().style.setProperty('--stop', stopPx() + 'px'); if (map) setTimeout(() => map.invalidateSize(), 0); }
+function setSheet(state) {
+  const m = MAIN(); m.dataset.sheet = state; $('rtSheet').dataset.sheet = state; $('rtHandle').dataset.state = state;
+  $('rtSheet').style.transform = ''; relayout();
+  if (S.res && isPhone() && !S.drive && S.fitted) setTimeout(() => fitTo(S.fitted), 260);
+}
+const SHEETS = ['peek', 'half', 'full'];
+const cycleSheet = () => setSheet(SHEETS[(SHEETS.indexOf(MAIN().dataset.sheet) + 1) % 3]);
+function setPanel(open) {
+  MAIN().dataset.panel = open ? 'open' : 'closed'; const b = $('rtPanelToggle'); b.setAttribute('aria-expanded', String(open)); b.title = b.ariaLabel = open ? T('panelHide') : T('panelShow');
+  $('rtPanel').inert = !open; relayout();
+}
+function searchOpen(open) { MAIN().dataset.search = open ? 'open' : 'closed'; $('rtSearchLine').setAttribute('aria-expanded', String(open)); relayout(); if (open && isPhone()) setSheet('peek'); }
+function initSheetDrag() {
+  const h = $('rtHandle'), sh = $('rtSheet'); let y0 = 0, base = 0, moved = false, id = null, t0 = 0;
+  const offsetOf = st => { const H = sh.getBoundingClientRect().height; return H - sheetVisible(st); };   // translateY of a state, px
+  h.addEventListener('pointerdown', e => { if (!isPhone()) return; id = e.pointerId; y0 = e.clientY; t0 = e.timeStamp; moved = false; base = offsetOf(MAIN().dataset.sheet); h.setPointerCapture(id); });
+  h.addEventListener('pointermove', e => {
+    if (id !== e.pointerId) return; const dy = e.clientY - y0; if (Math.abs(dy) > 6) moved = true; if (!moved) return;
+    sh.dataset.drag = ''; sh.style.transform = `translateY(${Math.max(0, Math.min(offsetOf('peek'), base + dy))}px)`;
+  });
+  const end = e => {
+    if (id !== e.pointerId) return; id = null; delete sh.dataset.drag; if (!moved) return;   // a tap is a click: the button cycles
+    const dy = e.clientY - y0, v = dy / Math.max(1, e.timeStamp - t0), at = Math.max(0, Math.min(offsetOf('peek'), base + dy + Math.max(-80, Math.min(80, v * 120))));   // a flick adds a little momentum, never a whole state
+    let best = 'peek', bd = Infinity; for (const st of SHEETS) { const d = Math.abs(offsetOf(st) - at); if (d < bd) { bd = d; best = st; } }
+    h.dataset.dragged = '1'; setTimeout(() => delete h.dataset.dragged, 50); setSheet(best);
+  };
+  h.addEventListener('pointerup', end); h.addEventListener('pointercancel', end);
+  h.addEventListener('click', () => { if (h.dataset.dragged) return; cycleSheet(); });
+}
+
+/* ---------- maneuver pictograms (own stroke icons, 24x24) ---------- */
+const MAN = {
+  straight: '<path d="M12 20V5M7 10l5-5 5 5"/>', left: '<path d="M18 20v-7a3 3 0 0 0-3-3H6M10 6 6 10l4 4"/>', right: '<path d="M6 20v-7a3 3 0 0 1 3-3h9M14 6l4 4-4 4"/>',
+  'slight-left': '<path d="M15 20v-8L8 5M8 11V5h6"/>', 'slight-right': '<path d="M9 20v-8l7-7M16 11V5h-6"/>', 'sharp-left': '<path d="M16 20v-6L6 6M6 12V6h6"/>', 'sharp-right': '<path d="M8 20v-6l10-8M18 12V6h-6"/>',
+  uturn: '<path d="M8 20V9a4 4 0 0 1 8 0v4M12 10l4 4 4-4"/>', ramp: '<path d="M6 20c0-7 11-5 11-14M13 9l4-4 4 4"/>', merge: '<path d="M6 20c0-8 6-6 6-15M18 20c0-8-6-6-6-15M9 8l3-3 3 3"/>',
+  fork: '<path d="M12 21v-7M12 14 6 7M12 14l6-7M6 12V7h5M18 12V7h-5"/>', roundabout: '<circle cx="12" cy="15" r="4"/><path d="M12 19v2M12 11V4M9 7l3-3 3 3"/>',
+  arrive: '<path d="M7 21V4M7 5h10l-2 4 2 4H7"/>', depart: '<circle cx="12" cy="12" r="3.5"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>',
+};
+function manIcon(key, cls = 'rt-mi') {
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('class', cls); s.setAttribute('aria-hidden', 'true'); s.innerHTML = MAN[key] || MAN.straight; return s;
 }
 
 /* ---------- map ---------- */
 function initMap() {
   const box = $('rtMap');
   if (!window.L) { box.textContent = T('noMapLib'); box.classList.add('rt-nomap'); return; }
-  map = L.map(box, { zoomControl: true, attributionControl: true, worldCopyJump: false });
+  map = L.map(box, { zoomControl: false, attributionControl: true, worldCopyJump: false });
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+  const rc = L.control({ position: 'bottomright' });
+  rc.onAdd = () => { const d = L.DomUtil.create('div', 'leaflet-bar rt-rc'), b = L.DomUtil.create('button', '', d); b.id = 'rtRecenter'; b.type = 'button'; b.innerHTML = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><circle cx="12" cy="12" r="8"/></svg>'; L.DomEvent.disableClickPropagation(d); b.addEventListener('click', recenter); return d; };
+  rc.addTo(map);
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, maxNativeZoom: 17, attribution: 'Tiles © Esri · Roads © OpenStreetMap contributors · Fires: NASA FIRMS' }).addTo(map);
   layer = L.layerGroup().addTo(map); pins = L.layerGroup().addTo(map); carLayer = L.layerGroup().addTo(map);
-  map.on('click', e => mapClick(e.latlng));
+  map.on('click', e => { if (!S.drive) mapClick(e.latlng); });
+  map.on('dragstart', () => { if (S.drive && S.follow) { S.follow = false; MAIN().dataset.follow = 'false'; renderRecenter(); } });
+  renderRecenter();
 }
-function fitRegion() { if (map && S.reg) map.fitBounds(S.reg.view, { animate: false }); }
+function renderRecenter() { const b = $('rtRecenter'); if (!b) return; const lbl = T('recenter'); b.title = lbl; b.setAttribute('aria-label', lbl); b.dataset.paused = String(!!(S.drive && !S.follow)); }
+/* the recenter button: while driving it resumes following the marker; otherwise it fits the routes (or the region) in view again */
+function recenter() {
+  if (S.drive) { S.follow = true; MAIN().dataset.follow = 'true'; renderRecenter(); if (S.drive.pos) followTo(S.drive.pos, true); return; }
+  if (S.fitted) fitTo(S.fitted); else fitRegion();
+}
+const FOLLOW_ZOOM = 14;
+function followTo(pos, first) {
+  if (!map || !S.follow) return;
+  const z = Math.max(map.getZoom(), 13), anim = !reduceMq.matches;
+  if (first || map.getZoom() < 13) map.setView(pos, FOLLOW_ZOOM, { animate: anim, duration: .5 }); else map.panTo(pos, { animate: anim, duration: .3, easeLinearity: .5 });
+  void z;
+}
+function fitRegion() { if (map && S.reg) map.fitBounds(S.reg.view, { ...fitPad(), animate: false }); }
 function drawPins() {
   if (!map) return; pins.clearLayers();
   [['start', S.from], ['end', S.to]].forEach(([k, p]) => { if (p) L.marker([p.lat, p.lon], { icon: L.divIcon({ className: 'rt-pin ' + k, iconSize: [22, 22], iconAnchor: [11, 11], html: '<i></i>' }), keyboard: false, title: p.name }).addTo(pins); });
@@ -111,27 +195,37 @@ function drawFires(rel) {
       .bindTooltip(`${SH('fire')} · ${nf(f.frp, 0)} MW · ${PL.hhmm(f.ms)} ${PL.dayOf(f.ms, S.lang)}`).addTo(layer);
   });
 }
+const shortDur = s => { const m = Math.round(s / 60); return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} min`; };
+function routeLabel(r) { const t = shortDur(r.route.duration); return r.status === 'notAssessed' ? T('lblNA', t) : r.kmInSmoke > 0 ? T('lblSmoke', t, nf(r.kmInSmoke, 1)) : T('lblClear', t); }
 function drawRoutes(res) {
   drawFires(res.relFires);
   const bounds = [], mine = chosenRoute();
   const order = res.routes.slice().sort((a, b) => (a === mine ? 1 : 0) - (b === mine ? 1 : 0)); // the chosen one on top
   order.forEach(r => {
     const ll = r.route.coords.map(p => [p[1], p[0]]); ll.forEach(p => bounds.push(p));
-    const on = r === mine, w = on ? 6 : 4, col = on ? '#1D3FD8' : r.detour ? '#7357D9' : '#6C7A99', name = r.detour ? T('routeD') : T('route', r.name);
+    const on = r === mine, w = on ? 7 : 4, col = on ? '#1D3FD8' : r.detour ? '#7357D9' : '#6C7A99', name = r.detour ? T('routeD') : T('route', r.name), pick = () => chooseRoute(r.name);
     L.polyline(ll, { color: '#151515', weight: w + 3, opacity: on ? .9 : .35, interactive: false, className: 'rt-casing' }).addTo(layer);
-    L.polyline(ll, { color: col, weight: w, opacity: 1, dashArray: on ? null : '8 6', className: 'rt-line' + (on ? ' best' : '') + (r.detour ? ' detour' : '') })
-      .bindTooltip(`${name}${r.best ? ' · ' + T('bestTag') : ''}`, { sticky: true }).addTo(layer);
+    // a wider invisible line under the visible one makes the thin grey routes easy to hit
+    L.polyline(ll, { color: '#000', weight: 18, opacity: 0, className: 'rt-hit' }).on('click', e => { L.DomEvent.stopPropagation(e); pick(); }).addTo(layer);
+    L.polyline(ll, { color: col, weight: w, opacity: 1, dashArray: on ? null : '8 6', className: 'rt-line' + (on ? ' best' : '') + (r.detour ? ' detour' : ''), interactive: false }).addTo(layer);
     r.segments.forEach(g => {
       const sc = g.peak >= 15 ? '#E23A1F' : '#F5841F';
-      L.polyline(g.pts, { color: '#151515', weight: w + 9, opacity: .5, interactive: false, lineCap: 'butt' }).addTo(layer);
-      L.polyline(g.pts, { color: sc, weight: w + 6, opacity: .95, lineCap: 'butt', className: 'rt-smoke' })
-        .bindTooltip(`${name} · ${nf(g.toKm - g.fromKm, 1)} km · ${T('peak')} ${nf(g.peak, 1)} µg/m³`, { sticky: true }).addTo(layer);
-      L.polyline(g.pts, { color: col, weight: Math.max(2, w - 2), opacity: 1, interactive: false, dashArray: on ? null : '8 6' }).addTo(layer);
+      L.polyline(g.pts, { color: '#151515', weight: w + 7, opacity: .5, interactive: false, lineCap: 'butt' }).addTo(layer);
+      L.polyline(g.pts, { color: sc, weight: w + 4, opacity: .95, lineCap: 'butt', className: 'rt-smoke' })
+        .bindTooltip(`${name} · ${nf(g.toKm - g.fromKm, 1)} km · ${T('peak')} ${nf(g.peak, 1)} µg/m³`, { sticky: true }).on('click', e => { L.DomEvent.stopPropagation(e); pick(); }).addTo(layer);
+      L.polyline(g.pts, { color: col, weight: Math.max(2, w - 3), opacity: 1, interactive: false, dashArray: on ? null : '8 6' }).addTo(layer);
     });
     (r.detour && r.route.via || []).forEach(v => L.marker([v.lat, v.lon], { icon: L.divIcon({ className: 'rt-via', iconSize: [18, 18], iconAnchor: [9, 9], html: '<i></i>' }), keyboard: false, title: T('routeD') }).bindTooltip(T('routeD')).addTo(layer));
   });
+  // a label bubble on each route: the chosen one in the middle and filled, the others spread along their length so they do not sit on top of each other
+  const others = res.routes.filter(r => r !== mine), frac = new Map([[mine, .5]]); others.forEach((r, i) => frac.set(r, [.3, .7, .85][i % 3]));
+  res.routes.forEach(r => {
+    const p = RT.labelPoint(r, frac.get(r) ?? .5), on = r === mine, txt = routeLabel(r), sm = r.status !== 'notAssessed' && r.kmInSmoke > 0;
+    const ic = L.divIcon({ className: 'rt-rl-wrap', iconSize: null, iconAnchor: [0, 0], html: `<span class="rt-rl${on ? ' on' : ''}${sm ? ' smoke' : ''}" data-route="${r.name}">${txt.replace(/</g, '&lt;')}</span>` });
+    L.marker(p, { icon: ic, keyboard: false, interactive: true }).on('click', e => { L.DomEvent.stopPropagation(e); chooseRoute(r.name); }).addTo(layer);
+  });
   drawPins();
-  if (bounds.length) map.fitBounds(bounds, { padding: [24, 24], animate: false });
+  S.fitted = L.latLngBounds(bounds); fitTo(S.fitted);
 }
 function mapClick(ll) {
   const p = { name: `${T('mapPoint')} ${ll.lat.toFixed(3)}, ${ll.lng.toFixed(3)}`, lat: +ll.lat.toFixed(5), lon: +ll.lng.toFixed(5) };
@@ -145,10 +239,17 @@ function renderLegend() {
 }
 
 /* ---------- from / to ---------- */
+function renderSearchLine() {
+  const b = $('rtSearchLine'); if (!b) return; const has = !!(S.res && S.from && S.to);
+  b.hidden = !has; if (has) { $('rtSearchLineTxt').textContent = `${S.from.name} → ${S.to.name}`; b.title = T('searchEdit'); }
+}
+function swapPoints() {
+  const a = S.from, b = S.to; S.from = b; S.to = a; const fi = $('rtFrom'), ti = $('rtTo'), t = fi.value; fi.value = ti.value; ti.value = t; clearMatches(); drawPins();
+}
 function clearMatches() { $('rtFromList').replaceChildren(); $('rtToList').replaceChildren(); }
 function setPoint(which, p) {
   S[which] = p; $(which === 'from' ? 'rtFrom' : 'rtTo').value = p.name; $(which === 'from' ? 'rtFromList' : 'rtToList').replaceChildren(); drawPins();
-  if (map && S.from && !S.res) map.fitBounds(L.latLngBounds([S.from, S.to].filter(Boolean).map(q => [q.lat, q.lon])).pad(1.5), { maxZoom: 9, animate: false });
+  if (map && S.from && !S.res) fitTo(L.latLngBounds([S.from, S.to].filter(Boolean).map(q => [q.lat, q.lon])).pad(1.5), { maxZoom: 9 });
 }
 function search(which) {
   const inp = $(which === 'from' ? 'rtFrom' : 'rtTo'), ul = $(which === 'from' ? 'rtFromList' : 'rtToList'), q = inp.value;
@@ -170,36 +271,40 @@ function tags() {
 }
 const chosenRoute = () => (S.res && S.chosen && S.res.routes.find(r => r.name === S.chosen)) || null;
 function card(r) {
-  const a = el('article', 'rt-route'); a.dataset.route = r.name; a.dataset.best = String(!!r.best); a.dataset.status = r.status; a.dataset.detour = String(!!r.detour); a.dataset.chosen = String(r.name === S.chosen);
-  const h = el('div', 'rt-route-head'); h.append(el('h3', null, r.detour ? T('routeD') : T('route', r.name)));
-  if (r.best) h.append(el('span', 'rt-besttag', T('bestTag')));
-  a.append(h);
-  const na = r.status === 'notAssessed', dl = el('dl', 'rt-nums');
-  const row = (k, v, cls) => { const d = el('div', cls); d.append(el('dt', null, k), el('dd', null, v)); dl.append(d); };
-  row(T('time'), fmtDur(r.route.duration)); row(T('dist'), `${nf(r.route.distance / 1000, 1)} ${T('kmShort')}`);
-  row(T('inSmoke'), na ? '?' : `${nf(r.kmInSmoke, 1)} ${T('kmShort')}`, 'rt-k smoke'); row(T('peak'), na ? '?' : `${nf(r.peak, 1)} µg/m³`, 'rt-k');
-  row(T('smokeMin'), na ? '?' : nf(r.smokeMin, 0), 'rt-k');
-  a.append(dl);
-  if (r.detour && r.route.via && S.res.detour) a.append(el('p', 'rt-note', T('detourVia', nf(S.res.detour.viaKm, 0), S.res.detour.side)));
+  const na = r.status === 'notAssessed', a = el('article', 'rt-route'); a.dataset.route = r.name; a.dataset.best = String(!!r.best); a.dataset.status = r.status; a.dataset.detour = String(!!r.detour); a.dataset.chosen = String(r.name === S.chosen);
+  const pick = el('button', 'rt-pick'); pick.type = 'button'; pick.dataset.pick = r.name; pick.setAttribute('aria-pressed', String(r.name === S.chosen)); pick.disabled = S.busy || !!S.drive;
+  const top = el('span', 'rt-route-head'); top.append(el('span', 'rt-rname', r.detour ? T('routeD') : T('route', r.name)));
+  if (r.best) top.append(el('span', 'rt-besttag', T('bestTag')));
+  const nums = el('span', 'rt-nums'); const nv = (k, v) => { const d = el('span', 'rt-n'); d.append(el('i', null, k), el('b', null, v)); nums.append(d); };
+  nv(T('time'), fmtDur(r.route.duration)); nv(T('dist'), `${nf(r.route.distance / 1000, 1)} ${T('kmShort')}`);
+  const chip = el('span', 'rt-chip ' + (na ? 'na' : r.kmInSmoke > 0 ? 'smoke' : 'clear'), na ? T('chipNA') : r.kmInSmoke > 0 ? T('chipSmoke', nf(r.kmInSmoke, 1)) : T('chipClear'));
+  chip.dataset.km = na ? '' : String(Math.round(r.kmInSmoke * 10) / 10);
+  const line = el('span', 'rt-r-line'); line.append(nums, chip); pick.append(top, line); a.append(pick);
   if (na) a.append(el('p', 'rt-note warn', T('notAssessedR')));
-  else {
-    if (r.start) a.append(el('p', 'rt-note smoke', T('starts', nf(r.start.km, 1), hhmm(r.start.ms))));
-    else a.append(el('p', 'rt-note', r.status === 'nofires' ? T('noFires') : T('noSmokeOn')));
-    if (r.status === 'partial') a.append(el('p', 'rt-note warn', T('partialR', r.unassessed)));
-    if (r.fires) a.append(el('p', 'rt-muted', T('obsFires', r.fires)));
+  else if (r.status === 'partial') a.append(el('p', 'rt-note warn', T('partialR', r.unassessed)));
+  // the chosen row opens: peak, smoke-minutes, where the smoke starts, the notes
+  const more = el('div', 'rt-more'); more.hidden = r.name !== S.chosen;
+  const dl = el('dl', 'rt-dl'), row = (k, v, cls) => { const d = el('div', cls); d.append(el('dt', null, k), el('dd', null, v)); dl.append(d); };
+  row(T('inSmoke'), na ? '?' : `${nf(r.kmInSmoke, 1)} ${T('kmShort')}`, 'smoke'); row(T('peak'), na ? '?' : `${nf(r.peak, 1)} µg/m³`); row(T('smokeMin'), na ? '?' : nf(r.smokeMin, 0));
+  more.append(dl);
+  if (r.detour && r.route.via && S.res.detour) more.append(el('p', 'rt-note', T('detourVia', nf(S.res.detour.viaKm, 0), S.res.detour.side)));
+  if (!na) {
+    if (r.start) more.append(el('p', 'rt-note smoke', T('starts', nf(r.start.km, 1), hhmm(r.start.ms))));
+    else more.append(el('p', 'rt-note', r.status === 'nofires' ? T('noFires') : T('noSmokeOn')));
+    if (r.fires) more.append(el('p', 'rt-muted', T('obsFires', r.fires)));
   }
-  const pick = el('button', 'ghost-btn rt-pick', r.name === S.chosen ? T('chosenRoute') : T('chooseRoute')); pick.type = 'button'; pick.dataset.pick = r.name; pick.setAttribute('aria-pressed', String(r.name === S.chosen));
-  pick.disabled = S.busy || !!(S.drive && S.drive.on); pick.addEventListener('click', () => chooseRoute(r.name)); a.append(pick);
-  a.append(tags());
+  a.append(more); a.append(tags());
+  pick.addEventListener('click', () => chooseRoute(r.name));
   return a;
 }
 function chooseRoute(name) {
-  if (!S.res || S.chosen === name || (S.drive && S.drive.on)) return;
+  if (!S.res || S.chosen === name || S.drive) return;
   S.chosen = name; stopDrive(true); renderResult(); if (map) drawRoutes(S.res);
 }
 function renderResult() {
   const res = S.res, box = $('rtRoutes'); box.replaceChildren();
-  $('rtBestBox').hidden = !res; $('rtHand').hidden = !res; $('rtStepsBox').hidden = !res; $('rtDriveBox').hidden = !res; $('rtLeaveBox').hidden = !(res && S.leave);
+  $('rtBestBox').hidden = !res; $('rtHand').hidden = !res; $('rtStepsBox').hidden = !res; $('rtDriveBox').hidden = !res; $('rtLeaveBox').hidden = !(res && S.leave); $('rtRoutes').hidden = !res; $('routesH').hidden = !res;
+  MAIN().dataset.result = res ? 'yes' : 'no'; renderSearchLine();
   if (!res) { $('rtBest').textContent = ''; $('rtDetour').hidden = true; return; }
   $('rtBest').textContent = RT.summary(res, S.lang);
   const ds = res.detourSearch, dn = $('rtDetour'); dn.hidden = true;
@@ -215,7 +320,7 @@ function renderResult() {
   warn2(miss ? 'someNoWind' : null, miss);
   if (res.windFailed && !res.routes.some(r => r.status !== 'notAssessed')) warn('windFail');
   else if (res.noFireData) warn('feedFail');
-  renderSteps(); renderLeave(); renderDrive();
+  renderSteps(); renderLeave(); renderDrive(); relayout();
 }
 
 /* ---------- directions ---------- */
@@ -229,7 +334,7 @@ function renderSteps() {
   if (!dirs.length) { list.append(Object.assign(el('li', 'rt-nostep', T('stepsNone')))); return; }
   dirs.forEach(s => {
     const li = el('li', 'rt-step'); li.dataset.step = s.n; if (s.warns.length) li.dataset.smoke = '1';
-    const main = el('span', 'rt-step-t', s.text); li.append(main);
+    const ic = el('span', 'rt-step-i'); ic.append(manIcon(s.icon)); const main = el('span', 'rt-step-t', s.text); li.append(ic, main);
     if (!s.inText && s.distKm > 0) li.append(el('span', 'rt-step-d', s.distText));
     s.warns.forEach(w => { const p = el('p', 'rt-swarn', w.text); li.append(p); });
     list.append(li);
@@ -272,32 +377,48 @@ function speak(text) {
 }
 function driveMsg(k, ...a) { S.driveMsg = k ? [k, ...a] : null; renderDrive(); }
 function renderDrive() {
-  const d = S.drive, r = chosenRoute();
+  const d = S.drive, r = chosenRoute(), m = MAIN(), panel = $('rtDrivePanel'), bar = $('rtDriveBar');
   $('rtDriveBox').hidden = !S.res || !r;
-  $('rtDrive').disabled = !!(d && d.on) || S.busy; $('rtSimulate').disabled = !!(d && d.on && d.mode === 'sim');
-  const m = S.driveMsg; $('rtDriveMsg').textContent = m ? T(m[0], ...m.slice(1)) : '';
-  const panel = $('rtDrivePanel'); panel.hidden = !d; if (!d) return;
+  $('rtDrive').disabled = !!d || S.busy; $('rtSimulate').disabled = !!(d && d.mode === 'sim');
+  m.dataset.driving = String(!!d);
+  // the message line lives under the buttons when planning and in the banner while driving
+  const msgEl = $('rtDriveMsg'), home = d ? panel : $('rtDriveBox'), before = d ? $('driveSafety') : null;
+  if (msgEl.parentNode !== home) home.insertBefore(msgEl, before);
+  const mg = S.driveMsg; msgEl.textContent = mg ? T(mg[0], ...mg.slice(1)) : '';
+  panel.hidden = !d; bar.hidden = !d; $('driveSafety').textContent = T('driveSafety');
+  if (!d) { renderRecenter(); return; }
   const sim = d.mode === 'sim', mode = $('rtDriveMode'); mode.replaceChildren();
   if (sim) mode.append(el('span', 'dtag scn rt-simtag', T('driveSimTag')), el('span', null, ' ' + T('driveSimNote', RT.nf(S.simSpeed, S.lang, 0)))); else mode.append(el('span', null, T('driveGps')));
   panel.dataset.mode = d.mode; panel.dataset.on = String(d.on);
-  const L = d.last;
-  if (L) { $('rtDriveNext').textContent = L.next; $('rtDriveSmoke').textContent = L.smoke; $('rtDriveProg').textContent = (sim ? T('driveSimTag') + ': ' : '') + L.progress; }
+  const L_ = d.last;
+  if (L_) {
+    const ns = d.ns;
+    $('rtDriveNext').textContent = ns ? ns.step.text : L_.next; $('rtDriveDist').textContent = ns ? RT.fmtDist(ns.inKm, S.lang) : '';
+    const ic = $('rtDriveIcon'); ic.replaceChildren(manIcon(ns ? ns.step.icon : L_.arrived ? 'arrive' : 'straight', 'rt-mi big'));
+    $('rtDriveSmoke').textContent = L_.smoke; $('rtDriveProg').textContent = (sim ? T('driveSimTag') + ': ' : '') + L_.progress;
+    panel.dataset.smoke = d.near ? 'near' : 'clear';
+    $('rtDriveEta').textContent = d.eta ? hhmm(d.eta) : ''; $('rtDriveLeft').textContent = d.leftMin != null ? fmtDur(d.leftMin * 60) : ''; $('rtDriveKm').textContent = d.leftKm != null ? `${nf(d.leftKm, 1)} ${T('kmShort')}` : '';
+  }
   $('rtDriveAlert').textContent = d.ev ? RT.alertText(d.ev, S.lang, sim) : '';
+  renderRecenter();
 }
 function stopDrive(silent) {
   const d = S.drive; if (!d) return;
   d.on = false; clearInterval(d.timer); clearInterval(d.reassess); if (d.watch != null && navigator.geolocation) navigator.geolocation.clearWatch(d.watch);
   try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) { /* none */ }
   if (carLayer) carLayer.clearLayers();
-  S.drive = null; delete document.body.dataset.drive; S.driveMsg = silent ? null : ['driveStopped']; $('rtSimulate').hidden = true; renderDrive();
+  S.drive = null; S.follow = true; delete document.body.dataset.drive; delete MAIN().dataset.follow; S.driveMsg = silent ? null : ['driveStopped']; $('rtSimulate').hidden = true; renderDrive();
+  relayout(); if (S.fitted) setTimeout(() => fitTo(S.fitted), 60);
 }
 function driveTick(km, nowMs, pos) {
   const d = S.drive; if (!d || !d.on) return;
   const st = RT.driveState(d.r, km, nowMs), sim = d.mode === 'sim';
-  d.km = km; d.nowMs = nowMs; d.last = RT.driveLines(d.r, st, d.dirs, S.lang, { hhmm });
+  d.km = km; d.nowMs = nowMs; d.last = RT.driveLines(d.r, st, d.dirs, S.lang, { hhmm }); d.last.arrived = st.done; d.ns = RT.nextStep(d.dirs, km); d.pos = pos || d.pos;
+  d.near = !!(st.inSmoke || (st.next && st.next.distKm <= RT.RULES.driveAhead[0])); d.leftKm = st.remainingKm; d.leftMin = st.remainingKm / st.kmh * 60; d.eta = nowMs + d.leftMin * 6e4;
   const evs = RT.driveAlerts(d.r, km, d.fired, { first: d.first }); d.first = false;
   evs.forEach(ev => { d.ev = ev; speak(RT.alertText(ev, S.lang, sim)); });
   if (carLayer && pos) {
+    followTo(pos, d.firstFollow !== false && !d.followed); d.followed = true;
     carLayer.clearLayers();
     L.circleMarker(pos, { radius: 9, color: '#151515', weight: 3, fillColor: sim ? '#F9BD2B' : '#1D3FD8', fillOpacity: 1, className: 'rt-car' + (sim ? ' sim' : '') }).bindTooltip(sim ? T('driveSimTag') : T('driveGps'), { permanent: sim, direction: 'top' }).addTo(carLayer);
   }
@@ -308,6 +429,7 @@ function driveTick(km, nowMs, pos) {
 function newDrive(mode) {
   const r = chosenRoute(); if (!r) return null;
   stopDrive(true);
+  S.follow = true; MAIN().dataset.follow = 'true';
   const d = S.drive = { on: true, mode, r, dirs: RT.directions(r, S.lang, { hhmm }), fired: new Set(), first: true, km: 0, last: null, ev: null, timer: 0, reassess: 0, watch: null };
   S.driveMsg = null; document.body.dataset.drive = mode; return d;
 }
@@ -350,10 +472,10 @@ function startDrive() {
 }
 
 /* ---------- actions ---------- */
-function busy(on) { S.busy = on; $('rtGo').disabled = on; $('rtExample').disabled = on; $('rtDrive').disabled = on || !!(S.drive && S.drive.on); document.querySelector('.rt-work').setAttribute('aria-busy', String(on)); document.querySelectorAll('.rt-pick').forEach(b => { b.disabled = on || !!(S.drive && S.drive.on); }); }
+function busy(on) { S.busy = on; $('rtGo').disabled = on; $('rtExample').disabled = on; $('rtDrive').disabled = on || !!(S.drive && S.drive.on); $('rtSheetBody').setAttribute('aria-busy', String(on)); document.querySelectorAll('.rt-pick').forEach(b => { b.disabled = on || !!(S.drive && S.drive.on); }); }
 async function go() {
   if (!S.from || !S.to) { say('need'); return; }
-  const my = ++runId; stopDrive(true); busy(true); say('working'); warn(null); warn2(null); S.res = null; S.leave = null; S.chosen = null; S.driveMsg = null; renderResult(); if (map) { drawFires(); drawPins(); }
+  const my = ++runId; stopDrive(true); searchOpen(true); setSheet('peek'); busy(true); say('working'); warn(null); warn2(null); S.res = null; S.leave = null; S.chosen = null; S.driveMsg = null; renderResult(); if (map) { drawFires(); drawPins(); }
   S.baseMs = Date.now(); const dep = S.baseMs + S.depart * 36e5;
   let fr;
   try { fr = await RT.fetchRoutes(S.from, S.to, F.getJSON); } catch (e) { if (my !== runId) return; busy(false); say(); warn('routingFail'); return; }
@@ -362,7 +484,7 @@ async function go() {
   let res;
   try { res = await RT.assess({ routes: fr.routes, depMs: dep, clusters: S.clusters, wind: S.wind, noFireData: S.errFeed }); } catch (e) { if (my !== runId) return; busy(false); say(); warn('windFail'); return; }
   if (my !== runId) return;
-  S.res = res; S.chosen = res.best; renderResult(); if (map) drawRoutes(res);
+  S.res = res; S.chosen = res.best; renderResult(); searchOpen(false); if (map) drawRoutes(res);
   // the best route still meets modelled smoke: look for a way round it (at most 6 more routing requests, none if the best is clean)
   const best = res.routes.find(r => r.name === res.best);
   if (best && best.peak >= RT.RULES.minConc) {
@@ -400,7 +522,7 @@ async function loadRegion(iso) {
   delete document.body.dataset.ready; delete document.body.dataset.result;
   const my = ++runId; S.region = iso; S.reg = RG.get(iso); PL.setRegion(S.reg); RG.remember(iso);
   try { const u = new URL(location.href); u.searchParams.set('r', iso); history.replaceState(null, '', u); } catch (e) { /* sandboxed URL */ }
-  $('regionSel').value = iso; stopDrive(true); S.chosen = S.leave = null; S.from = S.to = S.res = S.assets = S.example = null; $('rtFrom').value = ''; $('rtTo').value = ''; clearMatches(); say(); warn(null); warn2(null);
+  $('regionSel').value = iso; stopDrive(true); S.fitted = null; S.chosen = S.leave = null; S.from = S.to = S.res = S.assets = S.example = null; $('rtFrom').value = ''; $('rtTo').value = ''; clearMatches(); say(); warn(null); warn2(null);
   renderFrame(); renderResult(); if (map) { layer.clearLayers(); drawPins(); fitRegion(); }
   const d = await loadFeed(iso); if (my !== runId) return;
   S.feed = d.feed; S.fires = d.fires; S.errFeed = !d.feed; S.end = d.feed ? PL.dataEnd(d.feed) : 0;
@@ -428,6 +550,12 @@ async function init() {
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); const b = $(w === 'from' ? 'rtFromList' : 'rtToList').querySelector('button.rt-match'); if (b) b.click(); else if (S.from && S.to) go(); } });
   }
   $('rtFromLoc').addEventListener('click', locate);
+  $('rtSwap').addEventListener('click', swapPoints);
+  $('rtPanelToggle').addEventListener('click', () => setPanel(MAIN().dataset.panel === 'closed'));
+  $('rtSearchLine').addEventListener('click', () => searchOpen(MAIN().dataset.search !== 'open'));
+  initSheetDrag();
+  const relay = () => { relayout(); if (S.res && !S.drive) setTimeout(() => fitTo(S.fitted), 80); };
+  if (phoneMq.addEventListener) phoneMq.addEventListener('change', relay); window.addEventListener('resize', () => relayout());
   $('rtDepart').addEventListener('change', e => { S.depart = +e.target.value; });
   $('rtGo').addEventListener('click', go); $('rtExample').addEventListener('click', example);
   $('rtDrive').addEventListener('click', startDrive); $('rtSimulate').addEventListener('click', startSim); $('rtStop').addEventListener('click', () => stopDrive());
@@ -439,5 +567,5 @@ async function init() {
   if (map) { fitRegion(); setTimeout(() => map.invalidateSize(), 0); }
 }
 init();
-window.__ROUTE = { S, go, example, setLang, loadRegion, startSim, stopDrive };
+window.__ROUTE = { S, go, example, setLang, loadRegion, startSim, stopDrive, setSheet };
 })();

@@ -80,7 +80,8 @@ async function open({ vp = 'desktop', theme = 'dark', region = 'PY', stub = {}, 
   ctx.on('page', p => opened.push(p.url()));
   page.on('console', m => { if (m.type() === 'error' && !(expectBad && /Failed to load resource/.test(m.text()))) problems.push('console: ' + m.text()); });
   page.on('pageerror', e => problems.push('pageerror: ' + e.message));
-  page.on('requestfailed', r => { if (!expectBad) problems.push('failed: ' + r.url() + ' ' + (r.failure() || {}).errorText); });
+  page.on('requestfailed', r => { if (!expectBad && !(/arcgisonline\.com/.test(r.url()) && /ABORTED/.test((r.failure() || {}).errorText || ''))) problems.push(   // a map tile whose request the map cancelled while panning is not a problem
+   'failed: ' + r.url() + ' ' + (r.failure() || {}).errorText); });
   page.on('response', r => { if (r.status() >= 400 && !expectBad) problems.push('http ' + r.status() + ': ' + r.url()); });
   await page.goto(`${BASE}/route.html?r=${region}${search}`, { waitUntil: 'load' });
   if (wait) await page.waitForSelector('body[data-ready]', { timeout: 30000 });
@@ -88,6 +89,9 @@ async function open({ vp = 'desktop', theme = 'dark', region = 'PY', stub = {}, 
 }
 const pick = async (page, which, q, name) => { await page.fill(which === 'from' ? '#rtFrom' : '#rtTo', q); const b = page.locator(`#rt${which === 'from' ? 'From' : 'To'}List button.rt-match`, { hasText: name }); await b.first().click(); };
 const results = page => page.waitForSelector('body[data-result]', { timeout: 40000 });
+const chipKm = async (page, r) => parseFloat(await page.getAttribute(`.rt-route[data-route=${r}] .rt-chip`, 'data-km'));   // km in modelled smoke, from the chip of a route row
+const full = async page => { if (page.viewportSize().width < 760) { await page.evaluate(() => window.__ROUTE.setSheet('full')); await page.waitForTimeout(450); } };   // on a phone the results sheet starts at peek: open it to reach the controls in it
+const choose = async (page, r) => { await full(page); await page.locator(`.rt-route[data-route=${r}] .rt-pick`).click(); };
 const IDS = ['#rtFrom', '#rtTo', '#rtFromList', '#rtToList', '#rtDepart', '#rtGo', '#rtExample', '#rtMap', '#rtRoutes', '#rtBest', '#rtGmaps', '#rtGeojson', '#regionSel', '#themeToggle'];
 
 /* =============== every viewport x theme =============== */
@@ -106,7 +110,7 @@ for (const vp of ['desktop', 'phone']) for (const theme of ['dark', 'light']) {
     if (old) assert((await page.innerText('#oldWarn')).startsWith('THIS DATA IS OLD'), await page.innerText('#oldWarn'));
     assert((await page.innerText('#rtSafety')) === 'A modelled scenario from satellite data, not a ground report. In an emergency, follow official instructions.');
     assert((await page.innerText('#rtCredit')).includes('Routes: OSRM demo server, OpenStreetMap data') && /light use/.test(await page.innerText('#rtCredit')));
-    assert(/fire cluster\(s\) of 5 MW or more in the last 24 hours of data/.test(await page.innerText('#fireCount')), await page.innerText('#fireCount'));
+    assert(/fire cluster\(s\) of 5 MW or more in the last 24 hours of data/.test(await page.textContent('#fireCount')), await page.textContent('#fireCount'));
     assert(await page.locator('#rtRoutes .rt-route').count() === 0 && await page.locator('#rtBestBox').isHidden() && await page.locator('#rtHand').isHidden(), 'nothing is shown before a search');
     const o = await overflow(page); assert(o.sw <= o.iw + 1 && !o.bad.length, `horizontal overflow: ${o.sw} > ${o.iw} ${o.bad}`);
     await shot(page, `route-load-${vp}-${theme}`, vp === 'phone'); eq(problems, [], 'problems'); await ctx.close();
@@ -120,7 +124,7 @@ for (const vp of ['desktop', 'phone']) for (const theme of ['dark', 'light']) {
     const txt = (await page.innerText('#rtBest')).trim(); assert(txt.length > 30 && /Route [ABC]|No route meets|assess/.test(txt), 'summary: ' + txt);
     assert(/\d/.test(txt) || /No route meets/.test(txt));
     for (const t of ['OBSERVED', 'MAPPED', 'MODELLED', 'SCENARIO']) assert((await page.locator('#rtRoutes .rt-route').first().innerText()).includes(t), t);
-    const card = await page.innerText('#rtRoutes .rt-route'); assert(/Time/.test(card) && /Distance/.test(card) && /In smoke/.test(card) && /Peak/.test(card), card);
+    const card = await page.innerText('#rtRoutes .rt-route[data-chosen=true]'); assert(/ in smoke/.test(await page.innerText('#rtRoutes .rt-route .rt-chip')) || /no modelled smoke|not assessed/.test(await page.innerText('#rtRoutes .rt-route .rt-chip'))); assert(/Time/.test(card) && /Distance/.test(card) && /In smoke/.test(card) && /Peak/.test(card), card);
     assert((await page.inputValue('#rtFrom')).length > 2 && (await page.inputValue('#rtTo')).length > 2 && (await page.inputValue('#rtFrom')) !== (await page.inputValue('#rtTo')), 'From and To were filled from the data');
     assert(/Example from the current data:/.test(await page.innerText('#rtStatus')), await page.innerText('#rtStatus'));
     assert(await page.locator('#rtHand').isVisible() && await page.locator('#rtGeojson').isVisible());
@@ -142,15 +146,16 @@ for (const [vp, theme] of [['desktop', 'light'], ['phone', 'dark']]) await check
   await pick(page, 'from', 'alf', 'Alfa'); await pick(page, 'to', 'omeg', 'Omega'); eq(await page.inputValue('#rtFrom'), 'Alfa');
   await page.click('#rtGo'); await results(page);
   eq(await page.$$eval('#rtRoutes .rt-route', l => l.map(x => [x.dataset.route, x.dataset.best])), [['A', 'false'], ['B', 'true'], ['C', 'false']].map(([a, b], i) => [a, b]).map(([a, b]) => [a, b]), 'cards and best marker');
-  const num = async (r, label) => (await page.locator(`.rt-route[data-route=${r}] .rt-nums div`, { hasText: label }).locator('dd').innerText());
-  const kmA = parseFloat(await num('A', 'In smoke')), kmB = parseFloat(await num('B', 'In smoke'));
+  const kmA = await chipKm(page, 'A'), kmB = await chipKm(page, 'B');
   assert(kmA > 0 && kmB === 0, `A ${kmA} km, B ${kmB} km in smoke`);
-  assert(parseFloat(await num('A', 'Peak')) >= 1, 'peak on A');
+  eq(await page.getAttribute('.rt-route[data-route=B]', 'data-chosen'), 'true', 'the best route is chosen at first');
   const sum = (await page.innerText('#rtBest')).trim();
   assert(new RegExp(`^Route B avoids the modelled smoke: 0 km in smoke vs ${kmA} km on Route A, \\d+ min longer\\.$`).test(sum), sum);
-  assert(/Smoke starts at km [\d.]+, around \d\d:\d\d/.test(await page.innerText('.rt-route[data-route=A]')), await page.innerText('.rt-route[data-route=A]'));
   assert(/No modelled smoke on this route/.test(await page.innerText('.rt-route[data-route=B]')));
   assert(await page.locator('.rt-route[data-route=B] .rt-besttag').count() === 1);
+  await choose(page, 'A'); assert(/Smoke starts at km [\d.]+, around \d\d:\d\d/.test(await page.innerText('.rt-route[data-route=A]')), await page.innerText('.rt-route[data-route=A]'));
+  assert(parseFloat(await page.locator('.rt-route[data-route=A] .rt-dl div', { hasText: 'Peak' }).locator('dd').innerText()) >= 1, 'peak on A');
+  await choose(page, 'B');
   // the map: smoke stretches drawn on A, none on B's own colour
   assert(await page.locator('.leaflet-container path.rt-smoke').count() >= 1, 'smoke stretch drawn');
   // Google Maps: only a link, never opened by the page
@@ -194,7 +199,7 @@ await check('wind from the north: the same fire puts no smoke on the route south
   const north = ctx => ctx.route(/\/api\/wind/, r => { const q = new URL(r.request().url()).searchParams, cells = {}; for (const c of q.get('cells').split(';')) { const time = []; for (let t = Date.parse(q.get('d0') + 'T00:00:00Z'), k = 0; k < 264; t += 36e5, k++) time.push(new Date(t).toISOString().slice(0, 16)); const m = time.length; cells[c] = { time, wind_speed_100m: Array(m).fill(3), wind_direction_100m: Array(m).fill(0), wind_speed_10m: Array(m).fill(1.8), boundary_layer_height: Array(m).fill(1500), cloud_cover: Array(m).fill(0) }; } r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ cells }) }); });
   const { page, ctx, problems } = await open({ feed: feedWith({ fires: [FIRE] }), extra: north });
   await pick(page, 'from', 'alf', 'Alfa'); await pick(page, 'to', 'omeg', 'Omega'); await page.click('#rtGo'); await results(page);
-  const kmB = parseFloat(await page.locator('.rt-route[data-route=B] .rt-nums div', { hasText: 'In smoke' }).locator('dd').innerText());
+  const kmB = await chipKm(page, 'B');
   assert(kmB > 0, 'with the wind from the north the plume goes south over route B: ' + kmB); assert((await page.innerText('#rtBest')).startsWith('Route A'), await page.innerText('#rtBest')); eq(problems, []); await ctx.close();
 });
 
@@ -267,7 +272,7 @@ await check('Spanish and Portuguese: the page, the summary and the cards switch 
   await page.click('#langBox [data-lang=es]');
   assert(/^La Ruta B evita el humo modelado: 0 km en humo frente a [\d,]+ km en la Ruta A/.test(await page.innerText('#rtBest')), await page.innerText('#rtBest'));
   assert(/plantillas fijas/.test(await page.innerText('#esNote')) && /Un escenario modelado/.test(await page.innerText('#rtSafety')) && (await page.innerText('#rtGo')).includes('Comparar rutas'));
-  assert(/OBSERVADO/.test(await page.innerText('.rt-route')) && /El humo empieza en el km/.test(await page.innerText('.rt-route[data-route=A]')));
+  await choose(page, 'A'); assert(/OBSERVADO/.test(await page.innerText('.rt-route')) && /El humo empieza en el km/.test(await page.innerText('.rt-route[data-route=A]')));
   await page.click('#langBox [data-lang=pt]'); assert(/^A Rota B evita a fumaça modelada/.test(await page.innerText('#rtBest')), await page.innerText('#rtBest')); assert(/modelos fixos/.test(await page.innerText('#esNote')));
   assert(await page.locator('.rt-route[data-best=true]').count() === 1, 'the best marker survives a language switch'); await shot(page, 'route-pt');
   await page.click('#langBox [data-lang=en]'); assert(await page.locator('#esNote').isHidden()); eq(problems, []); await ctx.close();
@@ -374,11 +379,11 @@ await check('every alternative crosses the plume: a detour is searched, Route D 
   await compare(page);
   assert(log.filter(x => x === 'direct').length === 1 && log.filter(x => x.startsWith('via')).length >= 1 && log.filter(x => x.startsWith('via')).length <= 6, 'requests: ' + log);
   eq(log.filter(x => x.startsWith('via')).length, 1, 'the first (upwind) candidate was clean, so the search stopped');
-  const kmA = parseFloat(await page.locator('.rt-route[data-route=A] .rt-nums div', { hasText: 'In smoke' }).locator('dd').innerText()), kmB = parseFloat(await page.locator('.rt-route[data-route=B] .rt-nums div', { hasText: 'In smoke' }).locator('dd').innerText()), kmC = parseFloat(await page.locator('.rt-route[data-route=C] .rt-nums div', { hasText: 'In smoke' }).locator('dd').innerText());
+  const kmA = await chipKm(page, 'A'), kmB = await chipKm(page, 'B'), kmC = await chipKm(page, 'C');
   assert(kmA > 0 && kmB > 0 && kmC > 0, `all three alternatives meet the plume: ${kmA} ${kmB} ${kmC}`);
   eq(await page.$$eval('#rtRoutes .rt-route', l => l.map(x => [x.dataset.route, x.dataset.detour, x.dataset.best])), [['A', 'false', 'false'], ['B', 'false', 'false'], ['C', 'false', 'false'], ['D', 'true', 'true']]);
   const d = page.locator('.rt-route[data-route=D]'); assert((await d.innerText()).includes('Route D (detour)') && (await d.innerText()).includes('LEAST MODELLED SMOKE'), await d.innerText());
-  assert(/^0 km/.test(await d.locator('.rt-nums div', { hasText: 'In smoke' }).locator('dd').innerText()), 'D: no modelled smoke');
+  eq(await chipKm(page, 'D'), 0, 'D: no modelled smoke');
   const sum = (await page.innerText('#rtBest')).trim(); const m = /^Detour avoids the modelled smoke: 0 km in smoke vs ([\d.]+) km, \+(\d+) min\.$/.exec(sum); assert(m, sum);
   assert(Math.abs(+m[1] - Math.min(kmA, kmB, kmC)) < .06, `the km it is compared with is the best alternative's: ${m[1]} vs ${kmA} ${kmB} ${kmC}`);
   assert(await page.locator('#rtDetour').isHidden(), 'no "no detour" line');
@@ -445,7 +450,7 @@ await check('best time to leave: with the same wind every hour it says everythin
 
 await check('simulated drive: labelled a simulation everywhere, reaches the smoke alert in #rtDrivePanel, speaks each alert once (5 km, 1 km, entering, leaving) with "Simulation." in front, and finishes', async () => {
   const { page, ctx, problems } = await driver({ via: 'ignore', vp: 'phone' });
-  await compare(page); eq(await page.evaluate(() => window.__ROUTE.S.simSpeed), 30, 'the default is 30 times real time');
+  await compare(page); await full(page); eq(await page.evaluate(() => window.__ROUTE.S.simSpeed), 30, 'the default is 30 times real time');
   assert(await page.locator('#rtDrive').isVisible() && await page.locator('#rtSimulate').isHidden() && await page.locator('#rtDrivePanel').isHidden());
   await page.click('#rtDrive'); await page.waitForSelector('#rtSimulate', { state: 'visible', timeout: 15000 });
   assert(/simulate the drive/.test(await page.innerText('#rtDriveMsg')), 'offered when GPS is not available: ' + await page.innerText('#rtDriveMsg'));
@@ -454,7 +459,7 @@ await check('simulated drive: labelled a simulation everywhere, reaches the smok
   await page.click('#rtSimulate'); await page.waitForSelector('#rtDrivePanel', { state: 'visible' });
   const mode = await page.innerText('#rtDriveMode'); assert(/^SIMULATION/.test(mode) && /not your position/.test(mode) && /300 times real time/.test(mode), mode);
   assert(/^SIMULATION: /.test(await page.innerText('#rtDriveProg')), 'progress line says simulation too: ' + await page.innerText('#rtDriveProg'));
-  assert(/^Next: /.test(await page.innerText('#rtDriveNext')) || /End of the route|No more/.test(await page.innerText('#rtDriveNext')), await page.innerText('#rtDriveNext'));
+  assert((await page.innerText('#rtDriveNext')).trim().length > 3 && /^\d+(\.\d)? km$|^\d+ m$/.test((await page.innerText('#rtDriveDist')).trim()) && await page.locator('#rtDriveIcon svg').count() === 1, 'maneuver icon, distance and instruction: ' + await page.innerText('#rtDriveNext'));
   assert(/Modelled smoke ahead in [\d.]+ km \(about \d+ min, around \d\d:\d\d\), for [\d.]+ km\.|In modelled smoke now/.test(await page.innerText('#rtDriveSmoke')), 'real numbers: ' + await page.innerText('#rtDriveSmoke'));
   await page.waitForFunction(() => /Entering modelled smoke/.test(document.getElementById('rtDrivePanel').textContent), null, { timeout: 40000 });
   assert(/^Simulation\. Entering modelled smoke, about [\d.]+ km\.$/.test((await page.innerText('#rtDriveAlert')).trim()), await page.innerText('#rtDriveAlert'));
@@ -502,30 +507,33 @@ await check('GPS: a location within 2 km of the route is followed (watchPosition
   await page.click('#rtDrive'); await page.waitForSelector('#rtSimulate', { state: 'visible', timeout: 15000 }); assert(/more than 2 km, so GPS cannot follow it\. You can simulate the drive instead\./.test(await page.innerText('#rtDriveMsg')), await page.innerText('#rtDriveMsg'));
   eq(await page.locator('#rtDrivePanel').isHidden(), true, 'no panel for a refused GPS drive'); eq(problems, []); await ctx.close();
 });
-await check('drive and directions contrast >= 4.5:1 and tap targets >= 44 px with the panel open, dark and light, phone', async () => {
+const scanContrast = (page, sel) => page.evaluate(sel => {
+  const px = s => { const c = document.createElement('canvas').getContext('2d'); c.fillStyle = s; c.fillRect(0, 0, 1, 1); const d = c.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2], d[3] / 255]; };
+  const lum = ([r, g, b]) => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }; return .2126 * f(r) + .7152 * f(g) + .0722 * f(b); };
+  const cr = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+  const mix = (f, b) => f[3] >= 1 ? f.slice(0, 3) : f.slice(0, 3).map((v, i) => v * f[3] + b[i] * (1 - f[3]));
+  const bgOf = e => { const stack = []; for (let n = e; n; n = n.parentElement) { const c = px(getComputedStyle(n).backgroundColor); if (c[3] > 0) stack.push(c); if (c[3] >= 1) break; } let base = px(getComputedStyle(document.body).backgroundColor).slice(0, 3); if (base[0] + base[1] + base[2] === 0 && !stack.length) base = [7, 19, 27]; for (const c of stack.reverse()) base = mix(c, base); return base; };
+  const out = [];
+  for (const e of document.querySelectorAll(sel)) {
+    const isBtn = e.tagName === 'BUTTON' || e.tagName === 'SUMMARY' || e.tagName === 'A';
+    if (!e.offsetParent && getComputedStyle(e).position !== 'fixed' || e.disabled || (e.closest('button') && e.tagName !== 'BUTTON') || !(isBtn ? e.textContent.trim() : e.firstChild && e.firstChild.nodeType === 3 && e.firstChild.textContent.trim())) continue;
+    const cs = getComputedStyle(e), bg = bgOf(e), fg = mix(px(cs.color), bg); out.push({ t: e.textContent.trim().slice(0, 28), c: e.className.toString().slice(0, 24), r: +cr(fg, bg).toFixed(2) });
+  }
+  return out;
+}, sel);
+const smallTargets = (page, sel) => page.evaluate(sel => [...document.querySelectorAll(sel)].filter(e => e.offsetParent && !e.closest('.leaflet-container')).map(e => { const r = e.getBoundingClientRect(); return { t: (e.id || e.textContent || e.className).toString().slice(0, 20), w: Math.round(r.width), h: Math.round(r.height) }; }).filter(x => x.h < 44 || x.w < 44), sel);
+await check('navigation-app layout: text contrast >= 4.5:1 and tap targets >= 44 px in the planner, the sheet and the drive view, dark and light, phone', async () => {
   for (const theme of ['dark', 'light']) {
-    const { page, ctx } = await driver({ via: 'ignore', vp: 'phone', theme }); await compare(page);
-    await page.click('#rtSteps summary'); await page.click('#rtDrive'); await page.waitForSelector('#rtSimulate', { state: 'visible', timeout: 15000 }); await page.click('#rtSimulate'); await page.waitForSelector('#rtDrivePanel', { state: 'visible' });
-    const rows = await page.evaluate(() => {
-      const px = s => { const c = document.createElement('canvas').getContext('2d'); c.fillStyle = s; c.fillRect(0, 0, 1, 1); const d = c.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2], d[3]]; };
-      const lum = ([r, g, b]) => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }; return .2126 * f(r) + .7152 * f(g) + .0722 * f(b); };
-      const cr = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
-      const tok = n => getComputedStyle(document.body).getPropertyValue(n).trim(), light = document.body.classList.contains('light'), surf = [tok('--bg-0'), tok('--bg-1'), tok('--bg-2'), ...(light ? [] : ['#0E3445'])];
-      const blend = (fg, bg) => fg[3] === 255 ? fg : fg.slice(0, 3).map((v, i) => Math.round(v * fg[3] / 255 + bg[i] * (1 - fg[3] / 255)));
-      const out = [];
-      for (const e of document.querySelectorAll('#rtLeaveBox *, #rtStepsBox *, #rtDriveBox *, .rt-role *, .rt-role')) {
-        const isBtn = e.tagName === 'BUTTON' || e.tagName === 'SUMMARY';
-        if (!e.offsetParent || e.disabled || (e.closest('button') && !isBtn) || !(isBtn ? e.textContent.trim() : e.firstChild && e.firstChild.nodeType === 3 && e.firstChild.textContent.trim())) continue;
-        const cs = getComputedStyle(e), fg = px(cs.color), own = px(cs.backgroundColor), bgs = own[3] > 200 ? [own.slice(0, 3)] : surf.map(s => px(s).slice(0, 3));
-        const worst = Math.min(...bgs.map(b => { const bb = e.classList.contains('dtag') ? blend(own, b) : b; return cr(blend(fg, bb), bb); })); out.push({ t: e.textContent.trim().slice(0, 28), c: e.className, r: +worst.toFixed(2) });
-      }
-      return out;
-    });
-    const low = rows.filter(r => r.r < 4.5); assert(rows.length > 12 && !low.length, `${theme}: ${rows.length} texts, low contrast: ` + JSON.stringify(low.slice(0, 6)));
-    const small = await page.evaluate(() => [...document.querySelectorAll('#rtLeaveBox button,#rtStepsBox summary,#rtDriveBox button,.rt-pick')].filter(e => e.offsetParent).map(e => { const r = e.getBoundingClientRect(); return { t: (e.id || e.textContent).slice(0, 20), w: Math.round(r.width), h: Math.round(r.height) }; }).filter(x => x.h < 44));
-    assert(!small.length, `${theme}: small targets ` + JSON.stringify(small));
+    const { page, ctx, problems } = await driver({ via: 'ignore', vp: 'phone', theme }); await compare(page); await full(page);
+    await page.click('#rtSteps summary');
+    let rows = await scanContrast(page, '#rtSearch *, #rtSheet *, .rt-role, .rt-role *, .rt-top button, .rt-top a'); let low = rows.filter(r => r.r < 4.5); assert(rows.length > 60 && !low.length, `${theme} planner: ${rows.length} texts, low contrast: ` + JSON.stringify(low.slice(0, 8)));
+    const small = await smallTargets(page, '#rtSearch button,#rtSearch select,#rtSearch input,#rtSheet button,#rtSheet summary,#rtSheet a.ghost-btn,.rt-top button,.rt-top select,.rt-top a,#rtRecenter'); assert(!small.length, `${theme}: small targets ` + JSON.stringify(small));
     const o = await overflow(page); assert(o.sw <= o.iw + 1 && !o.bad.length, `${theme}: overflow ${o.sw} > ${o.iw} ${o.bad}`);
-    await shot(page, `route-driver-phone-${theme}`, true); await page.click('#rtStop'); await ctx.close();
+    await page.click('#rtDrive'); await page.waitForSelector('#rtSimulate', { state: 'visible', timeout: 15000 }); await page.click('#rtSimulate'); await page.waitForSelector('#rtDrivePanel', { state: 'visible' });
+    rows = await scanContrast(page, '#rtDrivePanel *, #rtDriveBar *'); low = rows.filter(r => r.r < 4.5); assert(rows.length > 10 && !low.length, `${theme} drive: ${rows.length} texts, low contrast: ` + JSON.stringify(low.slice(0, 8)));
+    const sm2 = await smallTargets(page, '#rtDriveBar button'); assert(!sm2.length, `${theme}: small drive targets ` + JSON.stringify(sm2));
+    const o2 = await overflow(page); assert(o2.sw <= o2.iw + 1 && !o2.bad.length, `${theme}: drive overflow ${o2.sw} > ${o2.iw} ${o2.bad}`);
+    await shot(page, `route-driver-phone-${theme}`); await page.click('#rtStop'); eq(problems, [], 'problems'); await ctx.close();
   }
 });
 await check('static hosting (no api/route): the detour search asks OSRM directly with via points in order, one route, at most 6, with steps=true', async () => {
@@ -539,6 +547,137 @@ await check('static hosting (no api/route): the detour search asks OSRM directly
   assert(calls[1].split('/driving/')[1].split('?')[0].split(';').length === 3, 'from;via;to');
   assert(await page.locator('.rt-route[data-detour=true]').count() === 1, 'Route D from direct OSRM'); await page.click('#rtSteps summary'); assert(await page.locator('#rtStepList .rt-step').count() >= 2, 'steps from OSRM legs');
   eq(problems.filter(p => !/404/.test(p)), []); await ctx.close();
+});
+
+/* =============== the map-first layout =============== */
+console.log('\n== map-first layout ==');
+const rectOf = (page, sel) => page.$eval(sel, e => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height }; });
+await check('desktop 1440x900: the map fills the viewport under the slim header, the document does not scroll, the panel floats over the map with its own scroll, the legend sits beside it', async () => {
+  const { page, ctx, problems } = await driver({ via: 'ignore' }); await compare(page);
+  const hd = await rectOf(page, '.rt-top'), mp = await rectOf(page, '#rtMap'), pn = await rectOf(page, '#rtPanel'), lg = await rectOf(page, '#rtLegend');
+  assert(hd.h <= 80, 'slim header: ' + hd.h); assert(Math.abs(mp.t - hd.b) <= 1.5 && Math.abs(mp.b - 900) <= 1.5 && Math.abs(mp.w - 1440) <= 1.5, `map ${JSON.stringify(mp)} under header ${hd.b}`);
+  const sc = await page.evaluate(() => ({ sh: document.documentElement.scrollHeight, sw: document.documentElement.scrollWidth, by: document.body.scrollHeight })); assert(sc.sh <= 900 && sc.sw <= 1440, 'the document does not scroll: ' + JSON.stringify(sc));
+  assert(pn.l >= mp.l && pn.r < 440 && pn.w >= 380 && pn.w <= 420 && pn.t >= mp.t && pn.b <= mp.b, 'a floating panel of about 400 px over the map: ' + JSON.stringify(pn));
+  const over = await page.evaluate(([x, y, x2, y2]) => [document.elementFromPoint(x, y).closest('#rtPanel') !== null, document.elementFromPoint(x2, y2).closest('#rtMap') !== null], [pn.l + pn.w / 2, pn.t + 40, 1000, 400]); eq(over, [true, true], 'the panel is on top of the map, the map is under the rest');
+  const sc2 = await page.$eval('#rtPanelBody', e => ({ oy: getComputedStyle(e).overflowY, sh: e.scrollHeight, ch: e.clientHeight })); assert(sc2.oy === 'auto' && sc2.sh > sc2.ch, 'the panel scrolls by itself: ' + JSON.stringify(sc2));
+  assert(lg.l >= pn.r && lg.b <= 900 && lg.l < 600, 'the legend is a chip beside the panel: ' + JSON.stringify(lg)); assert(await page.locator('#rtRecenter').isVisible() && await page.locator('.leaflet-control-zoom-in').isVisible(), 'zoom and recenter');
+  const rc = await rectOf(page, '#rtRecenter'), zm = await rectOf(page, '.leaflet-control-zoom-in'); assert(rc.l > 1300 && zm.l > 1300 && rc.b < zm.t + 1, 'recenter above the zoom buttons, bottom right: ' + JSON.stringify([rc, zm]));
+  assert(await page.locator('#rtSearchLine').isHidden() && await page.locator('#rtHandle').isHidden(), 'the phone-only parts are not shown on a desktop');
+  assert(await page.locator('.rt-rl').count() === 3 && /\d+ min · /.test(await page.locator('.rt-rl.on').innerText()), 'a label bubble on each route, the chosen one filled: ' + await page.locator('.rt-rl').allInnerTexts());
+  // keyboard order: header, then search, then results, then the map controls
+  const order = await page.evaluate(() => { const ids = ['regionSel', 'rtFrom', 'rtGo', 'rtDepart']; const pos = id => document.getElementById(id); const w = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT); const seq = []; const focusable = [...document.querySelectorAll('a[href],button,input,select,summary')].filter(e => e.offsetParent && !e.disabled && e.tabIndex >= 0); const idx = e => focusable.indexOf(e); void w; void ids; return { header: idx(pos('regionSel')), from: idx(pos('rtFrom')), pick: idx(document.querySelector('.rt-pick')), steps: idx(document.querySelector('#rtSteps summary')), recenter: idx(pos('rtRecenter')), zoom: idx(document.querySelector('.leaflet-control-zoom-in')) }; });
+  assert(order.header < order.from && order.from < order.pick && order.pick < order.steps && order.steps < order.zoom && order.zoom <= order.recenter + 1, 'keyboard order: ' + JSON.stringify(order));
+  await shot(page, 'route-nav-layout-check'); eq(problems, [], 'problems'); await ctx.close();
+});
+await check('choosing a route: by its row and by its line (and its label) on the map; the chosen row, the steps and the Google Maps link follow', async () => {
+  const { page, ctx, problems } = await known(); await pick(page, 'from', 'alf', 'Alfa'); await pick(page, 'to', 'omeg', 'Omega'); await page.click('#rtGo'); await results(page);
+  const chosen = () => page.$$eval('.rt-route[data-chosen=true]', l => l.map(x => x.dataset.route)), gm = () => page.getAttribute('#rtGmaps', 'href');
+  eq(await chosen(), ['B']); const gB = await gm();
+  await page.locator('.rt-route[data-route=A] .rt-pick').click(); eq(await chosen(), ['A']); const gA = await gm(); assert(gA !== gB, 'the Google Maps link follows the chosen route');
+  assert(/Route A/.test(await page.innerText('#rtChosen')) && /Route A/.test(await page.innerText('#rtSteps summary')), 'steps follow'); eq(await page.getAttribute('.rt-route[data-route=A] .rt-pick', 'aria-pressed'), 'true'); eq(await page.getAttribute('.rt-route[data-route=B] .rt-pick', 'aria-pressed'), 'false');
+  assert(await page.locator('.rt-route[data-route=A] .rt-more').isVisible() && await page.locator('.rt-route[data-route=B] .rt-more').isHidden(), 'only the chosen row is expanded');
+  assert(await page.locator('.leaflet-container path.rt-line.best').count() === 1, 'one thick blue line');
+  // click the invisible hit line of each route at its middle: each one chooses its own route
+  const seen = new Set();
+  const pts = await page.evaluate(() => [...document.querySelectorAll('#rtMap path.rt-hit')].map(p => { const L = p.getTotalLength(), q = p.getPointAtLength(L * .5), m = p.getScreenCTM(); return { x: m.a * q.x + m.c * q.y + m.e, y: m.b * q.x + m.d * q.y + m.f }; }));   // the three middles, taken before any click redraws the map
+  eq(pts.length, 3);
+  const links = {};
+  for (const pt of pts) { await page.mouse.click(pt.x, pt.y); await page.waitForTimeout(150); const c = await chosen(); seen.add(c[0]); links[c[0]] = await gm(); }
+  eq([...seen].sort(), ['A', 'B', 'C'], 'clicking each route line on the map chooses a different route');
+  assert(new Set(Object.values(links)).size === 3, 'the Google Maps link follows a choice made on the map: ' + JSON.stringify(links));
+  await page.locator('.rt-rl[data-route="A"]').click(); eq(await chosen(), ['A'], 'the label bubble chooses too');
+  assert(!(await page.$eval('.rt-route[data-route=A] .rt-pick', b => b.disabled)), 'real buttons');
+  await page.focus('.rt-route[data-route=C] .rt-pick'); await page.keyboard.press('Enter'); eq(await chosen(), ['C'], 'keyboard: Enter on the row button chooses');
+  await shot(page, 'route-nav-choose'); eq(problems, [], 'problems'); await ctx.close();
+});
+await check('#rtSwap swaps From and To (and the points behind them)', async () => {
+  const { page, ctx, problems } = await known(); await pick(page, 'from', 'alf', 'Alfa'); await pick(page, 'to', 'omeg', 'Omega');
+  await page.click('#rtSwap'); eq([await page.inputValue('#rtFrom'), await page.inputValue('#rtTo')], ['Omega', 'Alfa']); eq(await page.evaluate(() => [window.__ROUTE.S.from.name, window.__ROUTE.S.to.name]), ['Omega', 'Alfa']);
+  await page.click('#rtGo'); await results(page); assert(/Omega → Alfa|Omega/.test(await page.evaluate(() => window.__ROUTE.S.from.name))); await page.click('#rtSwap'); eq(await page.inputValue('#rtFrom'), 'Alfa'); eq(problems, []); await ctx.close();
+});
+await check('#rtPanelToggle hides the panel to show the whole map and brings it back; the map keeps its size; the legend moves to the corner', async () => {
+  const { page, ctx, problems } = await known(); await pick(page, 'from', 'alf', 'Alfa'); await pick(page, 'to', 'omeg', 'Omega'); await page.click('#rtGo'); await results(page);
+  eq(await page.getAttribute('#rtPanelToggle', 'aria-expanded'), 'true'); await page.click('#rtPanelToggle'); await page.waitForTimeout(400);
+  eq(await page.getAttribute('#rtPanelToggle', 'aria-expanded'), 'false'); eq(await page.getAttribute('#main', 'data-panel'), 'closed'); const pr = await rectOf(page, '#rtPanel'); assert(pr.r <= 0 || (await page.$eval('#rtPanel', e => getComputedStyle(e).opacity)) === '0', 'panel gone: ' + JSON.stringify(pr));
+  assert(await page.locator('#rtPanelToggle').isVisible(), 'the toggle stays'); const lg = await rectOf(page, '#rtLegend'); assert(lg.l < 40, 'legend at the corner: ' + lg.l); eq(await page.$eval('#rtPanel', e => e.inert), true, 'hidden panel is out of the tab order');
+  await shot(page, 'route-nav-panel-collapsed');
+  await page.click('#rtPanelToggle'); await page.waitForTimeout(400); eq(await page.getAttribute('#rtPanelToggle', 'aria-expanded'), 'true'); assert((await rectOf(page, '#rtPanel')).l >= 0 && await page.locator('#rtGo').isVisible(), 'panel back'); eq(await page.$eval('#rtPanel', e => e.inert), false);
+  const mp = await rectOf(page, '#rtMap'); assert(Math.abs(mp.w - 1440) < 2, 'map still full width'); eq(problems, []); await ctx.close();
+});
+await check('phone 390x844: results in a bottom sheet that starts at peek, cycles peek/half/full by its handle button and by drag; the search collapses to one line; no overflow; the map stays usable above', async () => {
+  const { page, ctx, problems } = await driver({ via: 'ignore', vp: 'phone', theme: 'light' });
+  assert(await page.locator('#rtSheet').isHidden(), 'no sheet before a search'); assert(await page.locator('#rtSearchLine').isHidden() && await page.locator('#rtFrom').isVisible(), 'the search form is open before a search');
+  await compare(page); await page.waitForTimeout(450);
+  eq(await page.getAttribute('#rtSheet', 'data-sheet'), 'peek'); eq(await page.getAttribute('#main', 'data-sheet'), 'peek');
+  const sh = await rectOf(page, '#rtSheet'); assert(Math.abs((844 - sh.t) - 190) <= 6, 'the peek shows about 190 px: ' + (844 - sh.t));
+  assert(await page.locator('#rtSearchLine').isVisible() && /^Alfa → Omega$/.test((await page.innerText('#rtSearchLineTxt')).trim()) && await page.locator('#rtFrom').isHidden(), 'one line "Alfa → Omega"');
+  const summ = await rectOf(page, '#rtBest'); assert(summ.b <= 844 && summ.t >= sh.t, 'the summary shows in the peek: ' + JSON.stringify(summ));
+  const mapRoom = await page.evaluate(() => { const s = document.getElementById('rtSearch').getBoundingClientRect(), h = document.getElementById('rtSheet').getBoundingClientRect(); return h.top - s.bottom; }); assert(mapRoom > 120, 'map visible between the card and the sheet: ' + mapRoom);
+  assert((await rectOf(page, '#rtMap')).h > 600 && (await rectOf(page, '#rtMap')).w === 390, 'the map fills the screen under the header');
+  const lblVisible = await page.evaluate(() => { const s = document.getElementById('rtSearch').getBoundingClientRect(), h = document.getElementById('rtSheet').getBoundingClientRect(); return [...document.querySelectorAll('.rt-rl')].some(e => { const r = e.getBoundingClientRect(); return r.top > s.bottom && r.bottom < h.top && r.left >= 0 && r.right <= innerWidth; }); }); assert(lblVisible, 'a route label is inside the free part of the map, not under the card or the sheet');
+  await shot(page, 'route-nav-phone-peek-check');
+  let o = await overflow(page); assert(o.sw <= o.iw + 1 && !o.bad.length, `overflow peek ${o.sw} > ${o.iw} ${o.bad}`);
+  const st = () => page.getAttribute('#rtSheet', 'data-sheet');
+  await page.click('#rtHandle'); eq(await st(), 'half'); await page.waitForTimeout(400); const half = await rectOf(page, '#rtSheet'); assert(Math.abs((844 - half.t) - 844 * .46) < 40, 'half: ' + (844 - half.t));
+  o = await overflow(page); assert(o.sw <= o.iw + 1 && !o.bad.length, `overflow half ${o.bad}`);
+  await page.click('#rtHandle'); eq(await st(), 'full'); await page.waitForTimeout(400); const fl = await rectOf(page, '#rtSheet'); assert(fl.t < 260 && fl.t > 100, 'full is below the search line: ' + fl.t); o = await overflow(page); assert(o.sw <= o.iw + 1 && !o.bad.length, `overflow full ${o.bad}`);
+  await page.click('#rtHandle'); eq(await st(), 'peek'); await page.waitForTimeout(400);
+  // drag: up from the handle, then down
+  const hb = await rectOf(page, '#rtHandle'), cx = hb.l + hb.w / 2, cy = hb.t + hb.h / 2;
+  await page.mouse.move(cx, cy); await page.mouse.down(); await page.mouse.move(cx, cy - 150, { steps: 6 }); const mid = await page.$eval('#rtSheet', e => e.style.transform); assert(/translateY/.test(mid), 'the sheet follows the finger: ' + mid); await page.mouse.move(cx, cy - 420, { steps: 6 }); await page.mouse.up(); await page.waitForTimeout(400);
+  eq(await st(), 'full', 'a long drag up goes to full'); const hb2 = await rectOf(page, '#rtHandle');
+  await page.mouse.move(hb2.l + hb2.w / 2, hb2.t + 20); await page.mouse.down(); await page.mouse.move(hb2.l + hb2.w / 2, hb2.t + 700, { steps: 8 }); await page.mouse.up(); await page.waitForTimeout(400); eq(await st(), 'peek', 'a long drag down goes to peek');
+  const hb3 = await rectOf(page, '#rtHandle'); await page.mouse.move(hb3.l + hb3.w / 2, hb3.t + 20); await page.mouse.down(); await page.mouse.move(hb3.l + hb3.w / 2, hb3.t - 130, { steps: 6 }); await page.mouse.up(); await page.waitForTimeout(400); eq(await st(), 'half', 'a short drag up goes to half');
+  // the keyboard: the handle is a button
+  await page.focus('#rtHandle'); await page.keyboard.press('Enter'); eq(await st(), 'full'); await page.keyboard.press('Space'); eq(await st(), 'peek');
+  // the search line opens the form again and brings the sheet down to peek
+  await page.evaluate(() => window.__ROUTE.setSheet('half')); await page.waitForTimeout(350); await page.click('#rtSearchLine'); assert(await page.locator('#rtFrom').isVisible(), 'the form is back'); eq(await page.getAttribute('#rtSearchLine', 'aria-expanded'), 'true'); eq(await st(), 'peek', 'opening the search brings the sheet down to peek');
+  const safe = await page.$eval('#rtSheet', e => getComputedStyle(e).transform); assert(safe !== 'none', 'transform based');
+  const props = await page.$eval('#rtSheet', e => getComputedStyle(e).transitionProperty); assert(/^transform$/.test(props), 'the sheet animates transform only: ' + props);
+  await page.click('#langBox [data-lang=es]'); assert(/Cambiar el tamaño/.test(await page.getAttribute('#rtHandle', 'aria-label')), 'handle label in Spanish');
+  eq(problems, [], 'problems'); await ctx.close();
+});
+await check('drive view (desktop): banner with maneuver icon, distance, instruction and smoke line; bottom bar with arrival, time and km left; the planner is hidden; SIMULATION stays in the banner; the map follows, dragging pauses it, #rtRecenter resumes it; End drive restores the planner', async () => {
+  const { page, ctx, problems } = await driver({ via: 'ignore', theme: 'light' }); await compare(page);
+  await page.click('#rtDrive'); await page.waitForSelector('#rtSimulate', { state: 'visible', timeout: 15000 }); await page.evaluate(() => { window.__ROUTE.S.simSpeed = 120; }); await page.click('#rtSimulate'); await page.waitForSelector('#rtDrivePanel', { state: 'visible' });
+  eq(await page.getAttribute('#main', 'data-driving'), 'true'); await page.waitForTimeout(1200);
+  assert(await page.locator('#rtDriveIcon svg').count() === 1 && /^\d+(\.\d)? km$|^\d+ m$/.test((await page.innerText('#rtDriveDist')).trim()) && (await page.innerText('#rtDriveNext')).trim().length > 3, 'maneuver icon, distance and instruction');
+  assert(/Modelled smoke ahead in [\d.]+ km|In modelled smoke now|Clear of modelled smoke ahead/.test(await page.innerText('#rtDriveSmoke')), await page.innerText('#rtDriveSmoke'));
+  eq(await page.getAttribute('#rtDrivePanel', 'data-smoke'), 'clear', 'smoke is still far ahead at the start');
+  assert(await page.locator('#rtDriveBar').isVisible() && /^\d\d:\d\d$/.test((await page.innerText('#rtDriveEta')).trim()) && /\d/.test(await page.innerText('#rtDriveLeft')) && /^[\d.]+ km$/.test((await page.innerText('#rtDriveKm')).trim()), 'bottom bar: ' + await page.innerText('#rtDriveBar'));
+  for (const sel of ['#rtPanel', '#rtSearch', '#rtPanelToggle', '#rtLegend']) assert(await page.locator(sel).isHidden(), sel + ' hidden while driving');
+  assert(/^SIMULATION/.test(await page.innerText('#rtDriveMode')), 'SIMULATION tag in the banner'); assert(await page.locator('.leaflet-container .rt-car.sim').count() === 1 && /SIMULATION/.test(await page.locator('.leaflet-tooltip').allInnerTexts().then(a => a.join(' '))), 'the marker keeps its simulation label');
+  const near = async () => page.evaluate(() => { const m = document.querySelector('.rt-car').getBoundingClientRect(), c = document.getElementById('rtMap').getBoundingClientRect(); return Math.hypot(m.left + m.width / 2 - (c.left + c.width / 2), m.top + m.height / 2 - (c.top + c.height / 2)); });
+  await page.waitForTimeout(600); const d0 = await near(); assert(d0 < 160, 'the map follows the marker: ' + d0);
+  await shot(page, 'route-nav-drive-check');
+  await page.mouse.move(900, 500); await page.mouse.down(); await page.mouse.move(700, 360, { steps: 8 }); await page.mouse.up(); await page.waitForTimeout(500);
+  eq(await page.getAttribute('#main', 'data-follow'), 'false', 'dragging the map pauses following'); eq(await page.getAttribute('#rtRecenter', 'data-paused'), 'true'); await page.waitForTimeout(1500); const d1 = await near(); assert(d1 > 120, 'the map stays where the person put it: ' + d1);
+  assert(/^SIMULATION/.test(await page.innerText('#rtDriveMode')), 'still a simulation');
+  await page.click('#rtRecenter'); eq(await page.getAttribute('#main', 'data-follow'), 'true'); await page.waitForTimeout(900); const d2 = await near(); assert(d2 < 160, 'recenter resumes following: ' + d2); eq(await page.getAttribute('#rtRecenter', 'data-paused'), 'false');
+  await page.waitForSelector('#rtDrivePanel[data-smoke=near]', { timeout: 40000 }); assert(/Modelled smoke ahead in [\d.]+ km|In modelled smoke now/.test(await page.innerText('#rtDriveSmoke')), 'orange within 5 km of smoke: ' + await page.innerText('#rtDriveSmoke'));
+  assert(await page.$eval('#rtDriveSmoke', e => getComputedStyle(e).color) !== await page.$eval('#rtDriveProg', e => getComputedStyle(e).color), 'the smoke line changes colour when smoke is near');
+  await page.click('#rtStop'); await page.waitForTimeout(300); eq(await page.getAttribute('#main', 'data-driving'), 'false');
+  for (const sel of ['#rtPanel', '#rtGo', '.rt-route']) assert(await page.locator(sel).first().isVisible(), sel + ' is back'); assert(await page.locator('#rtDrivePanel').isHidden() && await page.locator('#rtDriveBar').isHidden(), 'banner and bar gone');
+  assert(await page.locator('.rt-route[data-chosen=true]').count() === 1, 'the chosen route is kept'); eq(problems, [], 'problems'); await ctx.close();
+});
+await check('drive view (phone): banner on top, bar at the bottom, the search card and the sheet are hidden, and they come back on End drive', async () => {
+  const { page, ctx, problems } = await driver({ via: 'ignore', vp: 'phone', theme: 'dark' }); await compare(page); await full(page);
+  await page.click('#rtDrive'); await page.waitForSelector('#rtSimulate', { state: 'visible', timeout: 15000 }); await page.evaluate(() => { window.__ROUTE.S.simSpeed = 120; }); await page.click('#rtSimulate'); await page.waitForSelector('#rtDrivePanel', { state: 'visible' }); await page.waitForTimeout(900);
+  for (const sel of ['#rtSearch', '#rtSheet', '#rtHandle']) assert(await page.locator(sel).isHidden(), sel + ' hidden while driving');
+  const bn = await rectOf(page, '#rtDrivePanel'), br = await rectOf(page, '#rtDriveBar'); assert(bn.t < 120 && bn.l >= 0 && bn.r <= 390 && br.b > 780 && br.r <= 390 && br.l >= 0, `banner ${JSON.stringify(bn)} bar ${JSON.stringify(br)}`);
+  const hd = await rectOf(page, '.rt-top'); assert(bn.t >= hd.b - 1, 'banner under the header');
+  const zoom = await rectOf(page, '.leaflet-control-zoom-in'); assert(zoom.b < br.t + 2, 'zoom buttons sit above the bar: ' + JSON.stringify([zoom, br]));
+  const o = await overflow(page); assert(o.sw <= o.iw + 1 && !o.bad.length, `overflow ${o.bad}`); assert(/^SIMULATION/.test(await page.innerText('#rtDriveMode')));
+  await shot(page, 'route-nav-drive-phone-check'); await page.click('#rtStop'); await page.waitForTimeout(400);
+  assert(await page.locator('#rtSearch').isVisible() && await page.locator('#rtSheet').isVisible() && await page.locator('#rtSearchLine').isVisible(), 'planner back'); eq(await page.getAttribute('#rtSheet', 'data-sheet'), 'full', 'the sheet keeps its state');
+  eq(problems, [], 'problems'); await ctx.close();
+});
+await check('road patrol entry: route.html?r=PY without role=driver gets the same layout (no Driver chip) and the sheet on a phone', async () => {
+  for (const vp of ['desktop', 'phone']) {
+    const { page, ctx, problems } = await open({ vp, feed: feedWith({ fires: [FIRE] }), extra: south }); assert(await page.locator('#rtRole').isHidden(), 'no chip');
+    await pick(page, 'from', 'alf', 'Alfa'); await pick(page, 'to', 'omeg', 'Omega'); await page.click('#rtGo'); await results(page);
+    assert(vp === 'desktop' ? (await rectOf(page, '#rtPanel')).w > 380 : (await page.getAttribute('#rtSheet', 'data-sheet')) === 'peek', 'layout for ' + vp); eq(problems, [], 'problems'); await ctx.close();
+  }
 });
 
 await browser.close();

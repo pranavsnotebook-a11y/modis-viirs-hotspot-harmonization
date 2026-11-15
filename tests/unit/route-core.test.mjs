@@ -453,3 +453,28 @@ test('every new text works in all three languages and returns real text (no unde
   assert.equal(RT.UI.en.driveSafety, 'This is not an emergency navigation system. In an emergency, follow official instructions and road signs.');
   assert.equal(RT.RULES.simSpeed, 30); assert.deepEqual(J(RT.RULES.driveAhead), [5, 1]); assert.equal(RT.RULES.reassessMin, 10); assert.equal(RT.RULES.gpsMaxOffKm, 2); assert.equal(RT.RULES.maxDetourTries, 6);
 });
+
+test('maneuverIcon: every OSRM maneuver gets one of the pictograms the page draws, by type first and by modifier for turns', () => {
+  const m = RT.maneuverIcon;
+  assert.equal(m('depart'), 'depart'); assert.equal(m('arrive', 'left'), 'arrive'); assert.equal(m('roundabout', 'right'), 'roundabout'); assert.equal(m('rotary'), 'roundabout'); assert.equal(m('roundabout turn', 'left'), 'roundabout'); assert.equal(m('exit roundabout'), 'roundabout');
+  assert.equal(m('merge', 'slight left'), 'merge'); assert.equal(m('fork', 'left'), 'fork'); for (const t of ['on ramp', 'off ramp', 'ramp']) assert.equal(m(t), 'ramp');
+  assert.deepEqual(J(['left', 'right', 'slight left', 'slight right', 'sharp left', 'sharp right', 'uturn', 'straight', null, 'nonsense'].map(x => m('turn', x))), ['left', 'right', 'slight-left', 'slight-right', 'sharp-left', 'sharp-right', 'uturn', 'straight', 'straight', 'straight']);
+  assert.equal(m('new name', 'straight'), 'straight'); assert.equal(m('end of road', 'left'), 'left'); assert.equal(m('continue', 'slight right'), 'slight-right'); assert.equal(m(undefined), 'straight');
+  const keys = new Set(['depart', 'arrive', 'roundabout', 'merge', 'fork', 'ramp', 'left', 'right', 'slight-left', 'slight-right', 'sharp-left', 'sharp-right', 'uturn', 'straight']);
+  for (const t of ['depart', 'arrive', 'turn', 'end of road', 'fork', 'merge', 'on ramp', 'off ramp', 'roundabout', 'roundabout turn', 'exit roundabout', 'new name', 'continue', 'notification', 'x']) for (const mod of [null, 'left', 'sharp right', 'uturn']) assert.ok(keys.has(m(t, mod)), `${t} ${mod}`);
+});
+test('directions carry the maneuver, its modifier and its icon key', async () => {
+  const rt = { ...EW(), steps: STEPS }, res = await RT.assess({ routes: [rt], depMs: DEP, clusters: [], wind: windFrom(180) });
+  const d = RT.directions(res.routes[0], 'en'); assert.deepEqual(J(d.map(x => x.icon)), ['depart', 'left', 'straight', 'roundabout', 'arrive']); assert.equal(d[1].mod, 'left'); assert.equal(d[1].type, 'turn');
+});
+test('labelPoint: the point at a share of the route, kept off the very ends, so the labels can be spread along the routes', async () => {
+  const res = await RT.assess({ routes: [EW()], depMs: DEP, clusters: [], wind: windFrom(180) }), r = res.routes[0];
+  const mid = RT.labelPoint(r), p3 = RT.labelPoint(r, .3), p7 = RT.labelPoint(r, .7), end = RT.labelPoint(r, 1.5), start = RT.labelPoint(r, -2);
+  assert.ok(Math.abs(D.dist(-25.25, -57.5, mid[0], mid[1]) - r.km / 2) < .05); assert.ok(p3[1] < mid[1] && mid[1] < p7[1], 'west to east at .3, .5, .7');
+  assert.ok(Math.abs(D.dist(-25.25, -57.5, p3[0], p3[1]) - r.km * .3) < .05); assert.ok(Math.abs(D.dist(-25.25, -57.5, end[0], end[1]) - r.km * .95) < .05 && Math.abs(D.dist(-25.25, -57.5, start[0], start[1]) - r.km * .05) < .05);
+});
+test('the new layout texts exist in all three languages', () => {
+  for (const l of ['en', 'es', 'pt']) { const T = RT.UI[l]; for (const k of ['chipClear', 'chipNA', 'swap', 'recenter', 'panelHide', 'panelShow', 'handle', 'searchEdit', 'driveEta', 'driveTimeLeft', 'driveKmLeft']) assert.ok(typeof T[k] === 'string' && T[k].length > 3, `${l}.${k}`);
+    assert.match(T.chipSmoke('7.9'), /7\.9/); assert.match(T.lblSmoke('50 min', '7.9'), /50 min.*7\.9/); assert.match(T.lblClear('50 min'), /50 min/); }
+  assert.equal(RT.UI.en.chipSmoke('7.9'), '7.9 km in smoke'); assert.equal(RT.UI.en.chipClear, 'no modelled smoke'); assert.equal(RT.UI.en.lblSmoke('50 min', '7.9'), '50 min · 7.9 km smoke');
+});

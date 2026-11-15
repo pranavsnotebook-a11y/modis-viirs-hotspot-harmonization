@@ -407,6 +407,19 @@ const MORE = {
     leaveLater: (t, km, now) => `Sair às ${t} encontra a menor fumaça modelada: ${km} km contra ${now} km saindo agora.`, leaveNow: (km, worst) => `Sair agora encontra a menor fumaça modelada: ${km} km, contra até ${worst} km mais tarde.`,
     leaveSame: km => `Sair agora ou nas próximas três horas encontra quase a mesma fumaça modelada (${km} km).`, leaveNote: 'As mesmas rotas, com o vento de cada hora; sem novos pedidos de rotas. Cada fogo é mantido com a potência observada.' },
 };
+
+const NAV = {
+  en: { chipSmoke: km => `${km} km in smoke`, chipClear: 'no modelled smoke', chipNA: 'not assessed', lblSmoke: (t, km) => `${t} · ${km} km smoke`, lblClear: t => `${t} · no smoke`, lblNA: t => `${t} · ?`,
+    swap: 'Swap From and To', recenter: 'Recenter the map', panelHide: 'Hide the panel', panelShow: 'Show the panel', handle: 'Change the size of the results', searchEdit: 'Change the trip',
+    driveEta: 'Arrival', driveTimeLeft: 'Time left', driveKmLeft: 'Distance left', moreH: 'Details of this route', navLabel: 'Navigation', mapHint: 'Click a route on the map to choose it.' },
+  es: { chipSmoke: km => `${km} km en humo`, chipClear: 'sin humo modelado', chipNA: 'no evaluada', lblSmoke: (t, km) => `${t} · ${km} km de humo`, lblClear: t => `${t} · sin humo`, lblNA: t => `${t} · ?`,
+    swap: 'Intercambiar Desde y Hasta', recenter: 'Recentrar el mapa', panelHide: 'Ocultar el panel', panelShow: 'Mostrar el panel', handle: 'Cambiar el tamaño de los resultados', searchEdit: 'Cambiar el viaje',
+    driveEta: 'Llegada', driveTimeLeft: 'Tiempo restante', driveKmLeft: 'Distancia restante', moreH: 'Detalles de esta ruta', navLabel: 'Navegación', mapHint: 'Haga clic en una ruta del mapa para elegirla.' },
+  pt: { chipSmoke: km => `${km} km na fumaça`, chipClear: 'sem fumaça modelada', chipNA: 'não avaliada', lblSmoke: (t, km) => `${t} · ${km} km de fumaça`, lblClear: t => `${t} · sem fumaça`, lblNA: t => `${t} · ?`,
+    swap: 'Trocar De e Para', recenter: 'Recentralizar o mapa', panelHide: 'Ocultar o painel', panelShow: 'Mostrar o painel', handle: 'Mudar o tamanho dos resultados', searchEdit: 'Mudar a viagem',
+    driveEta: 'Chegada', driveTimeLeft: 'Tempo restante', driveKmLeft: 'Distância restante', moreH: 'Detalhes desta rota', navLabel: 'Navegação', mapHint: 'Clique em uma rota no mapa para escolhê-la.' },
+};
+for (const l of Object.keys(NAV)) Object.assign(MORE[l], NAV[l]);
 for (const l of Object.keys(MORE)) Object.assign(UI[l], MORE[l]);
 /* the one line above the cards. Real numbers only: every figure comes from the assessment. */
 function summary(res, lang = 'en') {
@@ -517,6 +530,18 @@ async function searchDetour(o) {
 }
 
 /* ---------- turn by turn ---------- */
+/* which pictogram a maneuver gets: depart, arrive, roundabout, merge, ramp, fork, uturn, or a direction (straight, left, right, slight-left, slight-right, sharp-left, sharp-right) */
+function maneuverIcon(type, mod) {
+  const t = String(type || '');
+  if (t === 'depart' || t === 'arrive') return t;
+  if (/roundabout|rotary/.test(t)) return 'roundabout';
+  if (t === 'merge') return 'merge';
+  if (t === 'fork') return 'fork';
+  if (t === 'on ramp' || t === 'off ramp' || t === 'ramp') return 'ramp';
+  return { left: 'left', right: 'right', 'slight left': 'slight-left', 'slight right': 'slight-right', 'sharp left': 'sharp-left', 'sharp right': 'sharp-right', uturn: 'uturn' }[mod] || 'straight';
+}
+/* where a route's label sits on the map: the point at `frac` of its length, [lat, lon] */
+function labelPoint(r, frac = .5) { return pointAlong(r.route, (r.km || 0) * Math.min(.95, Math.max(.05, frac))); }
 function fmtDist(km, lang = 'en') { return km < .95 ? `${Math.max(10, Math.round(km * 100) * 10)} m` : `${nf(km, lang, km < 10 ? 1 : 0)} km`; }
 /* The steps of an assessed route as short instructions in `lang`, each with where it starts along the route (km) and the smoke warnings of the
    in-smoke stretches that begin within it: "In 3.2 km: modelled smoke for 2 km, around 09:53". o.hhmm(ms) formats clock times (UTC if omitted). */
@@ -528,7 +553,7 @@ function directions(r, lang = 'en', o = {}) {
   const out = steps.map((s, i) => {
     const startKm = cum * scale / 1000, distKm = s.dist * scale / 1000; cum += s.dist;
     const lead = ['new name', 'continue', 'notification'].includes(s.type);
-    return { n: i + 1, type: s.type, text: T.step(s.type, s.mod, s.name, s.exit, lead ? fmtDist(distKm, lang) : ''), startKm, distKm, distText: fmtDist(distKm, lang), inText: lead, at: s.at ? [s.at[1], s.at[0]] : null, warns: [] };
+    return { n: i + 1, type: s.type, mod: s.mod, icon: maneuverIcon(s.type, s.mod), text: T.step(s.type, s.mod, s.name, s.exit, lead ? fmtDist(distKm, lang) : ''), startKm, distKm, distText: fmtDist(distKm, lang), inText: lead, at: s.at ? [s.at[1], s.at[0]] : null, warns: [] };
   });
   if (r.status !== 'notAssessed') (r.segments || []).forEach(g => {
     let k = 0; for (let i = 0; i < out.length; i++) if (out[i].startKm <= g.fromKm + 1e-9) k = i;
@@ -620,5 +645,5 @@ function leaveSummary(rk, lang = 'en', hhmm) {
 }
 
 root.ROUTE = Object.freeze({ NAMES, RULES, UI, fireClusters, sampleRoute, pointAlong, assess, metrics, rank, normRoutes, osrmSteps, fetchRoutes, gmapsUrl, geojson, pickExample, summary, nf, r1,
-  project, msAtKm, viaCandidates, detourVerdict, searchDetour, fmtDist, directions, driveState, nextStep, driveAlerts, remapFired, alertText, driveLines, leaveRanking, leaveSummary });
+  project, msAtKm, viaCandidates, detourVerdict, searchDetour, fmtDist, directions, driveState, nextStep, driveAlerts, maneuverIcon, labelPoint, remapFired, alertText, driveLines, leaveRanking, leaveSummary });
 })(typeof globalThis !== 'undefined' ? globalThis : window);

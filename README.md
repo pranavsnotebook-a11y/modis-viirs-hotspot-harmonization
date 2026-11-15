@@ -185,7 +185,7 @@ page: `downwind.html?replay`.
 
 The default look is the Paper theme (`web/css/play.css`): cream background, ink outlines, large headline numbers and solid data labels, so the data reads at a glance. The dark theme is one tap away and is remembered.
 
-`docs/video/fireverse-roles-walkthrough.mp4` is a 106-second narrated walkthrough. Rebuild it with `node scripts/video/record.mjs` (macOS `say`, ffmpeg, Chrome, and the server on port 8000). Every number on its tiles is read from the app while recording.
+`docs/video/fireverse-roles-walkthrough.mp4` is a 3.5-minute story walkthrough: story characters (Ana, fire brigade; Diego, grid; Marco, highway; Lucía, clinic; Rosa, farm) follow the smoke from one satellite-detected fire, through FIRELAB, the role pages, DOWNWIND and the January 2025 replay, to the smoke-aware navigation idea (labelled as not built). Rebuild it with `node scripts/video/record.mjs` (Chrome, ffmpeg, `pip install edge-tts`, network for the voice, and the server on port 8000). Voiced lines are cached in `data/cache/voice/`. Every number on its tiles is read from the app while recording.
 
 ## Wind cache
 

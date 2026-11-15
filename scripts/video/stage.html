@@ -29,6 +29,10 @@ iframe{border:0;width:1055px;height:779px;transform:scale(1.2);transform-origin:
 #cur{position:absolute;left:1200px;top:600px;width:34px;height:34px;z-index:9;transition:left .7s cubic-bezier(.3,.1,.2,1),top .7s cubic-bezier(.3,.1,.2,1);pointer-events:none}
 #cur.tap::after{content:"";position:absolute;left:-18px;top:-18px;width:50px;height:50px;border:5px solid var(--orange);border-radius:50%;animation:tap .5s ease-out forwards}
 @keyframes tap{from{transform:scale(.3);opacity:1}to{transform:scale(1.5);opacity:0}}
+#cap{position:absolute;left:596px;width:1276px;bottom:78px;display:flex;justify-content:center;pointer-events:none;z-index:8}
+#cap span{max-width:1080px;text-align:center;background:#151515;color:#FFFDF7;font:800 34px/1.25 -apple-system,"Helvetica Neue",Arial,sans-serif;padding:12px 22px;border-radius:14px;box-shadow:5px 5px 0 #F54E00;opacity:0;transform:translateY(8px);transition:opacity .18s,transform .18s}
+#cap span.on{opacity:1;transform:none}
+#cap b{color:#F9BD2B}
 </style></head><body>
 <div class="left">
   <div class="brand"><i><svg width="28" height="28" viewBox="0 0 24 24" fill="#fff" stroke="#151515" stroke-width="2" stroke-linejoin="round"><path d="M12 2.5c1 4-3.5 5.5-3.5 10a3.5 3.5 0 0 0 1.2 2.600C9.2 13 10.5 12 11.5 10.5c2.5 2 4 4.2 4 6.5a4.5 4.5 0 0 1-9 0"/><path d="M6.5 17a5.5 5.5 0 0 0 11 0c0-5-3.5-8-5.5-14.5"/></svg></i>FIREVERSE</div>
@@ -38,9 +42,10 @@ iframe{border:0;width:1055px;height:779px;transform:scale(1.2);transform-origin:
   <div class="bar"><p id="barTxt">Walkthrough</p><div class="segs" id="segs"></div></div>
 </div>
 <div class="win"><div class="chrome"><u></u><u></u><u></u><span id="url">fireverse</span></div><iframe id="app" src="about:blank" allow="clipboard-write; clipboard-read"></iframe></div>
+<div id="cap"><span></span></div>
 <svg id="cur" viewBox="0 0 24 24"><path d="M4 2l15 9-6.5 1.5L9 19z" fill="#fff" stroke="#151515" stroke-width="2.2" stroke-linejoin="round"/></svg>
 <script>
-const N = 9, segs = document.getElementById('segs'); for (let i = 0; i < N; i++) segs.append(document.createElement('i'));
+const N = 12, segs = document.getElementById('segs'); for (let i = 0; i < N; i++) segs.append(document.createElement('i'));
 window.scene = (n, head, url) => { document.getElementById('quest').textContent = `Quest ${n} of ${N}`; document.getElementById('head').innerHTML = head; if (url) document.getElementById('url').textContent = url;
   [...segs.children].forEach((s, i) => s.className = i < n - 1 ? 'on' : i === n - 1 ? 'now' : ''); document.getElementById('tiles').replaceChildren(); };
 window.tile = (num, label, tag, tagCls, color) => { const t = document.createElement('div'); t.className = 'tile'; t.dataset.c = color || '';
@@ -48,4 +53,9 @@ window.tile = (num, label, tag, tagCls, color) => { const t = document.createEle
   if (tag) { s.append(document.createElement('br')); const m = document.createElement('small'); m.className = tagCls; m.textContent = tag; s.append(m); }
   t.append(b, s); document.getElementById('tiles').append(t); requestAnimationFrame(() => requestAnimationFrame(() => t.classList.add('in'))); };
 window.cur = (x, y, tap) => { const c = document.getElementById('cur'); c.style.left = x + 'px'; c.style.top = y + 'px'; if (tap) { c.classList.remove('tap'); void c.offsetWidth; c.classList.add('tap'); } };
+window.captions = list => { // [{t: seconds from now, text}] shown in turn; the recorder passes the voice's own word timings
+  const sp = document.querySelector('#cap span'); (window._capT || []).forEach(clearTimeout); window._capT = [];
+  list.forEach((c, i) => window._capT.push(setTimeout(() => { sp.classList.remove('on'); setTimeout(() => { sp.innerHTML = c.text; sp.classList.add('on'); }, 60); }, c.t * 1000)));
+  const last = list[list.length - 1]; if (last) window._capT.push(setTimeout(() => sp.classList.remove('on'), (last.end + .4) * 1000));
+};
 </script></body></html>

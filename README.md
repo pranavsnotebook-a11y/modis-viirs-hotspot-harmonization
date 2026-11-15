@@ -2,7 +2,7 @@
 
 NASA Space Apps 2026 · **Team Terra flare**: Devika Sanil (Team Owner), Toufeeq SK, Pranav Krishna
 
-**Walkthrough video (3.5 min):** [`docs/video/fireverse-roles-walkthrough.mp4`](docs/video/fireverse-roles-walkthrough.mp4)
+**Walkthrough video (4.7 min):** [`docs/video/fireverse-roles-walkthrough.mp4`](docs/video/fireverse-roles-walkthrough.mp4)
 
 FIREVERSE merges NASA FIRMS active-fire detections from MODIS and VIIRS into one harmonized record. It then runs a
 smoke plume on modelled wind to show where each fire's smoke is heading, and what lies in its path: power lines,
@@ -21,6 +21,7 @@ Every value is labelled OBSERVED (satellite fires), MAPPED (OpenStreetMap assets
 | `downwind.html` | operations | The full watch list for every asset kind, plus the 8 January 2025 line-trip replay |
 | `firelab.html` | anyone | The smoke plume itself, hour by hour |
 | `index.html` | analyst | Explorer: map, globe, Harmonization Lab, calendar, history, data |
+| `route.html` | road patrol, drivers | Which of up to three driving routes meets the least modelled smoke, leaving now to +3 h; open it in Google Maps or download GeoJSON |
 | `place.html` | low-bandwidth phones | One place, one answer (about 130 kB) |
 
 Each simplified role page has a three-step shift briefing (check the satellite clock, review the top items, send a
@@ -29,8 +30,10 @@ bulletin). Bulletins come in full and SMS form, and can be read aloud or shared 
 **Run it:** `python -m hotspots.server`, then open http://127.0.0.1:8000. Setup, the FIRMS key and Codespaces are
 covered below.
 **Tests:** `pytest -q` (Python) and `npm test` (front-end unit tests plus browser checks in Chrome).
-**Idea, not built yet:** smoke-aware navigation. A map app could route around where smoke will be in the next hour,
-not only show today's air quality.
+**Smoke-aware routes (built, `web/route.html`):** map apps show the air quality right now, but smoke moves. This page
+compares up to three driving routes by the modelled smoke on each at the time you would be there, and hands the best one
+to Google Maps. **Not built:** true routing that avoids smoke (we compare the alternatives a router offers; we do not
+reroute through smoke-free roads), and any live integration with a map company.
 
 ## Harmonization of MODIS and VIIRS hot spots
 
@@ -98,6 +101,7 @@ for NRT; past standard-processing data is kept). Errors name the problem without
 | `GET /api/firms?product=VIIRS_NOAA20_NRT&bbox=w,s,e,n&days=1..5[&date=YYYY-MM-DD]` | normalized records of one product |
 | `GET /api/harmonize?bbox=w,s,e,n&days=1..7[&date=][&window=180][&processing=NRT\|SP]` | MODIS + all VIIRS for the box, matched, with every source record and its status |
 | `GET /api/weather?lat=&lon=&time=ISO` | modelled hourly wind (10 m, 100 m), boundary layer, cloud; CAMS PM2.5 (Open-Meteo) |
+| `GET /api/route?from=lat,lon&to=lat,lon` | up to 3 driving routes (OSRM demo server, OpenStreetMap data): geometry, distance m, duration s; cached |
 | `GET /api/population?bbox=w,s,e,n` | GHS-POP 2025 population on a 0.025° grid (box ≤ 30 sq deg) |
 
 ### Harmonization (v2, `src/hotspots/harmonize.py`, mirrored in `web/js/app.js`)
@@ -218,7 +222,22 @@ page: `downwind.html?replay`.
 
 The default look is the Paper theme (`web/css/play.css`): cream background, ink outlines, large headline numbers and solid data labels, so the data reads at a glance. The dark theme is one tap away and is remembered.
 
-`docs/video/fireverse-roles-walkthrough.mp4` is a 3.5-minute story walkthrough: story characters (Ana, fire brigade; Diego, grid; Marco, highway; Lucía, clinic; Rosa, farm) follow the smoke from one satellite-detected fire, through FIRELAB, the role pages, DOWNWIND and the January 2025 replay, to the smoke-aware navigation idea (labelled as not built). Rebuild it with `node scripts/video/record.mjs` (Chrome, ffmpeg, `pip install edge-tts`, network for the voice, and the server on port 8000). Voiced lines are cached in `data/cache/voice/`. Every number on its tiles is read from the app while recording.
+`docs/video/fireverse-roles-walkthrough.mp4` is a 4.7-minute walkthrough with six story characters, one per role, each with an avatar and their own neural voice: Ana (fire brigade), Diego (grid), Marco (road patrol, including the smoke-aware route planner), Lucía (clinic), Rosa (farmer) and Arjun (analyst: Explorer, Harmonization Lab, FIRELAB, DOWNWIND). Rebuild it with `node scripts/video/record.mjs` (Chrome, ffmpeg, `pip install edge-tts`, network for the voices, and the server on port 8000). Voiced lines are cached in `data/cache/voice/`. Every number on its tiles is read from the app while recording.
+
+## Smoke-aware route planner (`web/route.html`)
+
+Pick a start and an end (search the feed's named places, use your location when you press the button, or click the map), a departure (now, +1 h, +2 h, +3 h), and press Compare routes. Or press Try an example: it finds the main road with the strongest modelled smoke crossing in the current data and takes the named places near its two ends (at least 20 km apart); if nothing qualifies it says so.
+
+| Step | Source | Label |
+|---|---|---|
+| Fires: last 24 h of the light feed, clustered at 1.5 km, 5 MW or more | NASA FIRMS | OBSERVED |
+| Up to 3 driving routes | OSRM demo server, OpenStreetMap data, through `GET /api/route` (cached, 1 request a second) or directly on a static host | MAPPED |
+| Wind for the travel hours | Open-Meteo, through the wind cache | MODELLED |
+| Smoke at each km (every ~1 km, at the arrival time there), summed over the fires within 25 km of the route | the DOWNWIND/FIRELAB Gaussian plume, each fire held at its observed power for the whole trip | SCENARIO |
+
+Per route: km in modelled smoke (1 µg/m³ or more), peak µg/m³, smoke-minutes, and where the smoke starts (km and clock time). Routes rank by least smoke-minutes, then least peak, then shortest time. A fire with no modelled wind is "not assessed", never "clear"; with no fire data at all every route is "not assessed". No detection does not mean no fire.
+
+Hand-off: a Google Maps directions link (origin, destination and up to 8 waypoints along the route; opens only when clicked; Google may adjust the path between points) and a GeoJSON download (one LineString per route with its numbers, plus the in-smoke stretches), which a map provider could ingest to show smoke ahead on a route. `GET /api/route?from=lat,lon&to=lat,lon` validates input, keeps answers in memory and under `data/cache/route/` (git-ignored) and calls the OSRM demo server at most once a second; the demo server is for light use. Tests: `tests/unit/route-core.test.mjs`, `tests/test_route_api.py`, `tests/e2e/route.spec.mjs`.
 
 ## Wind cache
 

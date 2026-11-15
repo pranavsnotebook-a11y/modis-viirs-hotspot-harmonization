@@ -137,3 +137,9 @@ body.light .rl-day[data-complete=true] .rl-dot{background:#0A7384;border-color:#
 .rl-stat{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--bg-1);border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--shadow);max-width:100%}
 .rl-stat b{font-size:40px;line-height:1;font-weight:800;letter-spacing:-.03em;color:var(--orange)}
 .rl-stat span:not(.dtag){font-weight:600;max-width:22ch;line-height:1.25}
+
+/* road patrol: link card to the smoke-aware route page */
+.rl-routelink{display:flex;flex-direction:column;gap:3px;margin:0 0 14px;padding:12px 14px;min-height:44px;border:1px solid var(--line);border-left:4px solid var(--orange);border-radius:var(--r-md);background:var(--bg-1);box-shadow:var(--shadow);text-decoration:none;color:var(--text)!important}
+.rl-routelink b{font-size:15px}.rl-routelink span{font-size:13px;color:var(--muted)}
+body.light .rl-routelink{border:2px solid var(--ink);border-left-width:6px;box-shadow:3px 3px 0 var(--ink)}
+.rl-routelink:hover{background:var(--bg-2)}

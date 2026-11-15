@@ -32,7 +32,7 @@ const list = Object.freeze([
     id: 'road', title: 'Road patrol',
     tagline: 'Which stretches of road smoke could cross.',
     question: 'Which stretches of road could smoke cross?',
-    modules: ['Roads in the smoke path', 'SMS-length bulletin', 'Read aloud for radio'],
+    modules: ['Roads in the smoke path', 'SMS-length bulletin', 'Read aloud for radio', 'Smoke-aware route'],
     mode: 'simplified', accent: 'purple', href: 'role.html?role=road',
     // road in perspective with a dashed centre line
     icon: '<path d="M9 3 5 21M15 3l4 18M12 4.5v2.5M12 11v2.5M12 17.5V20"/>'

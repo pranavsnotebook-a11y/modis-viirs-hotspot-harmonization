@@ -91,6 +91,9 @@ const names = {
   resident: { title: L('Resident or farmer', 'Vecino o agricultor', 'Morador ou agricultor'), q: L('Is smoke heading for my place?', '¿Va el humo hacia mi lugar?', 'A fumaça está indo para o meu local?') },
 };
 for (const k of Object.keys(roles)) Object.assign(roles[k], names[k]);
+// the road patrol also plans trips: a link card to the smoke-aware route page
+roles.road.routeLink = { h: L('Plan a smoke-aware route', 'Planificar una ruta con el humo en cuenta', 'Planejar uma rota com a fumaça em conta'),
+  p: L('Compare driving routes by the modelled smoke on them at the time you would be there.', 'Compare rutas en auto según el humo modelado en ellas a la hora en que usted pasaría.', 'Compare rotas de carro pela fumaça modelada nelas na hora em que você passaria.') };
 
 root.ROLECFG = Object.freeze({ ui, roles, LANGS: ['en', 'es', 'pt'], get: id => roles[id] || null });
 })(typeof globalThis !== 'undefined' ? globalThis : window);

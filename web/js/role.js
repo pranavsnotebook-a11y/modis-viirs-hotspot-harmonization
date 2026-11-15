@@ -315,6 +315,10 @@ async function choose(h) {
 function renderWork(busy) {
   const box = $('work'), tt = cfg.text; box.replaceChildren();
   $('workH').textContent = tx(tt.listH); document.querySelector('.rl-work').setAttribute('aria-busy', String(!!(busy || S.loading)));
+  if (cfg.routeLink) { // the road patrol also plans trips
+    const a = el('a', 'rl-routelink'); a.href = 'route.html?r=' + S.region; a.dataset.routeLink = '';
+    a.append(el('b', null, tx(cfg.routeLink.h)), el('span', null, tx(cfg.routeLink.p))); box.append(a);
+  }
   if (S.loading || busy) { box.append(msg('rl-loading', t('loading'))); if (cfg.engine !== 'watch' && !S.loading) picker(box); return; }
   if (cfg.engine === 'fires' || cfg.engine === 'site' || cfg.engine === 'place') { if (S.errFeed) { /* feed missing: pickers have no places */ } picker(box); }
   if (S.errFeed) { box.append(msg('rl-warn', t('loadFeed'))); box.append(statusSpecBlock('notAssessed')); return; }

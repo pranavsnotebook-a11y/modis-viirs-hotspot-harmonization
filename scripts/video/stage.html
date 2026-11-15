@@ -1,61 +1,162 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><title>FIREVERSE walkthrough stage</title>
 <style>
-/* A playful flat look: cream paper, ink outlines, hard shadows, big numbers. Original artwork; no third-party marks. */
-:root{--paper:#EEEFE9;--ink:#151515;--orange:#F54E00;--yellow:#F9BD2B;--blue:#1D4AFF;--green:#2F9E44;--card:#FFFDF7}
+/* A playful flat look: cream paper, ink outlines, hard shadows, big numbers. Original artwork; no third-party marks.
+   The six characters are drawn here as flat SVG (avatar() below): each has a role prop, blinks, and moves its mouth on the
+   word timings of its own voice. They are story characters, labelled as such in the video. */
+:root{--paper:#EEEFE9;--ink:#151515;--orange:#F54E00;--yellow:#F9BD2B;--blue:#1D4AFF;--green:#2F9E44;--card:#FFFDF7;--acc:#F54E00}
 *{box-sizing:border-box}html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:var(--paper);color:var(--ink);font-family:-apple-system,"Helvetica Neue",Arial,sans-serif}
 body{background-image:radial-gradient(#15151514 1.5px,transparent 1.5px);background-size:28px 28px}
-.left{position:absolute;left:48px;top:44px;width:500px;bottom:44px;display:flex;flex-direction:column;gap:22px}
+.left{position:absolute;left:48px;top:40px;width:500px;bottom:40px;display:flex;flex-direction:column;gap:18px}
 .brand{display:flex;align-items:center;gap:14px;font-weight:900;font-size:30px;letter-spacing:.5px}
 .brand i{width:52px;height:52px;border:4px solid var(--ink);border-radius:14px;background:var(--orange);box-shadow:5px 5px 0 var(--ink);display:grid;place-items:center}
 .quest{align-self:flex-start;font:800 22px/1 Menlo,monospace;background:var(--yellow);border:4px solid var(--ink);border-radius:999px;padding:10px 18px;box-shadow:4px 4px 0 var(--ink);text-transform:uppercase}
-h1{font-size:54px;line-height:1.04;margin:0;font-weight:900;letter-spacing:-1px}
+h1{font-size:50px;line-height:1.04;margin:0;font-weight:900;letter-spacing:-1px}
 h1 em{font-style:normal;background:linear-gradient(transparent 62%,var(--yellow) 62%)}
-.tiles{display:flex;flex-direction:column;gap:18px}
-.tile{background:var(--card);border:4px solid var(--ink);border-radius:20px;box-shadow:7px 7px 0 var(--ink);padding:16px 20px;display:flex;align-items:center;gap:18px;transform:translateY(16px) rotate(-1deg);opacity:0;transition:transform .45s cubic-bezier(.2,1.5,.4,1),opacity .25s}
+/* the speaker */
+.who{display:flex;align-items:center;gap:18px;transform:translateX(-120%) rotate(-6deg);transition:transform .6s cubic-bezier(.2,1.4,.4,1)}
+.who.in{transform:none}
+.who .ava{width:150px;height:150px;flex:0 0 auto;filter:drop-shadow(6px 6px 0 var(--ink))}
+.who.in .ava{animation:bob 2.6s ease-in-out infinite}
+.who b{display:block;font-size:46px;font-weight:900;letter-spacing:-1px;line-height:1}
+.who span{display:inline-block;margin-top:8px;font:800 17px/1 Menlo,monospace;text-transform:uppercase;background:var(--acc);color:#fff;border:3px solid var(--ink);border-radius:9px;padding:6px 9px;box-shadow:3px 3px 0 var(--ink)}
+.who small{display:block;margin-top:8px;font:700 13px/1 Menlo,monospace;text-transform:uppercase;color:#5E5E56}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.ava .m-open{display:none}.ava.talk .m-open{display:inline}.ava.talk .m-closed{display:none}
+.ava .eyes{transform-origin:60px 57px;animation:blink 4.2s infinite}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+.tiles{display:flex;flex-direction:column;gap:16px}
+.tile{background:var(--card);border:4px solid var(--ink);border-radius:20px;box-shadow:7px 7px 0 var(--ink);padding:12px 18px;display:flex;align-items:center;gap:16px;transform:translateY(16px) rotate(-1deg);opacity:0;transition:transform .45s cubic-bezier(.2,1.5,.4,1),opacity .25s}
 .tile.in{transform:none;opacity:1}
-.tile b{font-size:72px;font-weight:900;line-height:1;min-width:150px;text-align:center;letter-spacing:-2px}
-.tile b.sm{font-size:44px;letter-spacing:-1px}
-.tile span{font-size:25px;font-weight:700;line-height:1.15}
-.tile small{display:inline-block;margin-top:8px;font:800 14px/1 Menlo,monospace;border:3px solid var(--ink);border-radius:8px;padding:4px 7px;text-transform:uppercase}
+.tile b{font-size:64px;font-weight:900;line-height:1;min-width:140px;text-align:center;letter-spacing:-2px}
+.tile b.sm{font-size:40px;letter-spacing:-1px}
+.tile .mini{width:76px;height:76px;min-width:76px;margin:0 32px}
+.tile span{font-size:23px;font-weight:700;line-height:1.15}
+.tile small{display:inline-block;margin-top:7px;font:800 13px/1 Menlo,monospace;border:3px solid var(--ink);border-radius:8px;padding:4px 7px;text-transform:uppercase}
 .tile[data-c=orange] b{color:var(--orange)}.tile[data-c=blue] b{color:var(--blue)}.tile[data-c=green] b{color:var(--green)}
-small.obs{background:#C8F0D0}small.map{background:#DCD3FF}small.mod{background:#BFE9F5}small.scn{background:#FFD9C2}small.you{background:var(--yellow)}
+small.obs{background:#C8F0D0}small.map{background:#DCD3FF}small.mod{background:#BFE9F5}small.scn{background:#FFD9C2}small.you{background:var(--yellow)}small.fast{background:#FBE7A8}
 .bar{margin-top:auto}.bar p{font:800 18px/1 Menlo,monospace;margin:0 0 10px;text-transform:uppercase}
-.segs{display:flex;gap:8px}.segs i{flex:1;height:26px;border:4px solid var(--ink);border-radius:9px;background:var(--card);transition:background .4s}.segs i.on{background:var(--orange)}.segs i.now{background:var(--yellow)}
+.segs{display:flex;gap:6px}.segs i{flex:1;height:24px;border:4px solid var(--ink);border-radius:8px;background:var(--card);transition:background .4s}.segs i.on{background:var(--orange)}.segs i.now{background:var(--yellow)}
 .win{position:absolute;left:596px;top:44px;width:1276px;height:992px;background:var(--card);border:5px solid var(--ink);border-radius:22px;box-shadow:12px 12px 0 var(--ink);overflow:hidden}
 .chrome{height:52px;border-bottom:5px solid var(--ink);background:var(--yellow);display:flex;align-items:center;gap:10px;padding:0 18px;font:800 18px/1 Menlo,monospace}
 .chrome u{width:18px;height:18px;border:4px solid var(--ink);border-radius:50%;background:var(--card)}.chrome u:first-child{background:var(--orange)}
 .chrome span{margin-left:14px;background:var(--card);border:3px solid var(--ink);border-radius:999px;padding:6px 16px}
 iframe{border:0;width:1055px;height:779px;transform:scale(1.2);transform-origin:0 0;background:#fff}
-#cur{position:absolute;left:1200px;top:600px;width:34px;height:34px;z-index:9;transition:left .7s cubic-bezier(.3,.1,.2,1),top .7s cubic-bezier(.3,.1,.2,1);pointer-events:none}
-#cur.tap::after{content:"";position:absolute;left:-18px;top:-18px;width:50px;height:50px;border:5px solid var(--orange);border-radius:50%;animation:tap .5s ease-out forwards}
+/* the pointer carries the speaker's name, so it reads as that character showing you around */
+#cur{position:absolute;left:1200px;top:600px;z-index:9;transition:left .7s cubic-bezier(.3,.1,.2,1),top .7s cubic-bezier(.3,.1,.2,1);pointer-events:none}
+#cur svg{width:34px;height:34px;display:block}
+#cur i{position:absolute;left:26px;top:26px;font:800 18px/1 -apple-system,"Helvetica Neue",Arial,sans-serif;font-style:normal;white-space:nowrap;background:var(--acc);color:#fff;border:3px solid var(--ink);border-radius:9px;padding:5px 9px;box-shadow:3px 3px 0 var(--ink)}
+#cur i:empty{display:none}
+#cur.tap::after{content:"";position:absolute;left:-18px;top:-18px;width:50px;height:50px;border:5px solid var(--acc);border-radius:50%;animation:tap .5s ease-out forwards}
 @keyframes tap{from{transform:scale(.3);opacity:1}to{transform:scale(1.5);opacity:0}}
-#cap{position:absolute;left:596px;width:1276px;bottom:78px;display:flex;justify-content:center;pointer-events:none;z-index:8}
-#cap span{max-width:1080px;text-align:center;background:#151515;color:#FFFDF7;font:800 34px/1.25 -apple-system,"Helvetica Neue",Arial,sans-serif;padding:12px 22px;border-radius:14px;box-shadow:5px 5px 0 #F54E00;opacity:0;transform:translateY(8px);transition:opacity .18s,transform .18s}
+#cap{position:absolute;left:596px;width:1276px;bottom:74px;display:flex;justify-content:center;pointer-events:none;z-index:8}
+#cap span{max-width:1100px;text-align:center;background:#151515;color:#FFFDF7;font:800 33px/1.25 -apple-system,"Helvetica Neue",Arial,sans-serif;padding:12px 22px;border-radius:14px;box-shadow:5px 5px 0 var(--acc);opacity:0;transform:translateY(8px);transition:opacity .18s,transform .18s}
 #cap span.on{opacity:1;transform:none}
-#cap b{color:#F9BD2B}
+#cap em{font-style:normal;color:var(--yellow);margin-right:10px}
+/* finale: the whole cast in a row */
+#cast{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:30px;background:#EEEFE9F2;z-index:20}
+#cast.on{display:flex}
+#cast .row{display:flex;gap:26px}
+#cast figure{margin:0;text-align:center;opacity:0;transform:translateY(60px);transition:transform .55s cubic-bezier(.2,1.5,.4,1),opacity .3s}
+#cast figure.in{opacity:1;transform:none}
+#cast figure .ava{width:220px;height:220px;filter:drop-shadow(7px 7px 0 #151515)}
+#cast figcaption b{display:block;font-size:40px;font-weight:900;margin-top:10px}
+#cast figcaption span{font:800 16px/1 Menlo,monospace;text-transform:uppercase}
+#cast h2{font-size:64px;font-weight:900;margin:0;letter-spacing:-1.5px}
+#cast h2 em{font-style:normal;background:linear-gradient(transparent 62%,var(--yellow) 62%)}
+#cast p{font:800 20px/1 Menlo,monospace;margin:0;text-transform:uppercase}
 </style></head><body>
 <div class="left">
-  <div class="brand"><i><svg width="28" height="28" viewBox="0 0 24 24" fill="#fff" stroke="#151515" stroke-width="2" stroke-linejoin="round"><path d="M12 2.5c1 4-3.5 5.5-3.5 10a3.5 3.5 0 0 0 1.2 2.600C9.2 13 10.5 12 11.5 10.5c2.5 2 4 4.2 4 6.5a4.5 4.5 0 0 1-9 0"/><path d="M6.5 17a5.5 5.5 0 0 0 11 0c0-5-3.5-8-5.5-14.5"/></svg></i>FIREVERSE</div>
-  <div class="quest" id="quest">Quest 1 of 9</div>
+  <div class="brand"><i><svg width="28" height="28" viewBox="0 0 24 24" fill="#fff" stroke="#151515" stroke-width="2" stroke-linejoin="round"><path d="M12 2.5c1 4-3.5 5.5-3.5 10a3.5 3.5 0 0 0 1.2 2.6C9.2 13 10.5 12 11.5 10.5c2.5 2 4 4.2 4 6.5a4.5 4.5 0 0 1-9 0"/><path d="M6.5 17a5.5 5.5 0 0 0 11 0c0-5-3.5-8-5.5-14.5"/></svg></i>FIREVERSE</div>
+  <div class="quest" id="quest">Quest 1</div>
   <h1 id="head"></h1>
+  <div class="who" id="who"><div class="ava" id="whoAva"></div><div><b id="whoName"></b><span id="whoRole"></span><small>story character</small></div></div>
   <div class="tiles" id="tiles"></div>
   <div class="bar"><p id="barTxt">Walkthrough</p><div class="segs" id="segs"></div></div>
 </div>
 <div class="win"><div class="chrome"><u></u><u></u><u></u><span id="url">fireverse</span></div><iframe id="app" src="about:blank" allow="clipboard-write; clipboard-read"></iframe></div>
 <div id="cap"><span></span></div>
-<svg id="cur" viewBox="0 0 24 24"><path d="M4 2l15 9-6.5 1.5L9 19z" fill="#fff" stroke="#151515" stroke-width="2.2" stroke-linejoin="round"/></svg>
+<div id="cur"><svg viewBox="0 0 24 24"><path d="M4 2l15 9-6.5 1.5L9 19z" fill="#fff" stroke="#151515" stroke-width="2.2" stroke-linejoin="round"/></svg><i id="curTag"></i></div>
+<div id="cast"><h2>What is the smoke <em>about to cross?</em></h2><div class="row" id="castRow"></div><p>Six roles · four countries · three languages</p></div>
 <script>
-const N = 12, segs = document.getElementById('segs'); for (let i = 0; i < N; i++) segs.append(document.createElement('i'));
+/* ---------- the cast ---------- */
+const INK = '#151515';
+const CAST = {
+  ana:   { name: 'Ana',   role: 'Fire brigade',   acc: '#F54E00', bg: '#FFD9C2', skin: '#C98A5E', hair: '#2B1B12', style: 'pony',  shirt: '#3A3A36', hat: 'helmet', extra: 'stripe' },
+  diego: { name: 'Diego', role: 'Grid operator',  acc: '#1D4AFF', bg: '#CFDBFF', skin: '#A86B45', hair: '#1C130D', style: 'short', shirt: '#1D4AFF', hat: 'hardhat', extra: 'bolt', beard: true },
+  marco: { name: 'Marco', role: 'Road patrol',    acc: '#7A5900', bg: '#FBE7A8', skin: '#D9A27A', hair: '#3B2A1E', style: 'short', shirt: '#24365C', hat: 'cap', extra: 'vest', mustache: true },
+  lucia: { name: 'Lucía', role: 'Clinic lead',    acc: '#B91C1C', bg: '#FFD6D6', skin: '#E0AC85', hair: '#4A2A18', style: 'curly', shirt: '#FFFFFF', hat: '', extra: 'stetho' },
+  rosa:  { name: 'Rosa',  role: 'Farmer',         acc: '#2F9E44', bg: '#C8F0D0', skin: '#B97A52', hair: '#2E1E14', style: 'braid', shirt: '#2F9E44', hat: 'straw', extra: '' },
+  arjun: { name: 'Arjun', role: 'Analyst',        acc: '#5B3FD0', bg: '#DCD3FF', skin: '#9C6B4A', hair: '#111111', style: 'short', shirt: '#5B3FD0', hat: '', extra: 'glasses' },
+};
+function avatar(id) {
+  const c = CAST[id], s = `stroke="${INK}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"`;
+  const back = { pony: `<circle cx="84" cy="64" r="9" fill="${c.hair}" ${s}/>`, curly: `<path d="M32 62C26 36 44 24 60 24C78 24 94 36 88 62C93 78 86 92 78 94L42 94C34 92 27 78 32 62Z" fill="${c.hair}" ${s}/>`,
+    braid: `<path d="M36 58C34 38 46 30 60 30C74 30 86 38 84 58Z" fill="${c.hair}" ${s}/><circle cx="83" cy="74" r="6" fill="${c.hair}" ${s}/><circle cx="85" cy="85" r="5" fill="${c.hair}" ${s}/>`, short: '' }[c.style] || '';
+  const front = { short: `<path d="M36 54C35 36 47 29 60 29C73 29 85 36 84 54C80 46 72 41 60 41C48 41 40 46 36 54Z" fill="${c.hair}" ${s}/>`,
+    curly: `<path d="M38 50C40 36 50 32 60 32C72 32 82 38 82 50C76 44 70 42 64 44C58 40 46 42 38 50Z" fill="${c.hair}" ${s}/>`,
+    pony: `<path d="M38 52C38 38 48 33 60 33C72 33 82 38 82 52C76 46 68 44 60 44C52 44 44 46 38 52Z" fill="${c.hair}" ${s}/>`,
+    braid: `<path d="M38 52C40 40 50 36 60 36C70 36 80 40 82 52C74 46 66 45 60 47C54 45 46 46 38 52Z" fill="${c.hair}" ${s}/>` }[c.style] || '';
+  const body = `<path d="M16 124C18 96 38 86 60 86C82 86 102 96 104 124Z" fill="${c.shirt}" ${s}/>`
+    + ({ stripe: `<path d="M24 106H96" stroke="#F9BD2B" stroke-width="7"/><path d="M24 106H96" stroke="${INK}" stroke-width="1.5" opacity=".0"/>`,
+      bolt: `<path d="M66 96L58 107H64L58 118L72 104H65L70 96Z" fill="#F9BD2B" ${s} stroke-width="2"/>`,
+      vest: `<path d="M38 90L50 124H34L28 100Z M82 90L70 124H86L92 100Z" fill="#E6F531" ${s}/><path d="M33 108H45M75 108H87" stroke="#C0C0C0" stroke-width="4"/>`,
+      stetho: `<path d="M48 88C46 104 54 112 60 112C66 112 74 104 72 88" fill="none" ${s}/><circle cx="60" cy="114" r="5" fill="#9AA3AD" ${s}/>`, glasses: '', '': '' }[c.extra] || '');
+  const neck = `<path d="M53 76H67V90H53Z" fill="${c.skin}" ${s}/>`;
+  const head = `<circle cx="60" cy="58" r="23" fill="${c.skin}" ${s}/><circle cx="37" cy="60" r="4.5" fill="${c.skin}" ${s}/><circle cx="83" cy="60" r="4.5" fill="${c.skin}" ${s}/>`;
+  const face = `<g class="eyes"><circle cx="51.5" cy="58" r="2.8" fill="${INK}"/><circle cx="68.5" cy="58" r="2.8" fill="${INK}"/></g>`
+    + `<path d="M46.5 51.5Q51 49 55 51M65 51Q69 49 73.5 51.5" fill="none" stroke="${INK}" stroke-width="2.4" stroke-linecap="round"/>`
+    + `<circle cx="46" cy="66" r="3.4" fill="#F28B82" opacity=".55"/><circle cx="74" cy="66" r="3.4" fill="#F28B82" opacity=".55"/>`
+    + (c.beard ? `<path d="M40 64C42 80 52 84 60 84C68 84 78 80 80 64C76 72 70 76 60 76C50 76 44 72 40 64Z" fill="${c.hair}" opacity=".85"/>` : '')
+    + (c.mustache ? `<path d="M51 66Q56 62 60 65Q64 62 69 66Q64 68 60 67Q56 68 51 66Z" fill="${c.hair}"/>` : '')
+    + `<path class="m-closed" d="M54 70Q60 74.5 66 70" fill="none" stroke="${INK}" stroke-width="2.6" stroke-linecap="round"/>`
+    + `<ellipse class="m-open" cx="60" cy="71" rx="5" ry="4.2" fill="#7A1F1F" stroke="${INK}" stroke-width="2.4"/>`
+    + (c.extra === 'glasses' ? `<g fill="#FFFFFF55" ${s} stroke-width="2.4"><rect x="43" y="52" width="15" height="12" rx="4"/><rect x="62" y="52" width="15" height="12" rx="4"/></g><path d="M58 57H62" stroke="${INK}" stroke-width="2.4"/>` : '');
+  const hat = { helmet: `<path d="M34 50C34 30 47 23 60 23C73 23 86 30 86 50Z" fill="#F9BD2B" ${s}/><path d="M28 48H92V55H28Z" fill="#F9BD2B" ${s}/><path d="M54 27H66V44H54Z" fill="#F54E00" ${s} stroke-width="2.4"/>`,
+    hardhat: `<path d="M35 48C35 31 47 25 60 25C73 25 85 31 85 48Z" fill="#FFFDF7" ${s}/><path d="M30 47H90V53H30Z" fill="#FFFDF7" ${s}/><path d="M60 25V40" ${s}/>`,
+    cap: `<path d="M37 47C37 32 48 27 60 27C72 27 83 32 83 47Z" fill="#24365C" ${s}/><path d="M60 47H96Q94 54 60 52Z" fill="#24365C" ${s}/><circle cx="60" cy="38" r="4" fill="#F9BD2B" ${s} stroke-width="2"/>`,
+    straw: `<ellipse cx="60" cy="42" rx="40" ry="8" fill="#E8C77A" ${s}/><path d="M42 42C42 25 78 25 78 42Z" fill="#E8C77A" ${s}/><path d="M43 38H77" stroke="#B91C1C" stroke-width="4"/>`, '': '' }[c.hat] || '';
+  return `<svg viewBox="0 0 120 120" width="100%" height="100%"><defs><clipPath id="clip-${id}"><circle cx="60" cy="60" r="56"/></clipPath></defs>`
+    + `<circle cx="60" cy="60" r="56" fill="${c.bg}"/><g clip-path="url(#clip-${id})">${back}${body}${neck}${head}${front}${face}${hat}</g>`
+    + `<circle cx="60" cy="60" r="56" fill="none" stroke="${INK}" stroke-width="4"/></svg>`;
+}
+/* ---------- scenes ---------- */
+let N = 12; const segs = document.getElementById('segs');
+const drawSegs = () => { segs.replaceChildren(); for (let i = 0; i < N; i++) segs.append(document.createElement('i')); };
+drawSegs();
+window.setTotal = n => { N = n; drawSegs(); };
 window.scene = (n, head, url) => { document.getElementById('quest').textContent = `Quest ${n} of ${N}`; document.getElementById('head').innerHTML = head; if (url) document.getElementById('url').textContent = url;
   [...segs.children].forEach((s, i) => s.className = i < n - 1 ? 'on' : i === n - 1 ? 'now' : ''); document.getElementById('tiles').replaceChildren(); };
+window.speaker = id => { // who is talking: the avatar slides in, the pointer and captions take their colour and name
+  const w = document.getElementById('who'), c = id && CAST[id];
+  document.documentElement.style.setProperty('--acc', c ? c.acc : '#F54E00'); document.getElementById('curTag').textContent = c ? c.name : '';
+  if (!c) { w.classList.remove('in'); w.style.display = 'none'; return; }
+  if (w.dataset.id === id && w.classList.contains('in')) return;
+  w.style.display = ''; w.classList.remove('in'); w.dataset.id = id;
+  document.getElementById('whoAva').innerHTML = avatar(id); document.getElementById('whoName').textContent = c.name; document.getElementById('whoRole').textContent = c.role;
+  void w.offsetWidth; requestAnimationFrame(() => w.classList.add('in'));
+};
+window.talk = (words, lead) => { // open the mouth on each spoken word, from the voice's own word timings
+  (window._talkT || []).forEach(clearTimeout); window._talkT = [];
+  const ava = () => document.getElementById('whoAva');
+  for (const w of words) { window._talkT.push(setTimeout(() => ava().classList.add('talk'), (lead + w.start) * 1000)); window._talkT.push(setTimeout(() => ava().classList.remove('talk'), (lead + Math.max(w.start + .08, w.end - .03)) * 1000)); }
+};
 window.tile = (num, label, tag, tagCls, color) => { const t = document.createElement('div'); t.className = 'tile'; t.dataset.c = color || '';
-  const b = document.createElement('b'); b.textContent = num; if (String(num).length > 4) b.className = 'sm'; const s = document.createElement('span'); s.textContent = label;
+  let b; if (String(num).startsWith('@')) { b = document.createElement('div'); b.className = 'mini'; b.innerHTML = avatar(num.slice(1)); }
+  else { b = document.createElement('b'); b.textContent = num; if (String(num).length > 4) b.className = 'sm'; }
+  const s = document.createElement('span'); s.textContent = label;
   if (tag) { s.append(document.createElement('br')); const m = document.createElement('small'); m.className = tagCls; m.textContent = tag; s.append(m); }
   t.append(b, s); document.getElementById('tiles').append(t); requestAnimationFrame(() => requestAnimationFrame(() => t.classList.add('in'))); };
 window.cur = (x, y, tap) => { const c = document.getElementById('cur'); c.style.left = x + 'px'; c.style.top = y + 'px'; if (tap) { c.classList.remove('tap'); void c.offsetWidth; c.classList.add('tap'); } };
-window.captions = list => { // [{t: seconds from now, text}] shown in turn; the recorder passes the voice's own word timings
-  const sp = document.querySelector('#cap span'); (window._capT || []).forEach(clearTimeout); window._capT = [];
-  list.forEach((c, i) => window._capT.push(setTimeout(() => { sp.classList.remove('on'); setTimeout(() => { sp.innerHTML = c.text; sp.classList.add('on'); }, 60); }, c.t * 1000)));
+window.captions = (list, who) => { // [{t: seconds from now, text}] shown in turn; the recorder passes the voice's own word timings
+  const sp = document.querySelector('#cap span'), tag = who && CAST[who] ? `<em>${CAST[who].name}</em>` : ''; (window._capT || []).forEach(clearTimeout); window._capT = [];
+  list.forEach(c => window._capT.push(setTimeout(() => { sp.classList.remove('on'); setTimeout(() => { sp.innerHTML = tag + c.text; sp.classList.add('on'); }, 60); }, c.t * 1000)));
   const last = list[list.length - 1]; if (last) window._capT.push(setTimeout(() => sp.classList.remove('on'), (last.end + .4) * 1000));
 };
+window.castLine = (on, ids) => { // the finale: everyone in a row, one after another
+  const box = document.getElementById('cast'), row = document.getElementById('castRow'); box.classList.toggle('on', !!on); if (!on) return;
+  row.replaceChildren(); (ids || Object.keys(CAST)).forEach((id, i) => { const f = document.createElement('figure'); f.innerHTML = `<div class="ava">${avatar(id)}</div><figcaption><b>${CAST[id].name}</b><span>${CAST[id].role}</span></figcaption>`; row.append(f); setTimeout(() => f.classList.add('in'), 250 + i * 260); });
+};
+window.castTalk = (id, words, lead) => { const f = [...document.querySelectorAll('#castRow figure')].find(x => x.querySelector('b').textContent === CAST[id].name); if (!f) return; const a = f.querySelector('.ava');
+  for (const w of words) { setTimeout(() => a.classList.add('talk'), (lead + w.start) * 1000); setTimeout(() => a.classList.remove('talk'), (lead + Math.max(w.start + .08, w.end - .03)) * 1000); } };
+window.speaker(null);
 </script></body></html>

@@ -6,12 +6,15 @@ The FIRMS MAP_KEY stays here: it is read from FIRMS_MAP_KEY (environment or .env
   GET /api/harmonize?bbox=&days=&date=&window=   MODIS + all VIIRS for a box, matched (hotspots.harmonize)
   GET /api/weather?lat=&lon=&time=      modelled wind, boundary layer and CAMS PM2.5 at a point (Open-Meteo)
   GET /api/population?bbox=             GHS-POP 2025 population grid for a small box
+  GET /api/route?from=lat,lon&to=lat,lon   up to 3 driving routes (OSRM demo server, OpenStreetMap data), cached, 1 request a second
 usage: python -m hotspots.server [--port 8000] [--host 127.0.0.1]"""
 import argparse
 import json
 import math
 import mimetypes
+import threading
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -269,8 +272,89 @@ def api_population(q):
     return g
 
 
+ROUTE_DIR = Path(__file__).resolve().parents[2] / "data" / "cache" / "route"
+ROUTE_TTL = 24 * 3600          # road geometry changes slowly; the OSRM demo server has no traffic anyway
+ROUTE_MAX_KM = 1500            # straight-line limit: the demo server is for light use
+ROUTE_BASE = "https://router.project-osrm.org/route/v1/driving/"
+_route_lock = threading.Lock()
+_route_last = [0.0]            # time of the last request to the routing service
+_route_mem = {}
+
+
+def _route_point(q, name):
+    import re
+    v = arg(q, name)
+    if not re.fullmatch(r"-?\d{1,2}(\.\d{1,8})?,-?\d{1,3}(\.\d{1,8})?", v):
+        raise BadRequest(f"{name} must be lat,lon in degrees")
+    lat, lon = (float(x) for x in v.split(","))
+    if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+        raise BadRequest(f"{name} is out of range")
+    return round(lat, 4), round(lon, 4)  # 4 decimals is about 11 m: also what the cache is keyed on
+
+
+def _route_fetch(url):
+    """One request to the routing service, never faster than one a second (its usage policy for the demo server)."""
+    with _route_lock:
+        wait = 1.0 - (time.time() - _route_last[0])
+        if wait > 0:
+            time.sleep(wait)
+        try:
+            return _fetch_json(url, 30)
+        finally:
+            _route_last[0] = time.time()
+
+
+def api_route(q):
+    """Up to 3 driving routes between two points from the OSRM demo server (OpenStreetMap data), with geometry as GeoJSON
+    order [lon, lat], distance in metres and duration in seconds. Answers are kept in memory and on disk."""
+    (la1, lo1), (la2, lo2) = _route_point(q, "from"), _route_point(q, "to")
+    if (la1, lo1) == (la2, lo2):
+        raise BadRequest("from and to are the same point")
+    if math.hypot((la2 - la1) * 111.195, (lo2 - lo1) * 111.195 * math.cos(math.radians((la1 + la2) / 2))) > ROUTE_MAX_KM:
+        raise BadRequest(f"from and to are more than {ROUTE_MAX_KM} km apart")
+    key = f"{la1:.4f},{lo1:.4f}>{la2:.4f},{lo2:.4f}"
+    hit = _route_mem.get(key)
+    if hit and time.time() - hit[0] < ROUTE_TTL:
+        return {**hit[1], "cached": True}
+    f = ROUTE_DIR / (key.replace(",", "_").replace(">", "__") + ".json")
+    try:
+        if f.exists() and time.time() - f.stat().st_mtime < ROUTE_TTL:
+            out = json.loads(f.read_text())
+            _route_mem[key] = (time.time(), out)
+            return {**out, "cached": True}
+    except (OSError, ValueError):
+        pass
+    url = f"{ROUTE_BASE}{lo1:.4f},{la1:.4f};{lo2:.4f},{la2:.4f}?alternatives=3&overview=full&geometries=geojson&steps=false"
+    try:
+        j = _route_fetch(url)
+    except Exception as e:
+        if isinstance(e, urllib.error.HTTPError) and e.code == 400:  # e.g. a point too far from any road
+            j = {"code": "NoRoute", "routes": []}
+        else:
+            raise firms.FirmsError(f"routing service unavailable ({type(e).__name__})") from None
+    if not isinstance(j, dict) or j.get("code") not in ("Ok", "NoRoute", "NoSegment"):
+        raise firms.FirmsError("routing service gave an unexpected answer")
+    routes = []
+    for r in (j.get("routes") or [])[:3]:
+        coords = (r.get("geometry") or {}).get("coordinates")
+        if coords and len(coords) >= 2:
+            routes.append({"coords": [[round(c[0], 5), round(c[1], 5)] for c in coords], "distance": float(r["distance"]), "duration": float(r["duration"])})
+    out = {"source": "OSRM demo server (router.project-osrm.org), OpenStreetMap data", "code": "Ok" if routes else "NoRoute", "routes": routes}
+    _route_mem[key] = (time.time(), out)
+    if len(_route_mem) > 300:
+        for k in sorted(_route_mem, key=lambda k: _route_mem[k][0])[:100]:
+            _route_mem.pop(k, None)
+    if routes:
+        try:
+            ROUTE_DIR.mkdir(parents=True, exist_ok=True)
+            f.write_text(json.dumps(out, separators=(",", ":")))
+        except OSError:
+            pass
+    return out
+
+
 ROUTES = {"/api/status": api_status, "/api/firms": api_firms, "/api/harmonize": api_harmonize,
-          "/api/weather": api_weather, "/api/wind": api_wind, "/api/population": api_population}
+          "/api/weather": api_weather, "/api/wind": api_wind, "/api/population": api_population, "/api/route": api_route}
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -282,7 +366,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def end_headers(self):
         self.send_header("X-Content-Type-Options", "nosniff")
-        if self.path.startswith(("/app-data/", "/js/", "/css/", "/index.html", "/start.html", "/role.html")) or self.path in ("/", ""):
+        if self.path.startswith(("/app-data/", "/js/", "/css/", "/index.html", "/start.html", "/role.html", "/route.html")) or self.path in ("/", ""):
             self.send_header("Cache-Control", "no-cache")
         super().end_headers()
 

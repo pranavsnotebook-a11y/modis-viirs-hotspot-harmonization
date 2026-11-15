@@ -29,7 +29,7 @@ test('ids are unique and get() finds each one', () => {
 test('every required field is present and non-empty', () => {
   for (const r of R.list) {
     for (const k of ['id', 'title', 'tagline', 'question', 'mode', 'icon', 'accent', 'href']) assert.ok(typeof r[k] === 'string' && r[k].trim(), `${r.id}.${k}`);
-    assert.equal(r.modules.length, 3, `${r.id} has three module chips`);
+    assert.ok(r.modules.length >= 3 && r.modules.length <= 4, `${r.id} has three or four module chips`);
     for (const m of r.modules) assert.ok(typeof m === 'string' && m.trim());
     assert.ok(THEME.includes(r.accent), `${r.id} accent is a theme colour`);
     assert.match(r.icon, /^(<(path|circle|rect|line|polyline|ellipse)\b[^>]*\/>)+$/, `${r.id} icon is stroke-only svg markup`);
